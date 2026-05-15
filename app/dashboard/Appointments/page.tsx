@@ -183,7 +183,7 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
       <div className="absolute inset-0 bg-black/40" onClick={onClose}/>
       <div className="relative w-full max-w-3xl h-full overflow-y-auto p-8" style={{backgroundColor:pageBg}}>
         <div className="flex items-center gap-3 mb-8">
-          <h2 className="text-2xl font-bold" style={{color:text1}}>APPOINTMENTS /</h2>
+          <h2 className="text-2xl font-bold" style={{color:isDark ? "#ffffff": ""}}>APPOINTMENTS /</h2>
           <span className="text-2xl font-bold" style={{color:isDark?"#B09070":"#7A6040"}}>Add Patient</span>
         </div>
         <div className={`rounded-2xl p-8 border ${cardBorder}`} style={{backgroundColor:card}}>
@@ -193,7 +193,7 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
               {fields.map(f=>(
                 <div key={f.key}>
                   <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2"
-                    style={{color:isDark?"#B09070":"#7A6040"}}>{f.label}</label>
+                    style={{color:isDark?"#591727":"#7A6040"}}>{f.label}</label>
                   <input
                     type={f.type}
                     placeholder={f.ph}
@@ -206,7 +206,7 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
               ))}
               <div>
                 <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2"
-                  style={{color:isDark?"#B09070":"#7A6040"}}>➕ SPECIALITIES</label>
+                  style={{color:isDark?"#591727":"#7A6040"}}>➕ SPECIALITIES</label>
                 <select value={addForm.specialty}
                   onChange={e=>setAddForm(prev=>({...prev,specialty:e.target.value}))}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none border appearance-none"
@@ -222,7 +222,7 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
             <div className="flex flex-col gap-5">
               <div>
                 <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2"
-                  style={{color:isDark?"#B09070":"#7A6040"}}>📅 SELECT DATE</label>
+                  style={{color:isDark?"#591727":"#7A6040"}}>📅 SELECT DATE</label>
                 <input type="date" value={addForm.date}
                   onChange={e=>setAddForm(prev=>({...prev,date:e.target.value}))}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none border"
@@ -230,11 +230,11 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
               </div>
               <div>
                 <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2"
-                  style={{color:isDark?"#B09070":"#7A6040"}}>⏰ SELECT TIME</label>
+                  style={{color:isDark?"#591727":"#7A6040"}}>⏰ SELECT TIME</label>
                 <select value={addForm.time}
                   onChange={e=>setAddForm(prev=>({...prev,time:e.target.value}))}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none border appearance-none"
-                  style={{backgroundColor:inputBg,borderColor:inputBorder,color:addForm.time?text1:text2}}>
+                  style={{backgroundColor:isDark ? "c1a694": "",borderColor:inputBorder,color:addForm.time?text1:text2}}>
                   <option value="">Select Time</option>
                   {["08:00 AM","09:00 AM","10:00 AM","11:00 AM","12:00 PM",
                     "01:00 PM","02:00 PM","03:00 PM","04:00 PM","05:00 PM"].map(t=>(
@@ -244,7 +244,7 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
               </div>
               <div>
                 <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2"
-                  style={{color:isDark?"#B09070":"#7A6040"}}>📋 NOTES</label>
+                  style={{color:isDark?"#591727":"#7A6040"}}>📋 NOTES</label>
                 <textarea placeholder="Message" value={addForm.notes}
                   onChange={e=>setAddForm(prev=>({...prev,notes:e.target.value}))}
                   rows={5}
@@ -285,16 +285,18 @@ export default function AppointmentsPage(){
   const currentDay   = "March 7, 2026";
 
   // Color tokens
-  const card         = isDark?"#3D1828":"#EDE0C4";
+   const card       = isDark ? "#c9a898" : "#EDE0C4";
   const cardBorder   = isDark?"border-[#5C2A3A]":"border-[#D9C9A8]";
-  const cardInner    = isDark?"#4A2030":"#E4D5B8";
-  const text1        = isDark?"#F5ECD7":"#591727";
-  const text2        = isDark?"#B09070":"#7A6040";
-  const pageBg       = isDark?"#2A0D18":"#F5ECD7";
-  const inputBg      = isDark?"#3D1828":"#ffffff";
+  const cardInner  = isDark ? "#d0baa3" : "#E4D5B8";
+ const text1      = isDark ? "#591727" : "#591727";
+ const text2      = isDark ? "#591727" : "#591727";
+ const pageBg     = isDark ? "#2A0D18" : "#ffe9bf";
+  const inputBg      = isDark?"#c1a694":"#ffffff";
   const inputBorder  = isDark?"#5C2A3A":"#D9C9A8";
-  const tableBg      = isDark?"#3D1828":"#FDFAF4";
+  const tableBg      = isDark?"#c1a694":"#FDFAF4";
   const tableRowHover= isDark?"#4A2030":"#EDE0C4";
+
+  
 
   const dateTop    = viewMode==="week"?"WEEK":viewMode==="day"?"TODAY":"MONTH";
   const dateBottom = viewMode==="month"?currentMonth:viewMode==="week"?currentWeek:currentDay;
@@ -459,7 +461,7 @@ export default function AppointmentsPage(){
 
       {/* Header Buttons */}
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-3xl font-bold tracking-wide" style={{color:text1}}>APPOINTMENTS</h1>
+        <h1 className="text-3xl font-bold tracking-wide" style={{ color: isDark ? "#ffffff":"#591727"}}>APPOINTMENTS</h1>
         <div className="flex gap-3">
           <button onClick={()=>setModal("pending")}
             className={`relative px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${isDark?"border-[#FFD52F] text-white hover:bg-[#D4A574] hover:text-[#3D0A1F]":"border-[#711C31] text-[#711C31] hover:bg-[#711C31] hover:text-[#F5ECD7]"}`}>
@@ -479,7 +481,7 @@ export default function AppointmentsPage(){
       <div className="grid grid-cols-4 gap-4 mb-5">
         {statCards.map(c=>(
           <div key={c.label} className={`relative rounded-2xl p-6 border ${cardBorder} transition-colors duration-300`}
-            style={{backgroundColor:isDark?"#3D0A1F":"#ffe9bf"}}>
+            style={{backgroundColor:isDark?"#d0baa3":"#ffe9bf"}}>
             <p className=" mb-3" style={{color:text2,}}>{c.label}</p>
             <div className="flex items-end justify-between gap-2">.
               {/* CAPSULE EDGE DECOR */}

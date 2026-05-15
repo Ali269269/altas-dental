@@ -195,7 +195,7 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-3xl h-full overflow-y-auto p-8" style={{ backgroundColor: pageBg }}>
         <div className="flex items-center gap-3 mb-8">
-          <h2 className="text-2xl font-bold" style={{ color: text1 }}>APPOINTMENTS /</h2>
+          <h2 className="text-2xl font-bold" style={{ color: isDark ? "#ffffff":"" }}>APPOINTMENTS /</h2>
           <span className="text-2xl font-bold" style={{ color: isDark ? "#B09070" : "#7A6040" }}>Add Patient</span>
         </div>
 
@@ -209,7 +209,7 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
                 { label:"📞 PHONE NUMBER",   key:"phone",   type:"tel",   ph:"Contact Number"   },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#B09070" : "#7A6040" }}>{f.label}</label>
+                  <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#591727" : "#7A6040" }}>{f.label}</label>
                   <input
                     type={f.type}
                     placeholder={f.ph}
@@ -221,12 +221,12 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
                 </div>
               ))}
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#B09070" : "#7A6040" }}>➕ SPECIALITIES</label>
+                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#591727" : "#7A6040" }}>➕ SPECIALITIES</label>
                 <select
                   value={addForm.specialty}
                   onChange={e => setAddForm(prev => ({ ...prev, specialty: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none border appearance-none"
-                  style={{ backgroundColor: inputBg, borderColor: inputBorder, color: addForm.specialty ? text1 : (isDark ? "#B09070" : "#7A6040") }}
+                  style={{ backgroundColor: isDark ? "":"", borderColor: inputBorder, color: addForm.specialty ? text1 : (isDark ? "#591727" : "#7A6040") }}
                 >
                   <option value="">Select Speciality</option>
                   <option>Aligneurs</option><option>Parodontologie</option>
@@ -239,7 +239,7 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
             {/* Right */}
             <div className="flex flex-col gap-5">
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#B09070" : "#7A6040" }}>📅 SELECT DATE</label>
+                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#591727" : "#7A6040" }}>📅 SELECT DATE</label>
                 <input
                   type="date"
                   value={addForm.date}
@@ -249,19 +249,52 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
                 />
               </div>
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#B09070" : "#7A6040" }}>⏰ SELECT TIME</label>
-                <select
-                  value={addForm.time}
-                  onChange={e => setAddForm(prev => ({ ...prev, time: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none border appearance-none"
-                  style={{ backgroundColor: inputBg, borderColor: inputBorder, color: addForm.time ? text1 : (isDark ? "#B09070" : "#7A6040") }}
-                >
-                  <option value="">Select Time</option>
-                  {["08:00 AM","09:00 AM","10:00 AM","11:00 AM","12:00 PM","01:00 PM","02:00 PM","03:00 PM","04:00 PM","05:00 PM"].map(t=><option key={t}>{t}</option>)}
-                </select>
+                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "" : "" }}>⏰ SELECT TIME</label>
+               <select
+  value={addForm.time}
+  onChange={e => setAddForm(prev => ({ ...prev, time: e.target.value }))}
+  className={`w-full px-4 py-3 rounded-xl text-sm outline-none border appearance-none ${
+    isDark
+      ? "placeholder:text-[#591727]"
+      : "placeholder:text-gray-400"
+  }`}
+  style={{
+    backgroundColor: inputBg,
+    borderColor: inputBorder,
+    color: addForm.time
+      ? text1
+      : (isDark ? "#6b444c" : "#ab8b92")
+  }}
+>
+  <option value="">Select Time</option>
+
+  {[
+    "08:00 AM",
+    "09:00 AM",
+    "10:00 AM",
+    "11:00 AM",
+    "12:00 PM",
+    "01:00 PM",
+    "02:00 PM",
+    "03:00 PM",
+    "04:00 PM",
+    "05:00 PM"
+  ].map(t => (
+    <option
+      key={t}
+      value={t}
+      style={{
+        backgroundColor: isDark ? "#ffffff" : "#ffffff",
+        color: isDark ? "#591727" : "#591727"
+      }}
+    >
+      {t}
+    </option>
+  ))}
+</select>
               </div>
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#B09070" : "#7A6040" }}>📋 NOTES</label>
+                <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2" style={{ color: isDark ? "#591727" : "#7A6040" }}>📋 NOTES</label>
                 <textarea
                   placeholder="Message"
                   value={addForm.notes}
@@ -284,7 +317,7 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
             </button>
             <button
               className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: isDark ? "#8B1A2E" : "#3D0A1F" }}
+              style={{ backgroundColor: isDark ? "#591727" : "#3D0A1F" }}
             >
               Book Appointment
             </button>
@@ -316,7 +349,7 @@ export default function DashboardPage() {
   const barTrack   = isDark ? "#a29b9d" : "#D4C0A4";
   const barFill    = isDark ? "#591727" : "#7A3048";
   const pageBg     = isDark ? "#2A0D18" : "#ffe9bf";
-  const inputBg    = isDark ? "#3D1828" : "#ffffff";
+  const inputBg    = isDark ? "#c1a694" : "#ffffff";
   const inputBorder = isDark ? "#5C2A3A" : "#D9C9A8";
 
   // Today's appointments (dayOffset === 0)
