@@ -92,11 +92,11 @@ const pendingConfirmations = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function statusStyle(status:string){
   switch(status){
-    case"CONFIRMED": return"text-[#3DAA7A] border border-[#3DAA7A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case"PENDING":   return"text-[#C9922A] border border-[#C9922A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case"CANCELLED": return"text-[#C94A3A] border border-[#C94A3A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case"SEEN":      return"text-[#C9922A] border border-[#C9922A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case"ACTIVE":    return"text-[#3DAA7A] border border-[#3DAA7A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"CONFIRMED": return"text-[#3DAA7A] border border-[#3DAA7A] text-[10px] bg-[#D1FAE5] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"PENDING":   return"text-[#C9922A] border border-[#C9922A] text-[10px] bg-[#FEF3C7] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"CANCELLED": return"text-[#C94A3A] border border-[#C94A3A] text-[10px] bg-[#bfafaa] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"SEEN":      return"text-[#C9922A] border border-[#C9922A] text-[10px] bg-[#FEF3C7] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"ACTIVE":    return"text-[#3DAA7A] border border-[#3DAA7A] text-[10px]  bg-[#D1FAE5] font-bold px-2 py-0.5 rounded tracking-wide";
     case"NEW":       return"text-[#C94A3A] border border-[#C94A3A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
     default:         return"";
   }
@@ -135,7 +135,7 @@ function PendingModal({ isDark,card,cardBorder,text1,text2,pageBg,cardInner,onCl
       <div className="absolute inset-0 bg-black/40" onClick={onClose}/>
       <div className="relative ml-auto w-full max-w-2xl h-full overflow-y-auto p-8" style={{backgroundColor:pageBg}}>
         <div className="flex items-center gap-3 mb-6">
-          <h2 className="text-2xl font-bold" style={{color:text1}}>APPOINTMENTS /</h2>
+          <h2 className="text-2xl font-bold" style={{color: isDark ? "#ffffff": "#711C31"}}>APPOINTMENTS /</h2>
           <span className="text-2xl font-bold" style={{color:isDark?"#B09070":"#7A6040"}}>Pending Confirmations</span>
         </div>
         <div className="inline-block text-xs px-3 py-1 rounded-full border mb-6"
@@ -146,16 +146,16 @@ function PendingModal({ isDark,card,cardBorder,text1,text2,pageBg,cardInner,onCl
           {pendingConfirmations.map((p,i)=>(
             <div key={i} className={`rounded-2xl p-5 border ${cardBorder}`} style={{backgroundColor:card}}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-base font-semibold" style={{color:isDark?"#D4A574":"#7A3048]"}}>{p.name}</span>
+                <span className="text-base font-semibold" style={{color:isDark?"#711C31":"#7A3048]"}}>{p.name}</span>
                 <span className="text-xs" style={{color:text2}}>{p.timeAgo}</span>
               </div>
               <p className="text-sm mb-1" style={{color:text2}}>{p.service} · {p.date}</p>
               <p className="text-xs mb-4 flex items-center gap-1" style={{color:text2}}><span>⏰</span>{p.time}</p>
               <div className="flex gap-3">
                 <button className="px-6 py-2 rounded-xl text-sm font-semibold text-white"
-                  style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>Call</button>
+                  style={{backgroundColor:isDark?"#591727":"#591727"}}>Call</button>
                 <button className={`px-6 py-2 rounded-xl text-sm font-semibold border`}
-                  style={{borderColor:isDark?"#D4A574":"#3D0A1F",color:isDark?"#D4A574":"#3D0A1F"}}>Confirm</button>
+                  style={{borderColor:isDark?"#FFD52F":"#FFD52F",color:isDark?"#591727":"#3D0A1F"}}>Confirm</button>
               </div>
             </div>
           ))}
@@ -294,7 +294,7 @@ export default function AppointmentsPage(){
   const inputBg      = isDark?"#c1a694":"#ffffff";
   const inputBorder  = isDark?"#5C2A3A":"#D9C9A8";
   const tableBg      = isDark?"#c1a694":"#FDFAF4";
-  const tableRowHover= isDark?"#4A2030":"#EDE0C4";
+  const tableRowHover= isDark?"#ffffff":"#EDE0C4";
 
   
 
@@ -329,7 +329,7 @@ export default function AppointmentsPage(){
                         </div>
                         <div className="flex flex-col gap-0.5">
                           {events.map((ev,ei)=>(
-                            <div key={ei} className={`text-[9px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)}`}>{ev.label}</div>
+                            <div key={ei} className={`text-[12px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)}`}>{ev.label}</div>
                           ))}
                         </div>
                       </>
@@ -365,7 +365,7 @@ export default function AppointmentsPage(){
                 return(
                   <div key={di} className={`border-t ${cardBorder} p-1 flex flex-col gap-0.5`}>
                     {evs.map((ev,ei)=>(
-                      <div key={ei} className={`text-[9px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)}`}>{ev.label}</div>
+                      <div key={ei} className={`text-[12px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)}`}>{ev.label}</div>
                     ))}
                   </div>
                 );
@@ -403,7 +403,7 @@ export default function AppointmentsPage(){
                       return(
                         <div key={i} className="rounded-lg px-3 py-2"
                           style={{borderLeft:`3px solid ${c.bar}`,backgroundColor:isDark?"#4A2030":"#FDFAF4"}}>
-                          <div className="text-[9px] font-semibold uppercase tracking-wide" style={{color:c.bar}}>{ev.label}</div>
+                          <div className="text-[12px] font-semibold uppercase tracking-wide" style={{color:c.bar}}>{ev.label}</div>
                           <div className="text-sm font-semibold" style={{color:text1}}>{ev.name}</div>
                           <div className="text-[10px]" style={{color:text2}}>⏰ {t}</div>
                         </div>
@@ -466,7 +466,7 @@ export default function AppointmentsPage(){
           <button onClick={()=>setModal("pending")}
             className={`relative px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${isDark?"border-[#FFD52F] text-white hover:bg-[#D4A574] hover:text-[#3D0A1F]":"border-[#711C31] text-[#711C31] hover:bg-[#711C31] hover:text-[#F5ECD7]"}`}>
             Pending Confirmations
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-white bg-[#8B1A2E]">
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[12px] font-bold flex items-center justify-center text-white bg-[#8B1A2E]">
               {pendingConfirmations.length}
             </span>
           </button>
@@ -514,7 +514,7 @@ export default function AppointmentsPage(){
         <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border ${cardBorder}`} style={{backgroundColor:card}}>
           <span className="text-base">📅</span>
           <div>
-            <div className="text-[9px] font-bold tracking-widest uppercase" style={{color:text2}}>{dateTop}</div>
+            <div className="text-[12px] font-bold tracking-widest uppercase" style={{color:text2}}>{dateTop}</div>
             <div className="text-sm font-semibold" style={{color:text1}}>{dateBottom}</div>
           </div>
           <div className="flex gap-1 ml-2">
@@ -662,7 +662,7 @@ export default function AppointmentsPage(){
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">📅</span>
-                      <span className="text-[11px]" style={{color:isDark?"#D4A574":"#7A3048"}}>{row.nextAppt}</span>
+                      <span className="text-[11px]" style={{color:isDark?"#711C31":"#7A3048"}}>{row.nextAppt}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3"><span className={statusStyle(row.status)}>{row.status}</span></td>

@@ -54,9 +54,9 @@ const pendingConfirmations = [
 
 function statusStyles(status: string) {
   switch (status) {
-    case "CONFIRMED": return "text-[#3DAA7A] border border-[#3DAA7A] bg-transparent text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case "PENDING":   return "text-[#C9922A] border border-[#C9922A] bg-transparent text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case "NEW":       return "text-[#C94A3A] border border-[#C94A3A] bg-transparent text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "CONFIRMED": return "text-[#3DAA7A] border border-[#3DAA7A] bg-[#D1FAE5] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "PENDING":   return "text-[#C9922A] border border-[#C9922A] bg-[#FEF3C7] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "NEW":       return "text-[#C94A3A] border border-[#C94A3A] bg-[#bfafaa] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
     default:          return "";
   }
 }
