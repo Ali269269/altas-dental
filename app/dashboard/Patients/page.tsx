@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type PatientStatus = "ACTIVE" | "PENDING" | "COMPLETED" | "CANCELLED";
+type PatientStatus =
+  | "ACTIVE"
+  | "PENDING"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "CONFIRMED"
+  | "FOLLOW-UP REQUIRED";
 type DetailTab = "overview" | "history" | "notes";
 
 interface Patient {
