@@ -323,7 +323,7 @@ export default function AppointmentsPage(){
                     style={{backgroundColor:day?cardInner:"transparent"}}>
                     {day&&(
                       <>
-                        <div className={`text-[11px] font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-1`}
+                        <div className={`text-[11px] font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-1 numeric-font`}
                           style={{backgroundColor:isToday?(isDark?"#8B1A2E":"#3D0A1F"):"transparent",color:isToday?"#F5ECD7":text1}}>
                           {day}
                         </div>
@@ -350,7 +350,7 @@ export default function AppointmentsPage(){
         <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-px mb-1">
           <div/>
           {WEEK_DAYS.map(d=>(
-            <div key={d.date} className="text-center py-2">
+            <div key={d.date} className="text-center py-2 numeric-font">
               <div className="text-[11px]" style={{color:text2}}>{d.label}</div>
               <div className="text-base font-bold" style={{color:text1}}>{d.date}</div>
             </div>
@@ -358,7 +358,7 @@ export default function AppointmentsPage(){
         </div>
         <div>
           {WEEK_TIMES.map(t=>(
-            <div key={t} className="grid grid-cols-[60px_repeat(7,1fr)] gap-px min-h-[70px]">
+            <div key={t} className="grid grid-cols-[60px_repeat(7,1fr)] gap-px min-h-[70px] numeric-font">
               <div className="text-[11px] pt-1 pr-2 text-right" style={{color:text2}}>{t}</div>
               {WEEK_DAYS.map((_,di)=>{
                 const evs=weekEvents.filter(e=>e.day===di&&e.time===t);
@@ -384,7 +384,7 @@ export default function AppointmentsPage(){
           <div className="text-center mb-4">
             <div className="inline-flex flex-col items-center justify-center w-14 h-14 rounded-full"
               style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>
-              <span className="text-2xl font-bold text-white">07</span>
+              <span className="text-2xl font-bold text-white numeric-font">07</span>
             </div>
             <div className="text-lg font-bold mt-1" style={{color:text1}}>Monday</div>
             <div className="text-xs" style={{color:text2}}>MARCH 2026</div>
@@ -395,7 +395,7 @@ export default function AppointmentsPage(){
               return(
                 <div key={t} className="flex gap-3 min-h-[60px]">
                   <div className="w-16 text-right text-[11px] pt-1 shrink-0" style={{color:text2}}>
-                    <div>{t.split(" ")[0]}</div><div>{t.split(" ")[1]}</div>
+                    <div className="numeric-font">{t.split(" ")[0]}</div><div className="numeric-font">{t.split(" ")[1]}</div>
                   </div>
                   <div className={`flex-1 border-t ${cardBorder} pt-1 flex flex-col gap-1`}>
                     {evs.map((ev,i)=>{
@@ -482,7 +482,7 @@ export default function AppointmentsPage(){
         {statCards.map(c=>(
           <div key={c.label} className={`relative rounded-2xl p-6 border ${cardBorder} transition-colors duration-300`}
             style={{backgroundColor:isDark?"#d0baa3":"#ffe9bf"}}>
-            <p className=" mb-3" style={{color:text2,}}>{c.label}</p>
+            <p className=" mb-3" style={{color:text2, }}>{c.label}</p>
             <div className="flex items-end justify-between gap-2">.
               {/* CAPSULE EDGE DECOR */}
 <div className="absolute right-0 top-1/2 -translate-y-1/2 h-[70%] w-[14px]">
@@ -502,7 +502,7 @@ export default function AppointmentsPage(){
     }}
   />
 </div>
-              <span className="text-3xl font-bold" style={{color:text1}}>{c.value}</span>
+              <span className="text-3xl font-bold numeric-font" style={{color:text1, fontFamily: "var(--font-cinzel)"}}>{c.value}</span>
               {c.badge&&<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#6B3A4A] text-[#F5ECD7] whitespace-nowrap">{c.badge}</span>}
             </div>
           </div>
@@ -566,7 +566,7 @@ export default function AppointmentsPage(){
                   <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder}`} style={{backgroundColor:cardInner}}>
                     <div className="flex items-center gap-3">
                       <div className="text-center min-w-[36px]">
-                        <div className="text-sm font-bold" style={{color:text1}}>{a.time}</div>
+                        <div className="text-sm font-bold numeric-font" style={{color:text1}}>{a.time}</div>
                         <div className="text-[10px]" style={{color:text2}}>{a.period}</div>
                       </div>
                       <div className="w-px h-8" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
@@ -651,7 +651,7 @@ export default function AppointmentsPage(){
                   onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}>
                   <td className="px-4 py-3">
                     <div className="font-semibold" style={{color:text1}}>{row.name}</div>
-                    <div className="text-[11px]" style={{color:text2}}>ID: {row.id}</div>
+                    <div className="text-[11px] numeric-font" style={{color:text2}}>ID: {row.id}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-[11px]" style={{color:text2}}>{row.email}</div>

@@ -453,8 +453,8 @@ export default function DashboardPage() {
               {DAYS.map(d => <div key={d} className="text-[10px] text-center font-semibold" style={{ color: text2 }}>{d}</div>)}
             </div>
             {TIMES.map((t, ti) => (
-              <div key={t} className="grid grid-cols-[44px_repeat(7,1fr)] gap-1 items-center">
-                <span className="text-[10px]" style={{ color: text2 }}>{t}</span>
+              <div key={t} className="grid grid-cols-[44px_repeat(7,1fr)] gap-1 items-center numeric-font font-bold">
+                <span className="text-[11px] font-bold numeric-font" style={{ color: text2 }}>{t}</span>
                 {occupancyData[ti].map((level, di) => <OccupancyCell key={di} level={level} isDark={isDark} />)}
               </div>
             ))}
@@ -469,10 +469,10 @@ export default function DashboardPage() {
               <div key={s.name}>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="" style={{ color: text1 }}>{s.name}</span>
-                  <span className=" font-semibold" style={{ color: "var(--font-cinzel)" }}>{s.pct}%</span>
+                  <span className=" font-semibold numeric-font" style={{ color: "var(--font-cinzel)" }}>{s.pct}%</span>
                 </div>
-                <div className="h-1.5 rounded-full" style={{ backgroundColor: barTrack }}>
-                  <div className="h-1.5 rounded-full transition-all duration-500" style={{ width:`${s.pct}%`, backgroundColor: barFill }} />
+                <div className="h-1.5 rounded-full " style={{ backgroundColor: barTrack }}>
+                  <div className="h-1.5 rounded-full transition-all duration-500 " style={{ width:`${s.pct}%`, backgroundColor: barFill }} />
                 </div>
               </div>
             ))}
@@ -504,7 +504,7 @@ export default function DashboardPage() {
                 <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder}`} style={{ backgroundColor: cardInner }}>
                   <div className="flex items-center gap-3">
                     <div className="text-center min-w-[36px]">
-                      <div className="text-sm font-bold leading-tight" style={{ color: text1 }}>{a.time}</div>
+                      <div className="text-sm font-bold leading-tight numeric-font" style={{ color: text1 }}>{a.time}</div>
                       <div className="text-[10px]" style={{ color: text2 }}>{a.period}</div>
                     </div>
                     <div className="w-px h-8" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
@@ -543,7 +543,7 @@ export default function DashboardPage() {
                       <div className="text-[11px]" style={{ color: text2 }}>{s.role}</div>
                     </div>
                   </div>
-                  <div className="text-center text-sm font-semibold" style={{ color: "var(--font-cinzel)", }}>{s.seen}</div>
+                  <div className="text-center text-sm font-semibold numeric-font" style={{ color: "var(--font-cinzel)", }}>{s.seen}</div>
                   <div className="text-center text-sm" style={{ color: "var(--font-cinzel)", }}>{s.avg}</div>
                 </div>
               ))}
