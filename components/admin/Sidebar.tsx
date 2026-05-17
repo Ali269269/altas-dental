@@ -19,8 +19,8 @@ import {
 const navItems = [
   { label: "Dashboard",      href: "/dashboard",      icon: LayoutDashboard },
   { label: "Appointments",   href: "/dashboard/Appointments",   icon: CalendarDays },
-  { label: "Patients",       href: "/admin/patients",       icon: Users },
-  { label: "Clinical Notes", href: "/admin/clinical-notes", icon: FileText },
+  { label: "Patients",       href: "/dashboard/Patient",       icon: Users },
+  { label: "Clinical Notes", href: "/dashboard/Clinical_Note", icon: FileText },
   { label: "Marketing",      href: "/admin/marketing",      icon: Megaphone },
   { label: "Analytics",      href: "/admin/analytics",      icon: BarChart2 },
   { label: "Blogs",          href: "/admin/blogs",          icon: BookOpen },
