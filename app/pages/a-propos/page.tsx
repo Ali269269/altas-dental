@@ -42,7 +42,7 @@ function ScissorsIcon() {
 }
 function LeafIcon() {
   return (
-    <img className="w-4" src="/images/iconb2.png"/>
+    <img className="w-4" src="/images/Iconb2.png"/>
   );
 }
 function AlignIcon() {
@@ -52,7 +52,7 @@ function AlignIcon() {
 }
 function ImplantIcon() {
   return (
-     <img className="w-5" src="/images/iconb4.png"/>
+     <img className="w-5" src="/images/Iconb4.png"/>
   );
 }
 
