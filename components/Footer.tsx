@@ -319,12 +319,12 @@ export default function Footer() {
           .footer-bottom-links {
             display: flex !important;
             flex-direction: row !important;
-            gap: 10px !important;
+            gap: 40px !important;
             align-items: center !important;
             justify-content: flex-end !important;
             white-space: nowrap !important;
             flex-shrink: 0;
-            margin-left: 50px !important;
+            margin-left: 30px !important;
           }
 
           .footer-bottom a,
@@ -508,7 +508,7 @@ export default function Footer() {
                   style={{
                     objectFit: "contain",
                     transform: "scale(1.99) translateY(-5px)",
-                    marginLeft: "25px",
+                    marginLeft: "18px",
                   }}
                 />
               </div>
@@ -518,7 +518,7 @@ export default function Footer() {
                 style={{
                   display: "flex",
                   gap: "1px",
-                  marginLeft: "6px",
+                  marginLeft: "0px",
                 }}
               >
                 <SocialLink href="#">

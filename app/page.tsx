@@ -86,7 +86,8 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
       href={`/pages/Blogs/${post.slug}`}
       style={{ textDecoration: 'none', display: 'block' }}
     >
-    <div
+    <div  
+    className="blog-card-wrapper"
         onMouseEnter={() => {
         setHovered(true);
         onPause();
@@ -97,6 +98,7 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
       }}
       
       style={{
+      
         flexShrink: 0,
         width: '380px',
         borderRadius: '24px',
@@ -111,7 +113,7 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
       }}
     >
       {/* Image */}
-      <div
+      <div className="blogimg"
         style={{
           width: '100%',
           height: '220px',
@@ -435,10 +437,40 @@ export default function Home() {
         }
 
         /* ── DESKTOP GUARD: hide mobile-only hero elements on big screens ── */
+     @media (max-width: 320px) {
+
+   
+
+  .hero-mobile-doctor-col {
+    width: 100% !important;
+    height: 80px !important;
+    margin-top: 120px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hero-mobile-doctor-col img {
+    transform: scale(1.05) !important;
+    object-fit: cover !important;
+  }
+
+  .hero-mobile-doctor-col span img {
+    transform: scale(1.08) !important;
+  }
+ .hero-mobile-cards-col {
+  gap: 12px !important;
+  transform: translateX(-10px);
+}
+
+.hero-mobile-cards-col > * {
+  width: 48% !important;
+}
+}
         @media (min-width: 769px) {
           .hero-mobile-bottom-row { display: none !important; }
           .about-doc-img-desktop  { display: block !important; }
           .about-doc-img-mobile   { display: none !important; }
+        
         }
 
         /* ── MOBILE (≤768px) ── */
@@ -470,7 +502,7 @@ export default function Home() {
             line-height: 1.3 !important;
           }
           .hero-text p {
-            font-size: 13px !important;
+            font-size: 11px !important;
             transform: translateY(0) !important;
             margin-bottom: 10px !important;
             max-width: 100% !important;
@@ -499,9 +531,9 @@ export default function Home() {
           }
           .hero-mobile-cards-col > * {
             flex: 1 1 0% !important;
-            min-width: 0 !important;
+            min-width: 100px !important;
             width: 50% !important;
-            min-height: 140px !important;
+            min-height: 120px !important;
             height: 100px !important;
             margin-bottom: 12px !important;
           }
@@ -511,13 +543,14 @@ export default function Home() {
             justify-content: center !important;
             align-items: flex-end !important;
             overflow: visible !important;
-            transform: translateX(27px);
+            transform: translateX(29px);
           }
           .hero-mobile-doctor-col .relative {
             width: 100% !important;
             height: 230px !important;
+            
           }
-
+        
           /* ── STATS ── */
           .stats-section-text {
             padding: 40px 20px 20px !important;
@@ -715,15 +748,71 @@ export default function Home() {
           }
 
           /* ── BLOG ── */
-          .blog-header {
-            padding: 0 20px !important;
-            margin-left: 0 !important;
-            margin-bottom: 28px !important;
-          }
-          .blog-header h2  { font-size: 22px !important; }
-          .blog-header p   { font-size: 15px !important; }
-          .blog-track { padding-left: 20px !important; }
-          .blog-track > div { width: 280px !important; }
+         /* ── BLOG ── */
+.blog-header {
+  padding: 0 20px !important;
+  margin-left: 0 !important;
+  margin-bottom: 30px !important;
+}
+.blog-header h2  { font-size: 22px !important; }
+.blog-header p   { font-size: 15px !important; }
+
+.blog-track {
+  padding-left: 14px !important;
+  gap: 12px !important;
+}
+
+.blog-track .blog-card-wrapper {
+  width: 165px !important;
+  min-width: 205px !important;
+  max-width: 195px !important;
+  height: 240px !important;
+  min-height: 240px !important;
+  max-height: 240px !important;
+  padding: 8px 8px 14px !important;
+  border-radius: 14px !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.blog-track .blog-card-wrapper .blogimg {
+  height: 9px !important;
+  min-height: 95px !important;
+  max-height: 95px !important;
+  flex-shrink: 0 !important;
+  border-radius: 10px !important;
+  margin-bottom: 22px !important;
+}
+
+.blog-track .blog-card-wrapper p {
+  font-size: 10px !important;
+  margin-bottom: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+.blog-track .blog-card-wrapper h3 {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+.blog-track .blog-card-wrapper > div:last-child {
+  flex-shrink: 0 !important;
+  align-items: flex-end !important;
+}
+
+.blog-track .blog-card-wrapper > div:last-child > div:last-child {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 15px !important;
+  flex-shrink: 0 !important;
+}
 
           /* ── FAQ ── */
           .faq-inner {
@@ -731,6 +820,8 @@ export default function Home() {
             gap: 32px !important;
             padding: 0 20px !important;
             margin-right: 0 !important;
+            margin-top: -90px !important;
+           
           }
           .faq-inner > div:first-child { flex: unset !important; }
           .faq-inner > div:first-child h2 { font-size: 22px !important; }
