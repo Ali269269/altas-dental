@@ -60,7 +60,7 @@ function ContactRow({
     <div
       className="flex items-start gap-3"
       style={{
-        border: "1px solid rgba(123,45,62,0.2)",
+        border: "1px solid #711C31",
         borderRadius: 10,
         padding: "12px 16px",
         background: "#fff",
@@ -71,7 +71,7 @@ function ContactRow({
           width: 34,
           height: 34,
           borderRadius: 2,
-          border:"1px solid #FFD52F ",
+          border: "1px solid #711C31",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -81,7 +81,7 @@ function ContactRow({
       >
         {icon}
       </div>
-      <div style={{ fontSize: 13, color: "#591727", lineHeight: 1.6,fontWeight:"500" }}>
+      <div style={{ fontSize: 13, color: "#591727", lineHeight: 1.6, fontWeight: "500" }}>
         {children}
       </div>
     </div>
@@ -95,7 +95,6 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Replace with your form submission logic
     setSent(true);
     setTimeout(() => setSent(false), 3000);
   };
@@ -103,7 +102,7 @@ export default function ContactPage() {
   const inputStyle: React.CSSProperties = {
     width: "400px",
     background: "transparent",
-    border: "1px solid #FFD52F",
+    border: "1px solid #FFFFFF",
     borderRadius: 3,
     padding: "12px 16px",
     color: "#fff",
@@ -116,17 +115,93 @@ export default function ContactPage() {
 
   return (
     <>
-     
+      <style>{`
+        /* ── Mobile responsiveness ── */
+        @media (max-width: 768px) {
 
-      <main style={{ fontFamily: "'Jost', sans-serif", background: "#f4eee1" }}>
+          /* Section 1 — Title */
+          .contact-title-section {
+            padding: 140px 20px 30px !important;
+          }
+          .contact-title-section h1 {
+            font-size: 22px !important;
+            letter-spacing: 0.5px !important;
+          }
+
+          /* Section 2 — Card wrapper */
+          .contact-card-section {
+            padding: 10px 16px 30px 16px !important;
+          }
+          .contact-card-wrapper {
+            flex-direction: column !important;
+            height: auto !important;
+            border-radius: 14px !important;
+          }
+
+          /* Left panel — Form */
+          .contact-form-panel {
+            width: 100% !important;
+            padding: 32px 20px !important;
+            align-items: stretch !important;
+          }
+          .contact-form-panel h2 {
+            font-size: 18px !important;
+          }
+          .contact-form-accent-line {
+            margin-left: 0 !important;
+          }
+          .contact-input,
+          .contact-form-panel input,
+          .contact-form-panel textarea,
+          .contact-form-panel button[type="submit"] {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .contact-form-panel form {
+            width: 100% !important;
+          }
+
+          /* Right panel — Info */
+          .contact-info-panel {
+            padding: 28px 20px !important;
+            gap: 16px !important;
+          }
+
+          /* CTA section */
+          .contact-cta-section {
+            margin-top: 40px !important;
+            margin-bottom: 40px !important;
+            padding: 60px 20px !important;
+            border-radius: 16px !important;
+          }
+          .cta-title {
+            font-size: 18px !important;
+            letter-spacing: 0.5px !important;
+          }
+          .cta-body {
+            font-size: 15px !important;
+            max-width: 100% !important;
+          }
+          .cta-body br {
+            display: none !important;
+          }
+          .contact-cta-hand {
+            width: 130px !important;
+          }
+        }
+      `}</style>
+
+      <main style={{ fontFamily: "'Jost', sans-serif", background: "#FFFFFF" }}>
 
         {/* ═══════════════════════════════════════════════════════
             SECTION 1 — PAGE TITLE
         ═══════════════════════════════════════════════════════ */}
-        <section style={{ background: "#f4eee1", padding: "156px 80px 40px", textAlign: "center" }}>
+        <section
+          className="contact-title-section"
+          style={{ background: "#FFFFFF", padding: "156px 80px 40px", textAlign: "center" }}
+        >
           <h1
             style={{
-             
               fontSize: 34,
               fontWeight: 500,
               color: "#711C31",
@@ -141,19 +216,23 @@ export default function ContactPage() {
         {/* ═══════════════════════════════════════════════════════
             SECTION 2 — CONTACT CARD (two panels)
         ═══════════════════════════════════════════════════════ */}
-        <section style={{  padding: "10px 100px 30px 100px" }}>
+        <section
+          className="contact-card-section"
+          style={{ padding: "10px 100px 30px 100px" }}
+        >
           <div
+            className="contact-card-wrapper"
             style={{
               borderRadius: 20,
               overflow: "hidden",
               display: "flex",
               boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
               height: 630,
-              
             }}
           >
             {/* ── Left panel: Form ── */}
             <div
+              className="contact-form-panel"
               style={{
                 background: "#711C31",
                 width: "48%",
@@ -161,15 +240,12 @@ export default function ContactPage() {
                 padding: "48px 44px",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent:"center",
-                alignItems:"center"
-                
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              {/* Heading + underline */}
               <h2
                 style={{
-                  
                   fontSize: 22,
                   fontWeight: 500,
                   color: "#fff",
@@ -179,19 +255,22 @@ export default function ContactPage() {
               >
                 Prenez contact
               </h2>
-              {/* Burgundy accent line */}
               <div
+                className="contact-form-accent-line"
                 style={{
                   width: 59,
-                  marginLeft:"-140px",
+                  marginLeft: "-140px",
                   height: 4,
-                  background: "#FFD52F",
+                  background: "#FFFFFF",
                   borderRadius: 2,
                   marginBottom: 32,
                 }}
               />
 
-              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+              <form
+                onSubmit={handleSubmit}
+                style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1, width: "100%" }}
+              >
                 <input
                   className="contact-input"
                   type="text"
@@ -225,12 +304,11 @@ export default function ContactPage() {
                   style={{
                     marginTop: 4,
                     width: "400px",
-                    background: "#F2E5C5",
-                    border: "none",
+                    background: "#ffffff",
+                    border: "1px solid #ffffff",
                     borderRadius: 3,
                     color: "#300E16",
                     fontSize: 17,
-                  
                     fontWeight: 500,
                     padding: "13px 0",
                     cursor: "pointer",
@@ -238,10 +316,10 @@ export default function ContactPage() {
                     transition: "background 0.25s",
                   }}
                   onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLButtonElement).style.background = "#b8925a")
+                    ((e.currentTarget as HTMLButtonElement).style.background = "#F0F0F0")
                   }
                   onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLButtonElement).style.background = "#C9A96E")
+                    ((e.currentTarget as HTMLButtonElement).style.background = "#F0F0F0")
                   }
                 >
                   {sent ? "Envoyé ✓" : "Envoyez"}
@@ -251,16 +329,16 @@ export default function ContactPage() {
 
             {/* ── Right panel: Info ── */}
             <div
+              className="contact-info-panel"
               style={{
                 flex: 1,
-                background: "#F5EFE3",
+                background: "#F0F0F0",
                 padding: "48px 44px",
                 display: "flex",
                 flexDirection: "column",
                 gap: 20,
               }}
             >
-              {/* Lorem text */}
               <p style={{ fontSize: 14, color: "#5a4040", lineHeight: 1.75, fontWeight: 300, marginBottom: 4 }}>
                 Borem ipsum dolor sit amet, consectetur adipiscing elit.
                 Nunc vulputate libero et velit interdum, ac aliquet odio
@@ -279,8 +357,6 @@ export default function ContactPage() {
                   flexShrink: 0,
                 }}
               >
-       
-                
                 <iframe
                   className="map-iframe"
                   src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3307.8412092259664!2d-6.846475!3d33.9966122!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda76dab52891b6f%3A0x3e544619ba730692!2sAtlas%20Dental%20Center%20-%20Dr%20Ghita%20Ouazzani%20T.!5e0!3m2!1sen!2s!4v1778524410125!5m2!1sen!2s"
@@ -306,7 +382,7 @@ export default function ContactPage() {
                 </ContactRow>
               </div>
 
-              {/* Social icons — bottom right */}
+              {/* Social icons */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: "auto" }}>
                 {[
                   { icon: <InstagramIcon />, label: "Instagram" },
@@ -352,118 +428,117 @@ export default function ContactPage() {
             SECTION 3 — CTA
         ═══════════════════════════════════════════════════════ */}
         <div
-  style={{
-    backgroundImage:"url(/images/bgsub.png)",
-    
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "100% 100%",
-    backgroundPosition: "center",
-   
+          className="contact-cta-section"
+          style={{
+            backgroundImage: "url(/images/bgsub.png)",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            borderRadius: 20,
+            padding: "80px 40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            overflow: "hidden",
+            textAlign: "center",
+            width: "100%",
+            marginLeft: "0px",
+            marginTop: "60px",
+            marginBottom: "60px",
+          }}
+        >
+          {/* Hand image */}
+          <div
+            style={{
+              position: "absolute",
+              right: 0,
+              bottom: 0,
+              opacity: 0.9,
+            }}
+          >
+            <img
+              src="/images/shand.png"
+              alt="Hand"
+              className="contact-cta-hand"
+              style={{
+                width: 220,
+                objectFit: "contain",
+                display: "block",
+                transform: "scaleX(-1) scale(1.3) translateY(15px)",
+              }}
+            />
+          </div>
 
-    borderRadius: 20,
-    padding: "80px 40px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    overflow: "hidden",
-    textAlign: "center",
-    width: "calc(100% - 80px)",
-    marginLeft:"40px",
-    marginTop:"60px",
-    marginBottom:"60px"
-  }}
->
-  {/* Left corner hand image */}
-  <div
-    style={{
-      position: "absolute",
-      right: 0,
-      bottom: 0,
-      opacity: 0.9,
-    }}
-  >
-    <img
-  src="/images/shand.png"
-  alt="Hand"
-  style={{
-    width: 220,
-    objectFit: "contain",
-    display: "block",
-    transform: "scaleX(-1) scale(1.3) translateY(15px)",
-    marginRight:"32px"
-    
-  }}
-/>
-  </div>
+          {/* Center Content */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <h2
+              className="cta-title"
+              style={{
+                fontSize: 27,
+                fontWeight: 500,
+                color: "#D3D3D3",
+                marginBottom: 14,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Assurez votre consultation privée
+            </h2>
 
-  {/* Center Content */}
-  <div
-    style={{
-      position: "relative",
-      zIndex: 2,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <h2
-      style={{
-        fontSize: 27,
-        fontWeight: 500,
-        color: "#F2D9A3",
-        marginBottom: 14,
-        textTransform: "uppercase",
-        letterSpacing: "1px",
-      }}
-    >
-      Assurez votre consultation privée
-    </h2>
+            <p
+              className="cta-body"
+              style={{
+                fontSize: 20,
+                color: "#FFFFFF",
+                fontWeight: 300,
+                lineHeight: 1.6,
+                maxWidth: 600,
+              }}
+            >
+              Sélectionnez un horaire qui vous convient, et notre équipe
+              <br />
+              préparera une présentation adaptée pour votre session.
+            </p>
 
-    <p
-      style={{
-        fontSize: 20,
-        color: "rgba(255,255,255,0.85)",
-        fontWeight: 300,
-        lineHeight: 1.6,
-        maxWidth: 600,
-      }}
-    >
-      Sélectionnez un horaire qui vous convient, et notre équipe
-      <br />
-      préparera une présentation adaptée pour votre session.
-    </p>
-
-    <a
-      href="/pages/Appointment"
-      style={{
-        marginTop: 28,
-        display: "inline-block",
-        background: "transparent",
-        border: "1.5px solid #FFD52F",
-        color: "#F2D9A3",
-        padding: "13px 30px",
-        borderRadius: 50,
-        fontSize: 14,
-        fontFamily: "'Jost', sans-serif",
-        cursor: "pointer",
-        textDecoration: "none",
-        transition: "all 0.3s",
-      }}
-      onMouseEnter={(e) =>
-        ((e.currentTarget as HTMLAnchorElement).style.background =
-          "rgba(255,255,255,0.1)")
-      }
-      onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLAnchorElement).style.background =
-          "transparent")
-      }
-    >
-      Prendre rendez-vous
-    </a>
-  </div>
-</div>
+            <a
+              href="/pages/Appointment"
+              style={{
+                marginTop: 28,
+                display: "inline-block",
+                background: "transparent",
+                border: "1.5px solid #FFFFFF",
+                color: "#FFFFFF",
+                padding: "13px 30px",
+                borderRadius: 50,
+                fontSize: 14,
+                fontFamily: "'Jost', sans-serif",
+                cursor: "pointer",
+                textDecoration: "none",
+                transition: "all 0.3s",
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.background =
+                  "rgba(255,255,255,0.1)")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.background =
+                  "transparent")
+              }
+            >
+              Prendre rendez-vous
+            </a>
+          </div>
+        </div>
       </main>
     </>
   );

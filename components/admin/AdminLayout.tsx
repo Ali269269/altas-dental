@@ -1,16 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Sidebar from "./Sidebar";
 import HeaderAdmin from "./HeaderAdmin";
 import { useTheme } from "@/context/ThemeContext";
-
 import { ReactNode } from "react";
 
 interface AdminLayoutProps {
   children: ReactNode;
-  title: string;         // Page title passed from each page
-  userImage?: string;    // Optional admin avatar URL
-  userName?: string;     // Optional admin name for initials fallback
+  title: string;
+  userImage?: string;
+  userName?: string;
 }
 
 export default function AdminLayout({
@@ -21,22 +21,29 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div
       className="min-h-screen flex transition-colors duration-300"
-      style={{ backgroundColor: isDark ? "#2A0812" : "#F0E4C8" }}
+      style={{ backgroundColor: isDark ? "#2A0812" : "#FFFFFF" }}
     >
-      {/* Fixed Sidebar */}
-      <Sidebar />
+      {/* Sidebar — receives open/onClose for mobile drawer */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main content area — offset from sidebar */}
-      <div className="flex-1 ml-[220px] flex flex-col min-h-screen">
-        {/* Fixed Header */}
-        <HeaderAdmin title={title} userImage={userImage} userName={userName} />
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-[220px] min-w-0">
 
-        {/* Page body — padded below the fixed header */}
-        <main className="flex-1 pt-[72px] p-6">
+        {/* Header — receives onMenuClick to open drawer on mobile */}
+        <HeaderAdmin
+          title={title}
+          userImage={userImage}
+          userName={userName}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+
+        {/* Page body */}
+        <main className="flex-1 pt-[72px] p-4 sm:p-7 lg:pt-18 ml-0 lg:ml-5 min-w-0">
           {children}
         </main>
       </div>

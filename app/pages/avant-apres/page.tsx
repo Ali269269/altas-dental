@@ -15,8 +15,6 @@ const CATEGORIES = [
   "Prothèse dentaire",
 ];
 
-// Each category has an array of case cards { label: "Avant"|"Après", imgSrc }
-// Replace imgSrc values with your real image paths
 const CASES: Record<string, { label: string; imgSrc: string }[]> = {
   "Pédodontie": [
     { label: "Après", imgSrc: "/images/teeth1.jpg" },
@@ -48,8 +46,6 @@ const CASES: Record<string, { label: string; imgSrc: string }[]> = {
   "Prothèse dentaire": [{ label: "Après", imgSrc: "/images/teeth1.jpg" }],
 };
 
-// ─── Dot Carousel ─────────────────────────────────────────────────────────────
-// ─── Pair Carousel (continuous infinite scroll) ────────────────────────────
 function CaseCarousel({
   category,
   cases,
@@ -57,23 +53,37 @@ function CaseCarousel({
   category: string;
   cases: { label: string; imgSrc: string }[];
 }) {
-  // Build Before/After pairs: zip consecutive items
-  // If items are already alternating Avant/Après, group them into pairs of 2
   const pairs: { before: { label: string; imgSrc: string }; after: { label: string; imgSrc: string } }[] = [];
   for (let i = 0; i + 1 < cases.length; i += 2) {
     pairs.push({ before: cases[i], after: cases[i + 1] });
   }
-  // If odd number of cases, the last one becomes a solo pair (duplicate it)
   if (cases.length % 2 !== 0 && cases.length > 0) {
     const last = cases[cases.length - 1];
     pairs.push({ before: last, after: last });
   }
 
+  const [current, setCurrent] = useState(0);
+  const [sliding, setSliding] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (pairs.length <= 1 || paused) return;
+    const interval = setInterval(() => {
+      setSliding(true);
+      setTimeout(() => {
+        setCurrent((prev) => (prev + 1) % pairs.length);
+        setSliding(false);
+      }, 500);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [pairs.length, paused]);
+
   const CARD_W = 220;
   const GAP = 12;
-  const animDuration = `${pairs.length * 5}s`;
-  // We duplicate the pairs array for seamless infinite loop
-  const allPairs = [...pairs, ...pairs];
+
+  if (pairs.length === 0) return null;
+
+  const pair = pairs[current];
 
   return (
     <div
@@ -85,17 +95,13 @@ function CaseCarousel({
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes slideTrack {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        @keyframes slideInPair {
+          from { opacity: 0; transform: translateX(60px); }
+          to   { opacity: 1; transform: translateX(0); }
         }
-        .pair-track {
-          display: flex;
-          gap: ${GAP}px;
-          animation: slideTrack ${animDuration} linear infinite;
-        }
-        .pair-track:hover {
-          animation-play-state: paused;
+        @keyframes slideOutPair {
+          from { opacity: 1; transform: translateX(0); }
+          to   { opacity: 0; transform: translateX(-60px); }
         }
         .pair-card {
           flex-shrink: 0;
@@ -128,53 +134,86 @@ function CaseCarousel({
           letter-spacing: 0.8px;
           white-space: nowrap;
         }
+
+        /* ── Mobile overrides for carousel cards ── */
+        @media (max-width: 600px) {
+          .pair-card {
+            width: calc(50vw - 28px) !important;
+            height: 200px !important;
+          }
+          .carousel-wrapper {
+            width: calc(100vw - 32px) !important;
+            padding: 10px 10px 14px !important;
+          }
+        }
       `}</style>
 
       <h2
         className="mb-4 text-center"
-        style={{ fontSize: 28, fontWeight: 500, color: "#2c1a1a", letterSpacing: "0.5px" }}
+        style={{ fontSize: 28, fontWeight: 500, color: "#711C31", letterSpacing: "0.5px" }}
       >
         {category}
       </h2>
 
-      {/* Single frame — slightly wider to fit two cards */}
       <div
+        className="carousel-wrapper"
         style={{
-          width: CARD_W * 2 + GAP + 32, // two cards + gap + padding
-          border: "1.5px solid #FFD52F",
+          width: CARD_W * 2 + GAP + 32,
+          border: "1.5px solid #711C31",
           borderRadius: 20,
-          background: "#EDE5D4",
+          background: "#D3D3D3",
           boxShadow: "0 6px 30px rgba(0,0,0,0.10)",
           overflow: "hidden",
           padding: "14px 16px 18px",
           boxSizing: "border-box",
         }}
       >
-        {/* Clipping window */}
-        <div style={{ overflow: "hidden", borderRadius: 12 }}>
-          {/* Sliding track — contains all pairs duplicated for seamless loop */}
-          <div
-            className="pair-track"
-            style={{
-              // Total width: (number of pairs × 2 cards each) × cardW+gap × 2 (duplicate)
-              width: allPairs.length * 2 * (CARD_W + GAP),
-            }}
-          >
-           {allPairs.map((pair, i) => (
-  <Fragment key={i}>
-    <div className="pair-card">
-      <img src={pair.before.imgSrc} alt={pair.before.label} />
-      <span className="pair-label">{pair.before.label}</span>
-    </div>
-    <div className="pair-card">
-      <img src={pair.after.imgSrc} alt={pair.after.label} />
-      <span className="pair-label">{pair.after.label}</span>
-    </div>
-  </Fragment>
-))}
+        {/* Cards */}
+        <div
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          style={{
+            display: "flex",
+            gap: GAP,
+            borderRadius: 12,
+            overflow: "hidden",
+            animation: sliding
+              ? "slideOutPair 0.5s ease-in forwards"
+              : "slideInPair 0.5s ease-out forwards",
+          }}
+        >
+          <div className="pair-card">
+            <img src={pair.before.imgSrc} alt={pair.before.label} />
+            <span className="pair-label">{pair.before.label}</span>
+          </div>
+          <div className="pair-card">
+            <img src={pair.after.imgSrc} alt={pair.after.label} />
+            <span className="pair-label">{pair.after.label}</span>
           </div>
         </div>
       </div>
+
+      {/* Dot indicators */}
+      {pairs.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4, marginTop: 14 }}>
+          {pairs.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setSliding(false); setCurrent(i); }}
+              style={{
+                width: i === current ? 18 : 7,
+                height: 7,
+                borderRadius: 10,
+                border: "none",
+                background: i === current ? "#711C31" : "rgba(113,28,49,0.3)",
+                cursor: "pointer",
+                padding: 0,
+                transition: "all 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -186,21 +225,114 @@ export default function AvantApresPage() {
 
   return (
     <>
-     
+      <style>{`
+        /* ════════════════════════════════════════
+           MOBILE RESPONSIVE — max-width: 768px
+           All desktop/laptop styles are untouched
+           because these rules only fire on mobile.
+        ════════════════════════════════════════ */
 
-      <main style={{  background: "#f4eee1" }}>
+        @media (max-width: 768px) {
+
+          /* ── Section 1: Hero ── */
+          .hero-section {
+            padding: 120px 20px 40px !important;
+          }
+          .hero-inner {
+            flex-direction: column !important;
+            gap: 28px !important;
+            align-items: center !important;
+          }
+          .hero-text {
+            flex: unset !important;
+            width: 100% !important;
+          }
+          .hero-title {
+            font-size: 28px !important;
+            margin-bottom: 20px !important;
+            text-align: center !important;
+             margin-top: 25px !important;
+          }
+          .hero-body {
+            font-size: 15px !important;
+            max-width: 100% !important;
+            text-align: center !important;
+          }
+          .hero-image {
+            width: 100% !important;
+            height: 260px !important;
+            flex-shrink: unset !important;
+          }
+
+          /* ── Section 2: Filter Tabs ── */
+          .filter-section {
+            padding: 0 16px 32px !important;
+          }
+          .filter-row {
+            gap: 8px !important;
+            justify-content: center !important;
+          }
+          .filter-btn {
+            padding: 7px 14px !important;
+            font-size: 12px !important;
+          }
+
+          /* ── Section 3: Carousel ── */
+          .carousel-section {
+            padding: 36px 16px 48px !important;
+          }
+
+          /* ── Section 4: CTA ── */
+          .cta-wrapper {
+            width: calc(100% - 32px) !important;
+            margin-left: 16px !important;
+            margin-top: 40px !important;
+            margin-bottom: 40px !important;
+            padding: 60px 20px !important;
+            border-radius: 16px !important;
+          }
+          .cta-title {
+            font-size: 18px !important;
+            letter-spacing: 0.5px !important;
+          }
+          .cta-body {
+            font-size: 15px !important;
+            max-width: 100% !important;
+          }
+          .cta-body br {
+            display: none !important;
+          }
+          .cta-hand-img {
+           display:none !important;
+            width: 130px !important;
+          }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 400px) {
+          .hero-image {
+           display:none !important;
+            height: 210px !important;
+          }
+          .cta-title {
+            font-size: 15px !important;
+          }
+        }
+      `}</style>
+
+      <main style={{ background: "#ffffff" }}>
 
         {/* ═══════════════════════════════════════════════════════
             SECTION 1 — HERO
         ═══════════════════════════════════════════════════════ */}
         <section
-          className="w-full"
-          style={{ background: "#FAF7F2", padding: "170px 80px 52px" }}
+          className="w-full hero-section"
+          style={{ background: "#FFFFFF", padding: "170px 80px 52px" }}
         >
-          <div className="flex items-start gap-14">
-            {/* Text */}
-            <div style={{ flex: 1 }}>
+          <div className="hero-inner flex items-start gap-14">
+            <div className="hero-text" style={{ flex: 1 }}>
               <h1
+                className="hero-title"
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontSize: 38,
@@ -213,6 +345,7 @@ export default function AvantApresPage() {
                 Avant/Après
               </h1>
               <p
+                className="hero-body"
                 style={{
                   fontSize: 19,
                   lineHeight: 1.5,
@@ -236,8 +369,8 @@ export default function AvantApresPage() {
               </p>
             </div>
 
-            {/* Hero image */}
             <div
+              className="hero-image"
               style={{
                 width: 480,
                 height: 450,
@@ -248,12 +381,11 @@ export default function AvantApresPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                border: '1px solid #753141'
               }}
             >
-             
-                <img src="/images/heartpic.png" alt="Avant Après"
-                  style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-             
+              <img src="/images/heartpic.png" alt="Avant Après"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
           </div>
         </section>
@@ -262,23 +394,24 @@ export default function AvantApresPage() {
             SECTION 2 — FILTER TABS
         ═══════════════════════════════════════════════════════ */}
         <section
+          className="filter-section"
           style={{
-            background: "#FAF7F2",
+            background: "#FFFFFF",
             padding: "0 80px 48px",
           }}
         >
-          {/* Row 1 */}
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div className="filter-row flex flex-wrap gap-2 mb-2">
             {CATEGORIES.slice(0, 6).map((cat) => (
               <button
                 key={cat}
+                className="filter-btn"
                 onClick={() => setActiveCategory(cat)}
                 style={{
                   padding: "7px 48px",
                   borderRadius: 50,
                   border: cat === activeCategory ? "none" : "1px solid #711C31",
                   background: cat === activeCategory ? "#7B2D3E" : "transparent",
-                  color: cat === activeCategory ? "#FFD52F" : "#711C31",
+                  color: cat === activeCategory ? "#FFFFFF" : "#711C31",
                   fontSize: 13,
                   fontFamily: "'Jost', sans-serif",
                   fontWeight: cat === activeCategory ? 500 : 400,
@@ -291,18 +424,18 @@ export default function AvantApresPage() {
               </button>
             ))}
           </div>
-          {/* Row 2 */}
-          <div className="flex flex-wrap gap-2">
+          <div className="filter-row flex flex-wrap gap-2">
             {CATEGORIES.slice(6).map((cat) => (
               <button
                 key={cat}
+                className="filter-btn"
                 onClick={() => setActiveCategory(cat)}
                 style={{
                   padding: "7px 18px",
                   borderRadius: 50,
                   border: cat === activeCategory ? "none" : "1px solid #711C31",
                   background: cat === activeCategory ? "#7B2D3E" : "transparent",
-                  color: cat === activeCategory ? "#FFD52F" : "#711C31",
+                  color: cat === activeCategory ? "#ffffff" : "#711C31",
                   fontSize: 13,
                   fontFamily: "'Jost', sans-serif",
                   fontWeight: cat === activeCategory ? 500 : 400,
@@ -321,8 +454,9 @@ export default function AvantApresPage() {
             SECTION 3 — RESULTS CAROUSEL
         ═══════════════════════════════════════════════════════ */}
         <section
+          className="carousel-section"
           style={{
-            background: "#ffe9bf",
+            background: "#F0F0F0",
             padding: "56px 80px 64px",
           }}
         >
@@ -331,130 +465,127 @@ export default function AvantApresPage() {
           ) : (
             <p
               className="text-center"
-              style={{ color: "#7a6050", fontSize: 14, fontStyle: "italic" }}
+              style={{ color: "#711C31", fontSize: 14 }}
             >
               Aucun cas disponible pour cette catégorie.
             </p>
           )}
         </section>
 
-               {/* ═══════════════════════════════════════════════════════
+        {/* ═══════════════════════════════════════════════════════
             SECTION 4 — CTA
         ═══════════════════════════════════════════════════════ */}
-        {/* ── 4. CTA ── */}
-     <div
-  style={{
-    backgroundImage:"url(/images/bgsub.png)",
-    
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "100% 100%",
-    backgroundPosition: "center",
-   
+        <div
+          className="cta-wrapper"
+          style={{
+            backgroundImage: "url(/images/bgsub.png)",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            borderRadius: 20,
+            padding: "80px 40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            overflow: "hidden",
+            textAlign: "center",
+            width: "100%",
+marginLeft: "0px",
+            marginTop: "60px",
+            marginBottom: "60px"
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              right: 0,
+              bottom: 0,
+              opacity: 0.9,
+            }}
+          >
+            <img
+              src="/images/shand.png"
+              alt="Hand"
+              className="cta-hand-img"
+              style={{
+                width: 220,
+                objectFit: "contain",
+                display: "block",
+                transform: "scaleX(-1) scale(1.3) translateY(15px)",
+               
+              }}
+            />
+          </div>
 
-    borderRadius: 20,
-    padding: "80px 40px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    overflow: "hidden",
-    textAlign: "center",
-    width: "calc(100% - 80px)",
-    marginLeft:"40px",
-    marginTop:"60px",
-    marginBottom:"60px"
-  }}
->
-  {/* Left corner hand image */}
-  <div
-    style={{
-      position: "absolute",
-      right: 0,
-      bottom: 0,
-      opacity: 0.9,
-    }}
-  >
-    <img
-  src="/images/shand.png"
-  alt="Hand"
-  style={{
-    width: 220,
-    objectFit: "contain",
-    display: "block",
-    transform: "scaleX(-1) scale(1.3) translateY(15px)",
-    marginRight:"32px"
-    
-  }}
-/>
-  </div>
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <h2
+              className="cta-title"
+              style={{
+                fontSize: 27,
+                fontWeight: 500,
+                color: "#D3D3D3",
+                marginBottom: 14,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Assurez votre consultation privée
+            </h2>
 
-  {/* Center Content */}
-  <div
-    style={{
-      position: "relative",
-      zIndex: 2,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <h2
-      style={{
-        fontSize: 27,
-        fontWeight: 500,
-        color: "#F2D9A3",
-        marginBottom: 14,
-        textTransform: "uppercase",
-        letterSpacing: "1px",
-      }}
-    >
-      Assurez votre consultation privée
-    </h2>
+            <p
+              className="cta-body"
+              style={{
+                fontSize: 20,
+                color: "#FFFFFF",
+                fontWeight: 300,
+                lineHeight: 1.6,
+                maxWidth: 600,
+              }}
+            >
+              Sélectionnez un horaire qui vous convient, et notre équipe
+              <br />
+              préparera une présentation adaptée pour votre session.
+            </p>
 
-    <p
-      style={{
-        fontSize: 20,
-        color: "rgba(255,255,255,0.85)",
-        fontWeight: 300,
-        lineHeight: 1.6,
-        maxWidth: 600,
-      }}
-    >
-      Sélectionnez un horaire qui vous convient, et notre équipe
-      <br />
-      préparera une présentation adaptée pour votre session.
-    </p>
-
-    <a
-      href="/pages/Appointment"
-      style={{
-        marginTop: 28,
-        display: "inline-block",
-        background: "transparent",
-        border: "1.5px solid #FFD52F",
-        color: "#F2D9A3",
-        padding: "13px 30px",
-        borderRadius: 50,
-        fontSize: 14,
-        fontFamily: "'Jost', sans-serif",
-        cursor: "pointer",
-        textDecoration: "none",
-        transition: "all 0.3s",
-      }}
-      onMouseEnter={(e) =>
-        ((e.currentTarget as HTMLAnchorElement).style.background =
-          "rgba(255,255,255,0.1)")
-      }
-      onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLAnchorElement).style.background =
-          "transparent")
-      }
-    >
-      Prendre rendez-vous
-    </a>
-  </div>
-</div>
+            <a
+              href="/pages/Appointment"
+              style={{
+                marginTop: 28,
+                display: "inline-block",
+                background: "transparent",
+                border: "1.5px solid #FFFFFF",
+                color: "#FFFFFF",
+                padding: "13px 30px",
+                borderRadius: 50,
+                fontSize: 14,
+                fontFamily: "'Jost', sans-serif",
+                cursor: "pointer",
+                textDecoration: "none",
+                transition: "all 0.3s",
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.background =
+                  "rgba(255,255,255,0.1)")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.background =
+                  "transparent")
+              }
+            >
+              Prendre rendez-vous
+            </a>
+          </div>
+        </div>
       </main>
     </>
   );

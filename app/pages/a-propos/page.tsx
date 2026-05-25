@@ -37,22 +37,41 @@ function CalendarIcon() {
 // Speciality icons (simple SVG)
 function ScissorsIcon() {
   return (
-    <img className="w-5" src="/images/iconb1.png"/>
+    <img
+      className="w-5 brightness-0 invert"
+      src="/images/iconb1.png"
+      alt="Scissors Icon"
+    />
   );
 }
+
 function LeafIcon() {
   return (
-    <img className="w-4" src="/images/Iconb2.png"/>
+    <img
+      className="w-4 brightness-0 invert"
+      src="/images/Iconb2.png"
+      alt="Leaf Icon"
+    />
   );
 }
+
 function AlignIcon() {
   return (
-    <img className="w-5" src="/images/iconb3.png"/>
+    <img
+      className="w-5 brightness-0 invert"
+      src="/images/iconb3.png"
+      alt="Align Icon"
+    />
   );
 }
+
 function ImplantIcon() {
   return (
-     <img className="w-5" src="/images/Iconb4.png"/>
+    <img
+      className="w-5 brightness-0 invert"
+      src="/images/Iconb4.png"
+      alt="Implant Icon"
+    />
   );
 }
 
@@ -68,9 +87,9 @@ function SpecialityItem({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="text-[#7B2D3E] mb-0.5">{icon}</div>
-      <p className="font-semibold text-[15.5px] text-[#F2E5C5] leading-snug">{title}</p>
-      <p className="text-[13px] text-[#ffffff] leading-relaxed font-light">{desc}</p>
+      <div className="specialities-item-icon text-[#7B2D3E] mb-0.5">{icon}</div>
+      <p className="specialities-item-title font-semibold text-[15.5px] text-[#F2E5C5] leading-snug">{title}</p>
+      <p className="specialities-item-desc text-[13px] text-[#ffffff] leading-relaxed font-light">{desc}</p>
     </div>
   );
 }
@@ -79,7 +98,358 @@ function SpecialityItem({
 export default function AProposPage() {
   return (
     <>
-      
+      <style>{`
+        /* ──────────────────────────────────────── MOBILE (≤ 768px) ──────────────────────────────────────── */
+        @media (max-width: 768px) {
+          /* Hero Section */
+          .hero-about-section {
+            height: auto !important;
+            margin-top: 130px !important;
+            padding: 40px 16px !important;
+          }
+
+          .hero-about-flex {
+            flex-direction: column !important;
+            align-items: center !important;
+          }
+
+          .hero-about-text {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin-bottom: 30px !important;
+            text-align: center !important;
+          }
+
+          .hero-about-text h1 {
+            font-size: 24px !important;
+            line-height: 1.3 !important;
+            margin-bottom: 16px !important;
+          }
+
+          .hero-about-text p {
+            font-size: 15px !important;
+            line-height: 1.6 !important;
+            margin-bottom: 12px !important;
+            max-width: 100% !important;
+          }
+
+          .hero-about-text p:last-of-type {
+            margin-bottom: 0 !important;
+          }
+
+          .hero-about-text-label {
+            font-size: 12px !important;
+          }
+
+          /* Doctor Image Card */
+          .doctor-card-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            margin-right: 0 !important;
+            margin-bottom: 0 !important;
+          }
+
+          .doctor-image-container {
+            width: 100% !important;
+            height: 380px !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+          }
+
+          .doctor-bg-card {
+            top: 20px !important;
+            width: 280px !important;
+            height: 300px !important;
+            margin-top: 40px !important;
+          }
+
+          .doctor-image {
+            width: 240px !important;
+            margin-bottom: 60px !important;
+            transform: scale(1.5) !important;
+          }
+
+          .doctor-social-icons {
+            top: 100px !important;
+            right: -8px !important;
+            gap: 10px !important;
+          }
+
+          .doctor-social-btn {
+            width: 26px !important;
+            height: 26px !important;
+          }
+
+          .doctor-fade-overlay {
+            width: 320px !important;
+            height: 160px !important;
+            bottom: -15px !important;
+          }
+
+          /* Philosophy Section */
+          .philosophy-section {
+            border-radius: 16px !important;
+            margin: 20px 16px !important;
+            margin-bottom: 20px !important;
+          }
+
+          .philosophy-container {
+            padding: 20px !important;
+          }
+
+          .philosophy-flex {
+            flex-direction: column !important;
+            gap: 16px !important;
+          }
+
+          .philosophy-card {
+            padding: 16px !important;
+            min-height: auto !important;
+          }
+
+          .philosophy-card h3 {
+            font-size: 18px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .philosophy-card p {
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+          }
+
+          .philosophy-badges {
+            gap: 8px !important;
+            margin-top: 12px !important;
+            flex-wrap: wrap !important;
+          }
+
+          .philosophy-badge {
+            font-size: 9px !important;
+            gap: 4px !important;
+          }
+
+          .journey-card {
+            width: 100% !important;
+            padding: 20px !important;
+            flex-shrink: unset !important;
+          }
+
+          .journey-card h3 {
+            font-size: 16px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .journey-card p {
+            font-size: 12px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .journey-btn {
+            padding: 8px 16px !important;
+            font-size: 12px !important;
+          }
+
+          /* Specialities Section */
+          .specialities-section {
+            padding: 10px 16px !important;
+          }
+
+          .specialities-container {
+            min-height: auto !important;
+            flex-direction: column !important;
+            padding: 1px !important;
+            
+          }
+
+          .specialities-content {
+            flex: 1 !important;
+            z-index: 10 !important;
+            margin-bottom: 80px !important;
+          }
+
+          .specialities-title {
+            font-size: 18px !important;
+            margin-bottom: 16px !important;
+          }
+
+          .specialities-grid {
+            grid-template-columns: 1fr !important;
+            gap: 26px !important;
+            max-width: 100% !important;
+          }
+
+          .specialities-item-icon {
+            width: 20px !important;
+            height: 20px !important;
+          }
+
+          .specialities-item-title {
+            font-size: 14px !important;
+          }
+
+          .specialities-item-desc {
+            font-size: 12px !important;
+          }
+
+          .specialities-image {
+            display: none !important;
+          }
+        }
+
+        /* ──────────────────────────────────────── TABLET (769px–1024px) ──────────────────────────────────────── */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          /* Hero Section */
+          .hero-about-section {
+            height: auto !important;
+            margin-top: 130px !important;
+            padding: 50px 30px !important;
+          }
+
+          .hero-about-flex {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+
+          .hero-about-text {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin-bottom: 30px !important;
+          }
+
+          .hero-about-text h1 {
+            font-size: 28px !important;
+            line-height: 1.3 !important;
+            margin-bottom: 16px !important;
+          }
+
+          .hero-about-text p {
+            font-size: 16px !important;
+            line-height: 1.6 !important;
+            margin-bottom: 12px !important;
+            max-width: 100% !important;
+          }
+
+          /* Doctor Image Card */
+          .doctor-card-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            margin-right: 0 !important;
+            margin-bottom: 20px !important;
+          }
+
+          .doctor-image-container {
+            width: 100% !important;
+            height: 340px !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+          }
+
+          .doctor-bg-card {
+            top: 30px !important;
+            width: 320px !important;
+            height: 320px !important;
+            margin-top: 50px !important;
+          }
+
+          .doctor-image {
+            width: 280px !important;
+            margin-bottom: 80px !important;
+            transform: scale(1.6) !important;
+          }
+
+          .doctor-social-icons {
+            top: 120px !important;
+            right: 0 !important;
+          }
+
+          .doctor-fade-overlay {
+            width: 360px !important;
+            height: 180px !important;
+            bottom: -10px !important;
+          }
+
+          /* Philosophy Section */
+          .philosophy-section {
+            border-radius: 18px !important;
+            margin: 20px 30px !important;
+            margin-bottom: 20px !important;
+          }
+
+          .philosophy-container {
+            padding: 24px !important;
+          }
+
+          .philosophy-flex {
+            flex-direction: column !important;
+            gap: 16px !important;
+          }
+
+          .philosophy-card {
+            padding: 20px !important;
+            min-height: 240px !important;
+          }
+
+          .philosophy-card h3 {
+            font-size: 20px !important;
+            margin-bottom: 14px !important;
+          }
+
+          .philosophy-card p {
+            font-size: 15px !important;
+            line-height: 1.6 !important;
+          }
+
+          .journey-card {
+            width: 240px !important;
+            flex-shrink: 0 !important;
+            padding: 24px !important;
+          }
+
+          .journey-card h3 {
+            font-size: 17px !important;
+            margin-bottom: 10px !important;
+          }
+
+          .journey-card p {
+            font-size: 13px !important;
+          }
+
+          /* Specialities Section */
+          .specialities-section {
+            padding: 24px 30px !important;
+          }
+
+          .specialities-container {
+            min-height: 300px !important;
+            padding: 24px !important;
+          }
+
+          .specialities-content {
+            flex: 1 !important;
+            max-width: 60% !important;
+          }
+
+          .specialities-title {
+            font-size: 20px !important;
+            margin-bottom: 18px !important;
+          }
+
+          .specialities-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 20px !important;
+            max-width: 100% !important;
+          }
+
+          .specialities-image {
+            width: 320px !important;
+            height: 280px !important;
+            scale: 1 !important;
+            opacity: 0.4 !important;
+          }
+        }
+      `}</style>
 
       <main
         className="w-full"
@@ -90,17 +460,17 @@ export default function AProposPage() {
         ══════════════════════════════════════════════════════════ */}
              <div className='bg-[#711C31]'> 
               <section
-          className="relative w-full"
+          className="hero-about-section relative w-full"
           style={{ height: 520, marginTop: "130px " }}
         >
-          <div className="flex items-stretch w-full h-full">
+          <div className="hero-about-flex flex items-stretch w-full h-full">
             {/* Left: text content */}
-            <div className="flex-1 flex flex-col justify-center px-19 py-16 pr-8 max-w-[55%]">
+            <div className="hero-about-text flex-1 flex flex-col justify-center px-19 py-16 pr-8 max-w-[55%]">
               {/* Small italic label */}
               <p
-                className="text-[14px] font-light mb-3"
+                className="hero-about-text-label text-[14px] font-light mb-3"
                 style={{
-                  color: "#F2D9A3",
+                  color: "#FFFFFF",
                   fontStyle: "italic",
                   letterSpacing: "0.3px",
                 }}
@@ -157,7 +527,7 @@ export default function AProposPage() {
 
             {/* Right: doctor image card — matches Figma rounded card with warm gradient bg */}
             <div
-  className="relative flex-shrink-0 flex items-center justify-end"
+  className="doctor-card-wrapper relative flex-shrink-0 flex items-center justify-end"
   style={{
     width: 490,
     paddingRight: "24px",
@@ -167,6 +537,7 @@ export default function AProposPage() {
 >
   {/* Outer burgundy area */}
   <div
+    className="doctor-image-container"
     style={{
       position: "relative",
       width: 300,
@@ -178,6 +549,7 @@ export default function AProposPage() {
   >
     {/* Half background card */}
     <div
+      className="doctor-bg-card"
       style={{
         position: "absolute",
         top: 40,
@@ -197,6 +569,7 @@ export default function AProposPage() {
 
     {/* Doctor image OUTSIDE background */}
     <img
+      className="doctor-image"
       src="/images/docterpc.png"
       alt="Doctor"
       style={{
@@ -214,6 +587,7 @@ export default function AProposPage() {
 
     {/* Social icons */}
     <div
+      className="doctor-social-icons"
       style={{
         position: "absolute",
         top: 130,
@@ -231,6 +605,7 @@ export default function AProposPage() {
       ].map(({ icon, label }) => (
         <button
           key={label}
+          className="doctor-social-btn"
           aria-label={label}
           style={{
             width: "30px",
@@ -260,6 +635,7 @@ export default function AProposPage() {
       ))}
     </div>
     <div
+      className="doctor-fade-overlay"
  style={{
   position: "absolute",
   bottom: -20,
@@ -284,23 +660,23 @@ export default function AProposPage() {
         {/* ══════════════════════════════════════════════════════════
             SECTION 2 — PHILOSOPHY + START YOUR JOURNEY
         ══════════════════════════════════════════════════════════ */}
-       <div className="relative z-10 bg-[#d4bca6] rounded-2xl mx-8 mb-10  mt-10 ">
+       <div className="philosophy-section relative z-10 bg-[#FFFFFF] rounded-2xl mx-8 mb-10  mt-10 "> 
         <section
-          className="w-full px-10 py-12 "
+          className="philosophy-container w-full px-10 py-12 "
           style={{  }}
         >
           <div
-            className="rounded-2xl overflow-hidden flex"
-            style={{ background: "transparent", gap: 16 }}
+            className="philosophy-flex rounded-2xl overflow-hidden flex"
+            style={{ background: "transparent", gap: 16, }}
           >
             {/* Left card — Philosophy of Care */}
             <div
-              className="flex-1 rounded-2xl p-8 flex flex-col justify-between"
-              style={{ background: "#E8E0D0", minHeight: 280 }}
+              className="philosophy-card flex-1 rounded-2xl p-8 flex flex-col justify-between"
+              style={{ background: "#D3D3D3", minHeight: 280,border:'1px solid #753141' }}
             >
               <div>
                 <p
-                  className="mb-5"
+                  className="mb-5 philosophy-card"
                   style={{
                    
                     fontSize: 24,
@@ -329,8 +705,8 @@ export default function AProposPage() {
               </div>
 
               {/* Badges */}
-              <div className="flex items-center gap-6 mt-2">
-                <div className="flex items-center gap-2">
+              <div className="philosophy-badges flex items-center gap-6 mt-2">
+                <div className="philosophy-badge flex items-center gap-2">
                    <img className="w-[14px]" src="/images/icon4.png" />
                   <span
                     className="tracking-widest"
@@ -339,7 +715,7 @@ export default function AProposPage() {
                     BOARD CERTIFIED
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="philosophy-badge flex items-center gap-2">
                  <img className="w-[14px]" src="/images/icon2.png" />
                   <span
                     className="tracking-widest"
@@ -353,11 +729,11 @@ export default function AProposPage() {
 
             {/* Right card — Start Your Journey */}
             <div
-              className="rounded-2xl p-8 flex flex-col items-center justify-center text-center"
+              className="journey-card rounded-2xl p-8 flex flex-col items-center justify-center text-center"
           style={{ background: "#711C31", width: 260, flexShrink: 0 }}
             >
               {/* Calendar icon */}
-              <div className="mb-4" style={{ color: "#FFD52F" }}>
+              <div className="mb-4" style={{ color: "#FFFFFF" }}>
                 <CalendarIcon />
               </div>
 
@@ -381,10 +757,10 @@ export default function AProposPage() {
 
               <Link href="/pages/Appointment">
   <button
-    className="transition-colors"
+    className="journey-btn transition-colors"
     style={{
       background: "transparent",
-      border: "1px solid #FFD52F",
+      border: "1px solid #FFFFFF",
       color: "#fff",
       padding: "10px 22px",
       borderRadius: 50,
@@ -411,16 +787,16 @@ export default function AProposPage() {
         {/* ══════════════════════════════════════════════════════════
             SECTION 3 — CLINICAL SPECIALITIES
         ══════════════════════════════════════════════════════════ */}
-      <section className="w-full px-10 pb-14">
+      <section className="specialities-section w-full px-10 pb-14">
   <div
-    className="rounded-2xl overflow-hidden relative flex"
+    className="specialities-container rounded-2xl overflow-hidden relative flex"
     style={{
       minHeight: 320,
       background: "#711C31",
     }}
   >
     {/* Right Side Image */}
-   <div className="absolute bottom-10 right-10 h-full w-[380px] overflow-hidden scale-128">
+   <div className="specialities-image absolute bottom-10 right-10 h-full w-[380px] overflow-hidden scale-128">
   <img
     src="/images/chiar.png"
     alt="Clinic"
@@ -443,13 +819,13 @@ export default function AProposPage() {
     />
 
     {/* Main Content */}
-    <div className="relative z-10 flex-1 p-8 md:p-10">
+    <div className="specialities-content relative z-10 flex-1 p-8 md:p-10">
       <p
-        className="mb-7"
+        className="specialities-title mb-7"
         style={{
           fontSize: 24,
           fontWeight: 500,
-          color: "#F2E5C5",
+          color: "#FFFFFF",
           letterSpacing: "0.3px",
         }}
       >
@@ -458,7 +834,7 @@ export default function AProposPage() {
 
       {/* Grid */}
       <div
-        className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8"
+        className="specialities-grid grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8"
         style={{ maxWidth: 700 }}
       >
         <SpecialityItem

@@ -81,7 +81,6 @@ function CalendarPopup({
   const year = view.getFullYear();
   const month = view.getMonth();
 
-  // first weekday of month (0=Sun → convert to Mon-based)
   const firstDay = new Date(year, month, 1).getDay();
   const offset = (firstDay === 0 ? 6 : firstDay - 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -112,25 +111,22 @@ function CalendarPopup({
         boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
       }}
     >
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <span style={{ color: "#a68698", fontSize: 15, fontWeight: 500, }}>
+        <span style={{ color: "#a68698", fontSize: 15, fontWeight: 500 }}>
           {MONTHS[month]} {year}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#C9A96E", cursor: "pointer", padding: 4 }}><ChevLeft /></button>
-          <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#C9A96E", cursor: "pointer", padding: 4 }}><ChevRight /></button>
+          <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#FFFFFF", cursor: "pointer", padding: 4 }}><ChevLeft /></button>
+          <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#FFFFFF", cursor: "pointer", padding: 4 }}><ChevRight /></button>
         </div>
       </div>
 
-      {/* Day headers */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 8 }}>
         {DAYS.map(d => (
           <div key={d} style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "4px 0" }}>{d}</div>
         ))}
       </div>
 
-      {/* Cells */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "2px 0" }}>
         {cells.map((d, i) => (
           <div
@@ -141,7 +137,7 @@ function CalendarPopup({
               padding: "6px 0",
               fontSize: 13,
               cursor: d ? "pointer" : "default",
-              color: d ? (isSelected(d!) ? "rgba(255,255,255,0.6)" : "#FFD52F") : "transparent",
+              color: d ? "rgba(255,255,255,0.6)" : "transparent",
               background: isSelected(d!) ? "#7B2D3E" : "transparent",
               borderRadius: "50%",
               width: 30,
@@ -161,7 +157,6 @@ function CalendarPopup({
   );
 }
 
-// ─── Time Picker Popup ────────────────────────────────────────────────────────
 // ─── Drum Column ─────────────────────────────────────────────────────────────
 function DrumColumn({
   items,
@@ -178,7 +173,6 @@ function DrumColumn({
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
 
-  // Snap scroll to selected on mount and index change
   useEffect(() => {
     const el = containerRef.current;
     if (!el || isScrolling.current) return;
@@ -197,30 +191,24 @@ function DrumColumn({
   };
 
   return (
-    <div style={{ position: "relative", width, flexShrink: 0, height: ITEM_H * 3,  background: "#541524",}}>
-      {/* Top fade — matches panel bg */}
+    <div style={{ position: "relative", width, flexShrink: 0, height: ITEM_H * 3, background: "#541524" }}>
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, height: ITEM_H,
-        background: "",
-        zIndex: 2, pointerEvents: "none",
+        background: "", zIndex: 2, pointerEvents: "none",
       }} />
-      {/* Bottom fade */}
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0, height: ITEM_H,
-        background: "",
-        zIndex: 2, pointerEvents: "none",
+        background: "", zIndex: 2, pointerEvents: "none",
       }} />
-
       <div
         ref={containerRef}
         onScroll={handleScroll}
         style={{
           height: ITEM_H * 3,
           overflowY: "scroll",
-         background: "#541524",
+          background: "#541524",
           scrollSnapType: "y mandatory",
           scrollbarWidth: "none",
-          // padding lets first & last items reach the centre slot
           paddingTop: ITEM_H,
           paddingBottom: ITEM_H,
           boxSizing: "content-box",
@@ -243,10 +231,10 @@ function DrumColumn({
                 color: isSelected
                   ? "rgba(255,255,255,0.6)"
                   : isAdjacent
-                  ? "rgba(201,169,110,0.9)"
+                  ? "rgba(255,255,255,0.6)"
                   : "rgba(201,169,110,0.20)",
                 fontSize: isSelected ? 19 : 16,
-                fontWeight: isSelected ? 500 : 500,
+                fontWeight: 500,
                 fontFamily: "'Jost', sans-serif",
                 letterSpacing: isSelected ? "0.5px" : "0px",
                 transition: "color 0.15s, font-size 0.15s",
@@ -276,11 +264,9 @@ function TimePickerPopup({
   onClose: () => void;
 }) {
   const ITEM_H = 48;
-
   const hourItems   = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
   const minItems    = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
   const periodItems = ["AM", "PM"];
-
   const hourIdx   = hour - 1;
   const minIdx    = minute;
   const periodIdx = period === "AM" ? 0 : 1;
@@ -292,88 +278,41 @@ function TimePickerPopup({
         top: "calc(100% + 8px)",
         left: 0,
         zIndex: 100,
-        // timedrop
         background: "#541524",
         borderRadius: 14,
         border: "1px solid rgba(255,255,255,0.08)",
-       
         width: 300,
         overflow: "hidden",
-
       }}
     >
-      {/* Horizontal selection lines framing the middle row */}
       <div style={{
         position: "absolute",
-        top: ITEM_H,           // top of the centre row
-        left: 16,
-        right: 16,
+        top: ITEM_H,
+        left: 16, right: 16,
         height: ITEM_H,
         borderTop: "1px solid rgba(255,255,255,0.22)",
         borderBottom: "1px solid rgba(255,255,255,0.22)",
         pointerEvents: "none",
         zIndex: 10,
       }} />
-
       <div style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: "0 8px",
       }}>
-        {/* Hours */}
-        <DrumColumn
-          items={hourItems}
-          selectedIndex={hourIdx}
-          onSelect={i => setHour(i + 1)}
-          width={72}
-        />
-
-        {/* Colon */}
-        <div style={{
-          color: "#C9A96E",
-          fontSize: 22,
-          fontWeight: 600,
-          width: 18,
-          textAlign: "center",
-          flexShrink: 0,
-          paddingBottom: 2,
-        }}>
-          :
-        </div>
-
-        {/* Minutes */}
-        <DrumColumn
-          items={minItems}
-          selectedIndex={minIdx}
-          onSelect={i => setMinute(i)}
-          width={72}
-        />
-
-        {/* Spacer */}
+        <DrumColumn items={hourItems} selectedIndex={hourIdx} onSelect={i => setHour(i + 1)} width={72} />
+        <div style={{ color: "#FFFFFF", fontSize: 22, fontWeight: 600, width: 18, textAlign: "center", flexShrink: 0, paddingBottom: 2 }}>:</div>
+        <DrumColumn items={minItems} selectedIndex={minIdx} onSelect={i => setMinute(i)} width={72} />
         <div style={{ width: 12, flexShrink: 0 }} />
-
-        {/* AM / PM */}
-        <DrumColumn
-          items={periodItems}
-          selectedIndex={periodIdx}
-          onSelect={i => setPeriod(i === 0 ? "AM" : "PM")}
-          width={56}
-        />
+        <DrumColumn items={periodItems} selectedIndex={periodIdx} onSelect={i => setPeriod(i === 0 ? "AM" : "PM")} width={56} />
       </div>
     </div>
   );
 }
 
-
-
 // ─── Speciality Dropdown ──────────────────────────────────────────────────────
-function SpecialityDropdown({
-  value, onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function SpecialityDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -392,7 +331,7 @@ function SpecialityDropdown({
         style={{
           width: "100%",
           background: "transparent",
-          border: "1px solid #FFD52F",
+          border: "1px solid #FFFFFF",
           borderRadius: 8,
           padding: "12px 14px",
           color: value ? "#fff" : "rgba(255,255,255,0.5)",
@@ -413,20 +352,15 @@ function SpecialityDropdown({
       </button>
 
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 3px)",
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            //specialitydrop
-            background: "#541524",
-            borderRadius: 14,
-            overflow: "hidden",
-            
-          }}
-        >
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 3px)",
+          left: 0, right: 0,
+          zIndex: 100,
+          background: "#541524",
+          borderRadius: 14,
+          overflow: "hidden",
+        }}>
           {SPECIALITIES.map((s, i) => (
             <div key={s}>
               <button
@@ -438,7 +372,6 @@ function SpecialityDropdown({
                   padding: "6px 18px",
                   color: "#ada1a7",
                   fontSize: 16.5,
-                
                   fontWeight: 500,
                   textAlign: "left",
                   cursor: "pointer",
@@ -462,9 +395,7 @@ function SpecialityDropdown({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AppointmentPage() {
-  const [form, setForm] = useState({
-    nom: "", email: "", telephone: "", message: "",
-  });
+  const [form, setForm] = useState({ nom: "", email: "", telephone: "", message: "" });
   const [speciality, setSpeciality] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showCal, setShowCal] = useState(false);
@@ -495,7 +426,7 @@ export default function AppointmentPage() {
   const inputBase: React.CSSProperties = {
     width: "100%",
     background: "transparent",
-    border: "1px solid #FFD52F",
+    border: "1px solid #FFFFFF",
     borderRadius: 8,
     padding: "12px 14px",
     color: "#fff",
@@ -509,7 +440,7 @@ export default function AppointmentPage() {
   const ContactRow = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: 12,
-      border: "1px solid rgba(123,45,62,0.2)", borderRadius: 10,
+      border: "1px solid #711C31", borderRadius: 10,
       padding: "12px 14px", background: "#fff",
     }}>
       <div style={{
@@ -524,14 +455,100 @@ export default function AppointmentPage() {
 
   return (
     <>
-     
+      <style>{`
+        /* ══════════════════════════════════════════
+           MOBILE RESPONSIVE — max-width: 768px
+           Desktop/laptop styles are 100% untouched
+        ══════════════════════════════════════════ */
+        @media (max-width: 768px) {
 
-      <main style={{  background: "#f4eee1" }}>
+          /* ── Page title ── */
+          .appt-title-section {
+            padding: 130px 20px 24px !important;
+          }
+          .appt-title-section h1 {
+            font-size: 22px !important;
+          }
+
+          /* ── Booking card section ── */
+          .appt-booking-section {
+            padding: 0 16px 36px !important;
+          }
+          .appt-booking-card {
+            padding: 28px 18px 36px !important;
+          }
+          .appt-booking-card h2 {
+            font-size: 16px !important;
+            letter-spacing: 1px !important;
+          }
+          .appt-divider {
+            width: 100% !important;
+          }
+
+          /* ── Form grid: 2-col → 1-col ── */
+          .appt-form-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+            margin-top: 16px !important;
+          }
+
+          /* ── All inputs / buttons inside the card ── */
+          .appt-input,
+          .appt-booking-card input,
+          .appt-booking-card textarea,
+          .appt-booking-card button:not([aria-label]) {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* ── Calendar & time popups: constrain on small screens ── */
+          .appt-booking-card [style*="position: absolute"] {
+            width: calc(100vw - 64px) !important;
+            left: 0 !important;
+          }
+
+          /* ── Contact info section ── */
+          .appt-contact-section {
+            padding: 36px 16px 48px !important;
+          }
+          .appt-contact-inner {
+            flex-direction: column !important;
+            gap: 24px !important;
+            align-items: center !important;
+          }
+          .appt-contact-image {
+            width: 100% !important;
+            height: 220px !important;
+            flex-shrink: unset !important;
+          }
+          .appt-contact-info {
+            padding-top: 0 !important;
+            width: 100% !important;
+          }
+          .appt-contact-info h2 {
+            font-size: 20px !important;
+            margin-bottom: 16px !important;
+          }
+          .appt-contact-rows {
+            max-width: 100% !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .appt-booking-card {
+            padding: 22px 12px 28px !important;
+          }
+          .appt-title-section h1 {
+            font-size: 18px !important;
+          }
+        }
+      `}</style>
+
+      <main style={{ background: "#f4eee1" }}>
 
         {/* ── PAGE TITLE ── */}
-        <section style={{ textAlign: "center", padding: "146px 80px 36px", background: "#f4eee1" }}>
+        <section className="appt-title-section" style={{ textAlign: "center", padding: "146px 80px 36px", background: "#FFFFFF" }}>
           <h1 style={{
-            
             fontSize: 32, fontWeight: 500,
             color: "#711C31", letterSpacing: "0.5px",
           }}>
@@ -540,16 +557,18 @@ export default function AppointmentPage() {
         </section>
 
         {/* ── BOOKING CARD ── */}
-        <section style={{ padding: "0 230px 48px", background: "#f4eee1" }}>
-          <div style={{
-            background: "#711C31",
-            borderRadius: 20,
-            padding: "44px 52px 52px",
-            boxShadow: "inset 0 -40px 60px rgba(0,0,0,0.45)",
-          }}>
+        <section className="appt-booking-section" style={{ padding: "0 230px 48px", background: "#FFFFFF" }}>
+          <div
+            className="appt-booking-card"
+            style={{
+              background: "#711C31",
+              borderRadius: 20,
+              padding: "44px 52px 52px",
+              boxShadow: "inset 0 -40px 60px rgba(0,0,0,0.45)",
+            }}
+          >
             {/* Card title */}
             <h2 style={{
-              
               fontSize: 22, fontWeight: 500,
               color: "#fff",
               textAlign: "center",
@@ -557,25 +576,24 @@ export default function AppointmentPage() {
               letterSpacing: "2px",
               marginBottom: 6,
               paddingBottom: 14,
-          
             }}>
               Réservez votre rendez-vous
             </h2>
             <div
-          style={{
-            width: "390px", // make smaller or bigger
-            height: "1.5px",
-            background: "#FFD52F",
-           margin: "0 auto 50px",
-            }}
-                />
+              className="appt-divider"
+              style={{
+                width: "390px",
+                height: "1.5px",
+                background: "#FFFFFF",
+                margin: "0 auto 50px",
+              }}
+            />
 
             {/* 2-column form grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px", marginTop: 28 }}>
+            <div className="appt-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px", marginTop: 28 }}>
 
               {/* LEFT column */}
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Nom */}
                 <input
                   className="appt-input"
                   type="text"
@@ -584,7 +602,6 @@ export default function AppointmentPage() {
                   onChange={e => setForm({ ...form, nom: e.target.value })}
                   style={inputBase}
                 />
-                {/* Email */}
                 <input
                   className="appt-input"
                   type="email"
@@ -593,9 +610,7 @@ export default function AppointmentPage() {
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   style={inputBase}
                 />
-                {/* Spécialité dropdown */}
                 <SpecialityDropdown value={speciality} onChange={setSpeciality} />
-                {/* Téléphone */}
                 <input
                   className="appt-input"
                   type="tel"
@@ -604,7 +619,6 @@ export default function AppointmentPage() {
                   onChange={e => setForm({ ...form, telephone: e.target.value })}
                   style={inputBase}
                 />
-               
               </div>
 
               {/* RIGHT column */}
@@ -623,7 +637,7 @@ export default function AppointmentPage() {
                     }}
                   >
                     <span>{selectedDate ? formatDate(selectedDate) : "Sélectionner la date"}</span>
-                    <span style={{ color: "#FFD52F" }}><CalIcon /></span>
+                    <span style={{ color: "#FFFFFF" }}><CalIcon /></span>
                   </button>
                   {showCal && (
                     <CalendarPopup
@@ -676,7 +690,7 @@ export default function AppointmentPage() {
               <button
                 onClick={() => { setSent(true); setTimeout(() => setSent(false), 3000); }}
                 style={{
-                  background: "#F2E5C5",
+                  background: "#ffffff",
                   border: "1.5px solid rgba(255,255,255,0.55)",
                   color: "#711C31",
                   padding: "13px 52px",
@@ -698,27 +712,26 @@ export default function AppointmentPage() {
         </section>
 
         {/* ── CONTACT INFO SECTION ── */}
-        <section style={{ background: "#F0F0F0", padding: "46px 280px 64px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 38 }}>
+        <section className="appt-contact-section" style={{ background: "#F0F0F0", padding: "46px 280px 64px" }}>
+          <div className="appt-contact-inner" style={{ display: "flex", alignItems: "flex-start", gap: 38 }}>
 
-            {/* Left: puzzle/image placeholder */}
-            <div style={{
-              width: 340, height: 360, flexShrink: 0,
-              borderRadius: 16, overflow: "hidden",
-              background: "linear-gradient(135deg,#c5b8a8,#8a6a5a)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-             
-                <img src="/images/puzzle.png" alt="Contact"
-                  style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-             
-             
+            {/* Left: image */}
+            <div
+              className="appt-contact-image"
+              style={{
+                width: 340, height: 360, flexShrink: 0,
+                borderRadius: 16, overflow: "hidden",
+                background: "linear-gradient(135deg,#c5b8a8,#8a6a5a)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <img src="/images/puzzle.png" alt="Contact"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
 
             {/* Right: contact info */}
-            <div style={{ flex: 1, paddingTop: 8 }}>
+            <div className="appt-contact-info" style={{ flex: 1, paddingTop: 8 }}>
               <h2 style={{
-                
                 fontSize: 26, fontWeight: 500,
                 color: "#711C31", marginBottom: 24,
                 letterSpacing: "0.3px",
@@ -726,23 +739,10 @@ export default function AppointmentPage() {
                 Prenez contact
               </h2>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 }}>
+              <div className="appt-contact-rows" style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 }}>
                 <ContactRow icon={<PhoneIcon />}>
-                  <div style={{
-                  fontFamily:  "var(--font-cinzel)",
-                  fontSize:"13px",
-                  color:"#591727",
-                  fontWeight:500
-                  }}
-                  >05 37 77 77 79</div>
-                  <div
-                   style={{
-                  fontFamily:  "var(--font-cinzel)",
-                  fontSize:"13px",
-                  color:"#591727",
-                  fontWeight:500
-                  }}
-                  >06 68 20 10 10</div>
+                  <div style={{ fontFamily: "var(--font-cinzel)", fontSize: "13px", color: "#591727", fontWeight: 500 }}>05 37 77 77 79</div>
+                  <div style={{ fontFamily: "var(--font-cinzel)", fontSize: "13px", color: "#591727", fontWeight: 500 }}>06 68 20 10 10</div>
                 </ContactRow>
                 <ContactRow icon={<MailIcon />}>
                   contact@atlasdentalcenter.com

@@ -26,7 +26,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("atlas-theme", theme);
     document.documentElement.classList.toggle("dark", theme === "dark");
-    document.body.style.backgroundColor = theme === "dark" ? "#2A0812" : "#F0E4C8";
+    document.body.style.backgroundColor = theme === "dark" ? "#2A0812" : "#FFFFFF";
     document.body.style.transition = "background-color 0.3s";
   }, [theme]);
 

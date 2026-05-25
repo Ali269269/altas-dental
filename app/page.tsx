@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 const cards = [
   { tag: "Pédodontie", title: "Teeth Whitening", sub: "Professional-grade whitening treatments that restore your smile's natural brilliance in just one session.", image: '/images/card10.png' },
@@ -33,7 +33,7 @@ const blogPosts = [
   { image: '/images/blog3.jpg', date: 'May 19, 2023', title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins", slug: "evolution-experience-2" },
 ];
 
-const TOTAL_PAGES = 3;
+const TOTAL_PAGES = 4;
 
 // ─── ReviewCard component ───────────────────────────────────────────────────
 function ReviewCard({
@@ -100,13 +100,14 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
         flexShrink: 0,
         width: '380px',
         borderRadius: '24px',
-        background: hovered ? '#5c0d2a' : '#ffe9bf',
+        background: hovered ? '#5c0d2a' : '#f0f0f0',
         padding: '14px 14px 24px',
         display: 'flex',
         flexDirection: 'column',
         cursor: 'pointer',
         transition: 'background 0.4s ease',
         position: 'relative',
+        border:'1px solid #753141'
       }}
     >
       {/* Image */}
@@ -161,11 +162,11 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
             width: '49px',
             height: '49px',
             borderRadius: '50%',
-            background: hovered ? '#f2e5c5' : '#5c0d2a',
+            background: hovered ? '#F0F0F0' : '#5c0d2a',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: hovered ? '#711c31':'#FFD52F',
+            color: hovered ? '#711c31':'#FFFFFF',
             fontSize:'25px',
             marginBottom: '2px',
           }}
@@ -211,7 +212,7 @@ function FaqSection() {
   return (
     <section
       style={{
-        background: '#f4eee1',
+        background: '#FFFFFF',
         fontFamily: "var(--font-seasons-reg)",
         padding: '80px 0 100px',
       }}
@@ -224,7 +225,7 @@ function FaqSection() {
           display: 'flex',
           gap: '90px',
           alignItems: 'flex-start',
-          marginRight:"62px"
+          marginRight:"62px",
         }}
       >
         {/* LEFT: Title + description */}
@@ -268,6 +269,7 @@ function FaqSection() {
                 key={i}
                 style={{
                   overflow: 'hidden',
+                  border:'1px solid #753141'
                 }}
               >
                 <button
@@ -278,7 +280,7 @@ function FaqSection() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '22px 24px',
-                    background: isOpen ? '#fff1d3' : '#ffe9bf',
+                    background: isOpen ? '#f0f0f0' : '#f0f0f0',
                     border: 'none',
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -317,7 +319,7 @@ function FaqSection() {
                 {/* Answer panel */}
                 <div
                   style={{
-                    background: '#fff1d3',
+                    background: '#F0F0F0',
                     maxHeight: isOpen ? '200px' : '0px',
                     overflow: 'hidden',
                     transition: 'max-height 0.4s cubic-bezier(.4,0,.2,1)',
@@ -353,12 +355,35 @@ export default function Home() {
   const [isBlogPaused, setIsBlogPaused] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isVideoHovered, setIsVideoHovered] = useState(false);
- 
+  const [isMobileStats, setIsMobileStats] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMobile = () => setIsMobileStats(mediaQuery.matches);
+    updateMobile();
+    const listener = () => updateMobile();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+    mediaQuery.addListener(listener);
+    return () => mediaQuery.removeListener(listener);
+  }, []);
+
+  const statsData = [
+    { value: '3000+', label: 'Patients', icon: '/images/icon1.png' },
+    { value: '3+', label: 'Years of Experience', icon: '/images/icon2.png' },
+    { value: '300+', label: 'Surgeries Performed', icon: '/images/icon3.png' },
+    { value: '10+', label: 'Advanced Certifications', icon: '/images/icon4.png' },
+    { value: '300+', label: 'Modern Technologies', icon: '/images/icon6.png' },
+  ];
+
+  const statsList = isMobileStats ? [...statsData, ...statsData] : statsData;
 
   return (
     <div className="flex flex-col">
 
-      {/* ───────────────── Mobile Responsive Styles ───────────────── */}
+      {/* ───────────────── All Styles (desktop unchanged + mobile additions) ───────────────── */}
       <style>{`
         @keyframes carousel-scroll {
           0%   { transform: translateX(0); }
@@ -372,19 +397,31 @@ export default function Home() {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-
         @keyframes reviews-scroll {
-          0%, 25% { transform: translateX(0); }
-          33%, 58% { transform: translateX(-25%); }
-          66%, 91% { transform: translateX(-50%); }
-          100% { transform: translateX(-75%); }
+          0%,   24% { transform: translateX(0%);   }
+          33%,  57% { transform: translateX(-25%); }
+          66%,  90% { transform: translateX(-50%); }
+          100%      { transform: translateX(-75%); }
+        }
+        @keyframes reviews-scroll-mobile {
+          0%,   24% { transform: translateX(0px); }
+          33%,  57% { transform: translateX(calc(-1 * (100vw))); }
+          66%,  90% { transform: translateX(calc(-2 * (100vw))); }
+          99.9%     { transform: translateX(calc(-3 * (100vw))); }
+          100%      { transform: translateX(0px); }
         }
         @keyframes dots-scroll {
-          0%, 25% { transform: translateX(0); }
-          33%, 58% { transform: translateX(20px); }
-          66%, 91% { transform: translateX(40px); }
-          100% { transform: translateX(0); }
+          0%,   24% { transform: translateX(0px);  }
+          33%,  57% { transform: translateX(18px); }
+          66%,  90% { transform: translateX(36px); }
+          99.9%     { transform: translateX(36px); opacity: 0; }
+          100%      { transform: translateX(0px);  opacity: 1; }
         }
+        @keyframes stats-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+
         .reviews-section:hover .reviews-track,
         .reviews-section:hover .active-dot-indicator {
           animation-play-state: paused;
@@ -394,137 +431,312 @@ export default function Home() {
           gap: 0px;
           width: max-content;
           will-change: transform;
-          animation: reviews-scroll 12s ease-in-out infinite;
+          animation: reviews-scroll 16s linear infinite;
         }
 
-        /* ── MOBILE ONLY (≤768px) ── */
+        /* ── DESKTOP GUARD: hide mobile-only hero elements on big screens ── */
+        @media (min-width: 769px) {
+          .hero-mobile-bottom-row { display: none !important; }
+          .about-doc-img-desktop  { display: block !important; }
+          .about-doc-img-mobile   { display: none !important; }
+        }
+
+        /* ── MOBILE (≤768px) ── */
+        
         @media (max-width: 768px) {
 
-          /* Hero */
+          /* prevent full-page horizontal overflow */
+          body, html { overflow-x: hidden !important; max-width: 100vw !important; }
+
+          /* ── HERO ── */
           .hero-section {
             flex-direction: column !important;
             min-height: unset !important;
-            padding: 80px 20px 30px !important;
+            padding: 100px 14px 0px !important;
             align-items: flex-start !important;
           }
           .hero-text {
             max-width: 100% !important;
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0 !important;
           }
           .hero-text h1 {
-            font-size: 26px !important;
+            font-size: 23px !important;
             transform: translateY(0) !important;
+            margin-bottom: 3px !important;
+            width: 100% !important;
+            line-height: 1.3 !important;
           }
           .hero-text p {
-            font-size: 15px !important;
+            font-size: 13px !important;
             transform: translateY(0) !important;
+            margin-bottom: 10px !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            line-height: 1.5 !important;
           }
-          .hero-cards-row {
-            margin-left: 0 !important;
+          .hero-cards-row  { display: none !important; }
+          .hero-doctor-img { display: none !important; }
+
+          /* Mobile hero bottom row */
+          .hero-mobile-bottom-row {
+            display: flex !important;
             flex-direction: row !important;
-            flex-wrap: wrap !important;
-            gap: 12px !important;
-            margin-top: 20px !important;
+            align-items: flex-end !important;
+            width: 100% !important;
+            gap: 10px !important;
+            margin-top: 0 !important;
           }
-          .hero-cards-row > div {
-            width: calc(50% - 6px) !important;
-            min-width: 140px !important;
+          .hero-mobile-cards-col {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 7px !important;
+            flex: 0 0 58% !important;
+            width: 58% !important;
+            align-items: stretch !important;
           }
-          .hero-doctor-img {
-            display: none !important;
+          .hero-mobile-cards-col > * {
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+            width: 50% !important;
+            min-height: 140px !important;
+            height: 100px !important;
+            margin-bottom: 12px !important;
+          }
+          .hero-mobile-doctor-col {
+            display: flex !important;
+            flex: 1 !important;
+            justify-content: center !important;
+            align-items: flex-end !important;
+            overflow: visible !important;
+            transform: translateX(27px);
+          }
+          .hero-mobile-doctor-col .relative {
+            width: 100% !important;
+            height: 230px !important;
           }
 
-          /* Services/Stats */
+          /* ── STATS ── */
           .stats-section-text {
             padding: 40px 20px 20px !important;
             max-width: 100% !important;
           }
-          .stats-section-text h2 {
-            font-size: 22px !important;
-          }
+          .stats-section-text h2 { font-size: 22px !important; }
+          .stats-section-text p  { font-size: 15px !important; }
+          .stats-wrapper { overflow: hidden !important; }
           .stats-row {
-            flex-direction: column !important;
-            padding: 0 20px !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            padding: 0 !important;
+            width: max-content !important;
+            animation: stats-scroll 12s linear infinite !important;
+            will-change: transform;
           }
+          .stats-row:hover { animation-play-state: paused !important; }
           .stats-row > div {
+            flex: 0 0 auto !important;
+            width: min(200px, 44vw) !important;
             margin-left: 0 !important;
+            margin-right: 0 !important;
             padding: 14px 16px !important;
             border-left: none !important;
-            border-top: 2px solid #711C31 !important;
+            border-top: none !important;
+            border-right: 2px solid #711C31 !important;
           }
-          .stats-row > div > div[style*="position: absolute"] {
-            display: none !important;
-          }
+          .stats-row > div > div[style*="position: absolute"] { display: none !important; }
 
-          /* Card Carousel */
+          /* ── CARD CAROUSEL ── */
           .carousel-header {
             padding: 0 20px !important;
+            margin-bottom: 24px !important;
           }
+          .carousel-header h2 { font-size: 22px !important; }
 
-          /* About/Doctor Section */
+          /* ── ABOUT / DOCTOR SECTION ── */
           .about-section {
-            width: 100% !important;
+            width: calc(100% - 28px) !important;
             max-width: 100% !important;
-            margin-left: 0 !important;
-            margin-top: 40px !important;
-            border-radius: 0 !important;
-            height: auto !important;
+            margin-left: 14px !important;
+            margin-right: 14px !important;
+            margin-top: 24px !important;
+            border-radius: 16px !important;
+            height: 320px !important;
+            overflow: hidden !important;
+            position: relative !important;
           }
           .about-inner {
-            flex-direction: column !important;
+            flex-direction: row !important;
+            min-height: unset !important;
+            height: 100% !important;
           }
           .about-left {
-            flex: unset !important;
-            padding: 40px 24px 30px !important;
+            flex: 0 0 58% !important;
+            width: 58% !important;
+            padding: 22px 10px 20px 18px !important;
+            justify-content: flex-start !important;
+            z-index: 3 !important;
           }
+          .about-left > div:first-child { margin-bottom: 8px !important; }
+          .about-left > div:first-child span { font-size: 11px !important; }
           .about-left h2 {
-            font-size: 20px !important;
+            font-size: 13px !important;
+            margin-bottom: 10px !important;
+            line-height: 1.3 !important;
           }
           .about-left p {
-            font-size: 16px !important;
+            font-size: 10.5px !important;
+            line-height: 1.5 !important;
+            margin-bottom: 10px !important;
+            text-indent: 0 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 4 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
           }
-          .about-doc-img {
-            display: none !important;
+          .about-left p:last-of-type { display: none !important; }
+          .about-left button { font-size: 10px !important; padding: 7px 14px !important; }
+          .about-doc-img-desktop { display: none !important; }
+          .about-doc-img-mobile {
+            display: block !important;
+            position: absolute !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 44% !important;
+            height: 100% !important;
+            z-index: 4 !important;
+            pointer-events: none !important;
           }
 
-          /* Reviews Section */
+          @media (max-width: 768px) {
+
+  /* hide last row cards */
+  .reviews-track > div > div:nth-child(4),
+  .reviews-track > div > div:nth-child(5) {
+    display: none !important;
+  }
+}
           .reviews-section {
-            padding: 40px 16px 20px !important;
+            padding: 60px 0px 16px !important;
+            overflow: hidden !important;
           }
+          .reviews-container-wrapper {
+            overflow: hidden !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Switch track to mobile per-slide animation */
+          .reviews-track {
+            animation: reviews-scroll-mobile 15s linear infinite !important;
+            gap: 0px !important;
+            width: max-content !important;
+          }
+          /* Each "set" div becomes one full-viewport-width slide */
           .reviews-track > div {
-            grid-template-columns: repeat(1, 90vw) !important;
-            grid-template-rows: unset !important;
-            padding-left: 0 !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 12px !important;
+            width: 100vw !important;
+            min-width: 100vw !important;
+            max-width: 100vw !important;
+            box-sizing: border-box !important;
+            flex-shrink: 0 !important;
+            overflow: hidden !important;
+            padding: 0 16px !important;
           }
+          /* Adjust grid for max 4 cards (plus title card) */
+          /* Since the prompt asks for max 4 cards in a row, but mobile is 2x2, we ensure cards are well spaced */
           .reviews-track > div > div {
-            width: 90vw !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
             height: auto !important;
-            min-height: 200px !important;
+            min-height: 140px !important;
+            max-height: none !important;
+            padding: 14px !important;
+            box-sizing: border-box !important;
+            border-radius: 14px !important;
+            border-top-left-radius: 14px !important;
+            border-top-right-radius: 14px !important;
+            border-bottom-left-radius: 14px !important;
+            border-bottom-right-radius: 14px !important;
+          }
+          /* Text inside cards */
+          .reviews-track > div > div p {
+            font-size: 11px !important;
+            line-height: 1.45 !important;
+            margin: 5px 0 !important;
+            text-indent: 0 !important;
+            margin-left: 0 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 4 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .reviews-track > div > div span {
+            font-size: 11px !important;
+            margin-left: 0 !important;
+            letter-spacing: 0 !important;
+          }
+          .reviews-track > div > div > div:first-child {
+            font-size: 12px !important;
+            margin-bottom: 4px !important;
+            margin-left: 0 !important;
+            letter-spacing: 1px !important;
+          }
+          /* Title card (first child) — spans both columns */
+          .reviews-track > div > div:first-child {
+            grid-column: 1 / 0 !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 12px !important;
+            padding: 10px 14px !important;
+            min-height: unset !important;
+            height: auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .reviews-track > div > div:first-child h2 {
+            font-size: 14px !important;
+            margin: 0 !important;
+            text-align: center !important;
+            line-height: 1.2 !important;
+          }
+          .reviews-track > div > div:first-child img {
+            width:  86px !important;
+            height: 86px !important;
+            flex-shrink: 0 !important;
+            margin-top:12px !important;
           }
 
-          /* Blog Section */
+          /* ── BLOG ── */
           .blog-header {
             padding: 0 20px !important;
             margin-left: 0 !important;
+            margin-bottom: 28px !important;
           }
-          .blog-track > div {
-            width: 280px !important;
-          }
-          .blog-track {
-            padding-left: 20px !important;
-          }
+          .blog-header h2  { font-size: 22px !important; }
+          .blog-header p   { font-size: 15px !important; }
+          .blog-track { padding-left: 20px !important; }
+          .blog-track > div { width: 280px !important; }
 
-          /* FAQ Section */
+          /* ── FAQ ── */
           .faq-inner {
             flex-direction: column !important;
             gap: 32px !important;
             padding: 0 20px !important;
             margin-right: 0 !important;
           }
-          .faq-inner > div:first-child {
-            flex: unset !important;
-          }
+          .faq-inner > div:first-child { flex: unset !important; }
+          .faq-inner > div:first-child h2 { font-size: 22px !important; }
+          .faq-inner > div:first-child p  { font-size: 15px !important; }
 
-          /* Why Choose Us / Video Section */
+          /* ── WHY CHOOSE US / VIDEO ── */
           .why-section {
             padding: 0 20px !important;
             margin-bottom: 40px !important;
@@ -532,11 +744,14 @@ export default function Home() {
           .why-header {
             flex-direction: column !important;
             gap: 16px !important;
+            margin-bottom: 28px !important;
           }
           .why-header > div:first-child {
             flex: unset !important;
             margin-left: 0 !important;
           }
+          .why-header > div:first-child h2 { font-size: 22px !important; }
+          .why-header > div:last-child { padding-top: 0 !important; }
           .why-body {
             flex-direction: column !important;
             margin-left: 0 !important;
@@ -549,32 +764,21 @@ export default function Home() {
             flex: unset !important;
             width: 100% !important;
           }
+          .why-right-col p { font-size: 15px !important; }
         }
 
         /* ── TABLET (769px–1024px) ── */
         @media (min-width: 769px) and (max-width: 1024px) {
-          .hero-section {
-            padding: 80px 30px 30px !important;
-          }
-          .hero-text h1 {
-            font-size: 28px !important;
-            transform: translateY(0) !important;
-          }
-          .hero-text p {
-            transform: translateY(0) !important;
-          }
-          .hero-cards-row {
-            margin-left: 0 !important;
-            margin-top: 20px !important;
-          }
-          .hero-doctor-img {
-            width: 280px !important;
-            height: 340px !important;
-          }
+          .hero-section { padding: 80px 30px 30px !important; }
+          .hero-text h1 { font-size: 28px !important; transform: translateY(0) !important; }
+          .hero-text p  { transform: translateY(0) !important; }
+          .hero-cards-row { margin-left: 0 !important; margin-top: 10px !important; }
+          .hero-doctor-img { width: 280px !important; height: 340px !important; }
           .about-section {
-            width: 100% !important;
+            width: calc(100% - 40px) !important;
             max-width: 100% !important;
-            margin-left: 0 !important;
+            margin-left: 20px !important;
+            margin-right: 20px !important;
             border-radius: 12px !important;
           }
           .faq-inner {
@@ -583,26 +787,31 @@ export default function Home() {
             padding: 0 30px !important;
             margin-right: 0 !important;
           }
-          .faq-inner > div:first-child {
-            flex: unset !important;
-          }
-          .why-section {
-            padding: 0 30px !important;
+          .faq-inner > div:first-child { flex: unset !important; }
+          .why-section { padding: 0 30px !important; }
+          .why-header { gap: 40px !important; }
+          .why-body { flex-direction: column !important; }
+          .why-video-col { flex: unset !important; width: 100% !important; }
+          .why-right-col { flex: unset !important; width: 100% !important; }
+          .reviews-container-wrapper { overflow: hidden !important; }
+        }
+
+        /* ── MEDIUM DESKTOP (1000px–1280px) — fix about + why overflow ── */
+        @media (min-width: 1025px) and (max-width: 1280px) {
+          .about-section {
+            width: calc(100% - 80px) !important;
+            max-width: calc(100% - 80px) !important;
+            margin-left: 40px !important;
+            margin-right: 40px !important;
           }
           .why-header {
-            gap: 40px !important;
+            gap: 60px !important;
           }
-          .why-body {
-            flex-direction: column !important;
+          .why-header > div:first-child {
+            flex: 0 0 280px !important;
           }
-          .why-video-col {
-            flex: unset !important;
-            width: 100% !important;
-          }
-          .why-right-col {
-            flex: unset !important;
-            width: 100% !important;
-          }
+          .reviews-container-wrapper { overflow: hidden !important; }
+          .reviews-section { padding: 60px 30px 10px !important; }
         }
       `}</style>
 
@@ -617,107 +826,112 @@ export default function Home() {
           fontFamily: "var(--font-seasons-reg)",
         }}
       >
-        <div className="absolute pointer-events-none" style={{ top: '-40%', left: '-5%', width: '50%', height: '200%', background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.035) 50%, transparent 60%)' }} />
-
         <div className="hero-text relative z-10 flex flex-col max-w-[520px]">
-          <h1 className="text-white font-bold uppercase leading-tight mb-8" style={{ fontFamily: "var(--font-cinzel)", fontSize: '34px', letterSpacing: '0.01em', transform: 'translateY(90px)' }}>
-            Votre sourire le plus<br />sain,{' '}
-            <span style={{ color: '#e8c97a', fontSize: '34px' }}>simplifié.</span>
+
+          <h1
+            className="text-white font-bold uppercase leading-tight mb-8"
+            style={{ fontFamily: "var(--font-cinzel)", fontSize: '34px', letterSpacing: '0.01em', transform: 'translateY(90px)' }}
+          >
+            Votre sourire le plus sain,{' '}
+            <span style={{ color: '#D3D3D3', fontSize: '34px' }}>simplifié.</span>
           </h1>
-          <p className="font-light leading-relaxed\ mb-11 max-w-[420px]" style={{ fontSize: '17px', letterSpacing: '0.01em', transform: 'translateY(70px)',color:'#F0F0F0' }}>
+
+          <p
+            className="font-light leading-relaxed mb-11 max-w-[420px]"
+            style={{ fontSize: '17px', letterSpacing: '0.01em', transform: 'translateY(70px)', color: '#F0F0F0' }}
+          >
             Fournir des soins doux et experts dans un environnement<br /> chaleureux.
             Des premiers examens aux restaurations qui <br /> changent la vie.
           </p>
 
+          {/* ── MOBILE ONLY: 2 cards + doctor in one row ── */}
+          <div className="hero-mobile-bottom-row" style={{ display: 'none' }}>
+            <div className="hero-mobile-cards-col">
+              {/* Card 1 — Subscribe */}
+              <div
+                className="rounded-2xl relative overflow-hidden flex flex-col items-center justify-end"
+                style={{ background: '#5c0d2a', padding: '8px', border: '1.5px solid #FFFFFF' }}
+              >
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/images/cardhero.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.45, zIndex: 0 }} />
+                <div style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', borderRadius: '8px', padding: '8px 8px 12px', width: '100%', marginBottom: '10px' }}>
+                  <div style={{ position: 'absolute', bottom: '-10px', right: '0px', width: 0, height: 0, borderTop: '18px solid #F0F0F0', borderLeft: '14px solid transparent', borderRight: '2px solid transparent' }} />
+                  <p style={{ color: '#6b1228', fontSize: '10.5px', lineHeight: 1.45, textAlign: 'center', fontFamily: "var(--font-seasons-reg)", fontWeight: 600, margin: 0 }}>
+                    Abonnez-vous à<br />nos actualités et<br />mises à jour
+                  </p>
+                </div>
+                <button style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', color: '#6b1228', border: 'none', padding: '4px 12px', borderRadius: '999px', fontFamily: "var(--font-seasons-reg)", fontSize: '10px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transform: 'translateY(-6px)' }}>
+                  S'abonner
+                </button>
+              </div>
+
+              {/* Card 2 — Reservation */}
+              <Link href="/pages/Appointment" className="block relative z-50" style={{ flex: 1, display: 'flex' }}>
+                <div
+                  className="rounded-2xl flex flex-col items-center justify-center cursor-pointer"
+                  style={{ border: "1.5px solid #FFFFFF", background: "#898989", padding: "12px 8px", gap: "8px", position: "relative", zIndex: 50, width: '100%' }}
+                >
+                  <div style={{ position: "relative", width: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Image src="/images/teeth.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-1 scale-190" priority />
+                    <div style={{ position: "absolute", top: "-5px", right: "-4px", width: "17px", height: "17px", background: "#711C31", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF", fontSize: "13px", fontWeight: 700, lineHeight: 1 }}>
+                      +
+                    </div>
+                  </div>
+                  <p className="text-center" style={{ color: "#3d0a1e", fontSize: "10.5px", lineHeight: 1.35, fontFamily: "var(--font-seasons-reg)", fontWeight: 700, margin: 0 }}>
+                    Réservation en ligne instantanée
+                  </p>
+                </div>
+              </Link>
+            </div>
+
+            {/* Right: Doctor image */}
+            <div className="hero-mobile-doctor-col">
+              <div className="relative" style={{ width: '100%', height: '230px', position: 'relative' }}>
+                <Image
+                  src="/images/doctor.png"
+                  alt="Dental doctor"
+                  fill
+                  className="object-contain object-bottom"
+                  style={{ transform: 'translateY(4px) scale(1.35)', transformOrigin: 'bottom center' }}
+                  priority
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── DESKTOP ONLY: original cards row ── */}
           <div className="hero-cards-row flex items-end relative z-20 gap-3.5 ml-[470px]">
             {/* Card 1 — Subscribe */}
-            <div className="rounded-2xl flex-shrink-0 relative overflow-hidden flex flex-col items-center justify-end" style={{ background: '#5c0d2a', width: '183px', minHeight: '180px', padding: '10px', border: '1.5px solid #c8960a' }}>
+            <div className="rounded-2xl flex-shrink-0 relative overflow-hidden flex flex-col items-center justify-end" style={{ background: '#5c0d2a', width: '183px', minHeight: '180px', padding: '10px', border: '1.5px solid #FFFFFF' }}>
               <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/images/cardhero.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.45, zIndex: 0 }} />
-              <div style={{ position: 'relative', zIndex: 1, background: '#f5edda', borderRadius: '10px', padding: '14px 12px 18px', width: '100%', marginBottom: '18px' }}>
-                <div style={{ position: 'absolute', bottom: '-14px', right: '0px', width: 0, height: 0, borderTop: '26px solid #f5edda', borderLeft: '19px solid transparent', borderRight: '2px solid transparent' }} />
+              <div style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', borderRadius: '10px', padding: '14px 12px 18px', width: '100%', marginBottom: '18px' }}>
+                <div style={{ position: 'absolute', bottom: '-14px', right: '0px', width: 0, height: 0, borderTop: '26px solid #F0F0F0', borderLeft: '19px solid transparent', borderRight: '2px solid transparent' }} />
                 <p style={{ color: '#6b1228', fontSize: '13px', lineHeight: 1.55, textAlign: 'center', fontFamily: "var(--font-seasons-reg)", fontWeight: 600, margin: 0 }}>
                   Abonnez-vous à<br />nos actualités et<br />mises à jour
                 </p>
               </div>
-              <button style={{ position: 'relative', zIndex: 1, background: '#f5edda', color: '#6b1228', border: 'none', padding: '7px 22px', borderRadius: '999px', fontFamily: "var(--font-seasons-reg)", fontSize: '12px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transform: 'translateY(-10px)' }}>
+              <button style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', color: '#6b1228', border: 'none', padding: '7px 22px', borderRadius: '999px', fontFamily: "var(--font-seasons-reg)", fontSize: '12px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transform: 'translateY(-10px)' }}>
                 S'abonner
               </button>
             </div>
 
             {/* Card 2 — Reservation */}
-           <Link href="/pages/Appointment" className="block relative z-50">
-  <div
-    className="rounded-2xl flex flex-col items-center justify-center shadow-xl flex-shrink-0 cursor-pointer"
-    style={{
-      border: "1.5px solid #c8960a",
-      background: "#c8a87a",
-      width: "182px",
-      minHeight: "180px",
-      padding: "22px 18px 20px",
-      gap: "14px",
-      position: "relative",
-      zIndex: 50, // 🔥 important
-    }}
-  >
-    <div
-      style={{
-        position: "relative",
-        width: "70px",
-        height: "70px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Image
-        src="/images/teeth.png"
-        alt="Dental doctor"
-        fill
-        className="object-contain object-bottom translate-y-1 scale-190"
-        priority
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          top: "-8px",
-          bottom: "-11px",
-          right: "0px",
-          width: "22px",
-          height: "22px",
-          background: "#711C31",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#FFD52F",
-          fontSize: "18px",
-          fontWeight: 700,
-          lineHeight: 1,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
-        }}
-      >
-        +
-      </div>
-    </div>
-
-    <p
-      className="text-center"
-      style={{
-        color: "#3d0a1e",
-        fontSize: "14px",
-        lineHeight: 1.4,
-        fontFamily: "var(--font-seasons-reg)",
-        fontWeight: 700,
-      }}
-    >
-      Réservation en ligne instantanée
-    </p>
-  </div>
-</Link>
+            <Link href="/pages/Appointment" className="block relative z-50">
+              <div className="rounded-2xl flex flex-col items-center justify-center shadow-xl flex-shrink-0 cursor-pointer" style={{ border: "1.5px solid #FFFFFF", background: "#898989", width: "182px", minHeight: "180px", padding: "22px 18px 20px", gap: "14px", position: "relative", zIndex: 50 }}>
+                <div style={{ position: "relative", width: "70px", height: "70px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Image src="/images/teeth.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-1 scale-190" priority />
+                  <div style={{ position: "absolute", top: "-8px", bottom: "-11px", right: "0px", width: "22px", height: "22px", background: "#711C31", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF", fontSize: "18px", fontWeight: 700, lineHeight: 1, boxShadow: "0 1px 4px rgba(0,0,0,0.25)" }}>
+                    +
+                  </div>
+                </div>
+                <p className="text-center" style={{ color: "#3d0a1e", fontSize: "14px", lineHeight: 1.4, fontFamily: "var(--font-seasons-reg)", fontWeight: 700 }}>
+                  Réservation en ligne instantanée
+                </p>
+              </div>
+            </Link>
           </div>
         </div>
 
+        {/* ── DESKTOP ONLY: Doctor image ── */}
         <div className="hero-doctor-img relative z-0 flex flex-1 justify-end items-end self-stretch pointer-events-none">
           <div className="relative w-[390px] h-[460px]">
             <Image src="/images/doctor.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-4 scale-150" priority />
@@ -725,10 +939,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ───────────────── Services / Stats Section ───────────────── */}
-      <section style={{ background: '#f4eee1', fontFamily: "var(--font-seasons-reg)" }} className="w-full">
+      {/* ───────────────── Stats Section ───────────────── */}
+      <section style={{ background: '#FFFFFF', fontFamily: "var(--font-seasons-reg)" }} className="w-full">
         <div className="stats-section-text px-22 pt-16 pb-8" style={{ maxWidth: '700px' }}>
-          <h2 style={{ color: '#5A1628', fontSize: '29px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3, marginBottom: '14px', }}>
+          <h2 style={{ color: '#5A1628', fontSize: '29px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3, marginBottom: '14px' }}>
             Pourquoi choisir notre centre dentaire ?
           </h2>
           <p style={{ color: '#4a3728', fontSize: '17px', lineHeight: 1.75, fontFamily: "var(--font-seasons-reg)", fontWeight: 500, maxWidth: '620px' }}>
@@ -737,17 +951,20 @@ export default function Home() {
             précis et sans stress dans un environnement moderne conçu pour votre confort.
           </p>
         </div>
-        <div style={{ background: '#ffe9bf' }}>
+        <div className="stats-wrapper" style={{ background: '#f0f0f0', border: '1px solid #753141' }}>
           <div className="stats-row flex items-stretch">
-            {[
-              { value: '3000+', label: 'Patients', icon: '/images/icon1.png' },
-              { value: '3+', label: 'Years of Experience', icon: '/images/icon2.png' },
-              { value: '300+', label: 'Surgeries Performed', icon: '/images/icon3.png' },
-              { value: '10+', label: 'Advanced Certifications', icon: '/images/icon4.png' },
-              { value: '300+', label: 'Modern Technologies', icon: '/images/icon6.png' },
-            ].map((stat, i) => (
-              <div key={i} className="flex-1 flex flex-col justify-center" style={{ padding: '14px 20px 20px', marginLeft: '90px', position: 'relative' }}>
-                {i < 5 && <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: '70%', width: '2px', background: '#711C31' }} />}
+            {statsList.map((stat, i) => (
+              <div
+                key={i}
+                className={isMobileStats ? 'flex-shrink-0 flex flex-col justify-center' : 'flex-1 flex flex-col justify-center'}
+                style={{
+                  padding: '14px 20px 20px',
+                  marginLeft: isMobileStats ? '0' : '90px',
+                  minWidth: isMobileStats ? '180px' : undefined,
+                  position: 'relative',
+                }}
+              >
+                {i < statsData.length && <div style={{ display: isMobileStats ? 'none' : 'block', position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: '70%', width: '2px', background: '#711C31' }} />}
                 <div style={{ marginBottom: '10px', width: '36px', height: '36px' }}>
                   <img src={stat.icon} alt={stat.label} style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                 </div>
@@ -763,84 +980,68 @@ export default function Home() {
       </section>
 
       {/* ───────────────── Card Carousel Section ───────────────── */}
-      <section className="overflow-hidden py-10" style={{ background: '#f4eee1', fontFamily: "var(--font-seasons-reg)" }}>
-  <div className="carousel-header px-20 mb-10" style={{ maxWidth: '900px' }}>
-    <h2 style={{ color: '#5A1628', fontSize: '29px', fontWeight: 600, marginBottom: '8px', fontFamily: "var(--font-cinzel)" }}>
-      Nos spécialités
-    </h2>
-  </div>
-  <div className="overflow-hidden w-full">
-    <div
-      className="overflow-hidden w-full"
-      onMouseLeave={() => setOpenIndex(null)}
-    >
-      <div
-        className="flex"
-        style={{
-          gap: '20px',
-          width: 'max-content',
-          animation: 'carousel-scroll 32s linear infinite',
-          animationPlayState: openIndex !== null ? 'paused' : 'running',
-        }}
-      >
-        {[...cards, ...cards].map((card, i) => {
-          const realIndex = i % cards.length;
-          const isOpen = openIndex === realIndex;
-          return (
+      <section className="overflow-hidden py-10" style={{ background: '#FFFFFF', fontFamily: "var(--font-seasons-reg)" }}>
+        <div className="carousel-header px-20 mb-10" style={{ maxWidth: '900px' }}>
+          <h2 style={{ color: '#5A1628', fontSize: '29px', fontWeight: 600, marginBottom: '8px', fontFamily: "var(--font-cinzel)" }}>
+            Nos spécialités
+          </h2>
+        </div>
+        <div className="overflow-hidden w-full">
+          <div className="overflow-hidden w-full" onMouseLeave={() => setOpenIndex(null)}>
             <div
-              key={`card-${i}`}
-              className="flex-shrink-0 flex flex-col justify-between relative overflow-hidden rounded-2xl"
-              onMouseEnter={() => setOpenIndex(realIndex)}
-              style={{ width: isOpen ? '290px' : '200px', minHeight: '200px', padding: '24px 20px 20px', background: isOpen ? '#0a1520' : '#ffe9bf', transition: 'width 0.5s cubic-bezier(.4,0,.2,1), background 0.4s', cursor: 'pointer' }}
+              className="flex"
+              style={{
+                gap: '20px',
+                width: 'max-content',
+                animation: 'carousel-scroll 32s linear infinite',
+                animationPlayState: openIndex !== null ? 'paused' : 'running',
+              }}
             >
-              <div style={{ position: 'absolute', width: '212px', height: '212px', top: '100px', left: '-80px', background: '#F2E5C5', opacity: 0.99, borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: isOpen ? `linear-gradient(135deg, rgba(90,22,39,0.7), rgba(113,28,49,0.9)), url(${card.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', opacity: isOpen ? 1 : 0, transition: 'opacity 0.5s', zIndex: 0, borderRadius: '16px' }} />
-              <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '16px', letterSpacing: '2px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#65192b', marginBottom: '10px', display: 'block' }}>{card.tag}</span>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.4, marginBottom: '14px', fontFamily: "var(--font-cinzel)" }}>{card.title}</h3>
-                <div style={{ fontSize: '12px', color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.7, overflow: 'hidden', maxHeight: isOpen ? '100px' : '0px', opacity: isOpen ? 1 : 0, transition: 'max-height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s', fontFamily: "var(--font-seasons-reg)" }}>{card.sub}</div>
-              </div>
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
-                <button style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#711C31', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-seasons-reg)", padding: 0, transition: 'color 0.2s' }}>Read More</button>
-                <div style={{ position: 'absolute', right: isOpen ? 'auto' : '0px', left: isOpen ? '90px' : 'auto', width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #b8955a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px', color: isOpen ? '#711C31' : '#FFD52F', background: isOpen ? '#F2D9A3' : '#711C31', transform: isOpen ? 'rotate(0deg)' : 'rotate(320deg)', transition: 'transform 0.4s ease, background 0.3s, color 0.3s' }}>→</div>
-              </div>
+              {[...cards, ...cards].map((card, i) => {
+                const realIndex = i % cards.length;
+                const isOpen = openIndex === realIndex;
+                return (
+                  <div
+                    key={`card-${i}`}
+                    className="flex-shrink-0 flex flex-col justify-between relative overflow-hidden rounded-2xl"
+                    onMouseEnter={() => setOpenIndex(realIndex)}
+                    style={{ width: isOpen ? '290px' : '200px', minHeight: '200px', border: '1px solid #711C31', padding: '24px 20px 20px', background: isOpen ? '#0a1520' : '#f0f0f0', transition: 'width 0.5s cubic-bezier(.4,0,.2,1), background 0.4s', cursor: 'pointer' }}
+                  >
+                    <div style={{ position: 'absolute', width: '212px', height: '212px', top: '100px', left: '-80px', background: '#D3D3D3', opacity: 0.99, borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', inset: 0, backgroundImage: isOpen ? `linear-gradient(135deg, rgba(90,22,39,0.7), rgba(113,28,49,0.9)), url(${card.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', opacity: isOpen ? 1 : 0, transition: 'opacity 0.5s', zIndex: 0, borderRadius: '16px' }} />
+                    <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '16px', letterSpacing: '2px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#65192b', marginBottom: '10px', display: 'block' }}>{card.tag}</span>
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.4, marginBottom: '14px', fontFamily: "var(--font-cinzel)" }}>{card.title}</h3>
+                      <div style={{ fontSize: '12px', color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.7, overflow: 'hidden', maxHeight: isOpen ? '100px' : '0px', opacity: isOpen ? 1 : 0, transition: 'max-height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s', fontFamily: "var(--font-seasons-reg)" }}>{card.sub}</div>
+                    </div>
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
+                      <button style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#711C31', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-seasons-reg)", padding: 0, transition: 'color 0.2s' }}>Read More</button>
+                      <div style={{ position: 'absolute', right: isOpen ? 'auto' : '0px', left: isOpen ? '90px' : 'auto', width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #b8955a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px', color: isOpen ? '#711C31' : '#FFFFFF', background: isOpen ? '#F0F0F0' : '#711C31', transform: isOpen ? 'rotate(0deg)' : 'rotate(320deg)', transition: 'transform 0.4s ease, background 0.3s, color 0.3s' }}>→</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  </div>
-</section>
+          </div>
+        </div>
+      </section>
 
       {/* ───────────────── About / Doctor Section ───────────────── */}
       <section
         className="about-section"
-        style={{ background: 'linear-gradient(135deg, #5c0d2a 0%, #3d0818 50%, #2a0510 100%)', fontFamily: "", height: '640px', width: '1150px', maxWidth: '95%', marginTop: '80px', marginLeft:'100px', borderRadius: '20px', position: 'relative', overflow: 'hidden' }}
+        style={{ background: 'linear-gradient(15deg, #5c0d2a 0%, #5c0d2a 10%, #5c0d2a 100%)', height: '640px', width: '1150px', maxWidth: '95%', marginTop: '80px', marginLeft: '100px', borderRadius: '20px', position: 'relative', overflow: 'hidden' }}
       >
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 50%, transparent 40%, rgba(0,0,0,0.35) 100%)', zIndex: 1, pointerEvents: 'none' }} />
-
         <div className="about-inner" style={{ display: 'flex', minHeight: '220px', position: 'relative', zIndex: 2 }}>
           <div className="about-left" style={{ flex: '0 0 62%', padding: '60px 56px 60px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', zIndex: 3 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ width: '36px', height: '1.5px', background: '#c8960a' }} />
-              <span style={{ color: '#c8960a', fontSize: '14px', fontStyle: 'italic', letterSpacing: '0.04em', fontFamily: "var(--font-seasons-reg)" }}>À propos</span>
+              <div style={{ width: '36px', height: '1.5px', background: '#FFFFFF' }} />
+              <span style={{ color: '#FFFFFF', fontSize: '14px', fontStyle: 'italic', letterSpacing: '0.04em', fontFamily: "var(--font-seasons-reg)" }}>À propos</span>
             </div>
-            <h2
-              style={{
-                color: '#FAE1AA',
-                fontSize: 'clamp(22px, 2.5vw, 24px)',
-                fontWeight: 700,
-                lineHeight: 1.2,
-                marginBottom: '28px',
-                fontFamily: "var(--font-cinzel)",
-                letterSpacing: '0.01em',
-                display: 'inline-block',
-                maxWidth: '100%',
-              }}
-            >
+            <h2 style={{ color: '#FFFFFF', fontSize: 'clamp(22px, 2.5vw, 24px)', fontWeight: 700, lineHeight: 1.2, marginBottom: '28px', fontFamily: "var(--font-cinzel)", letterSpacing: '0.01em', display: 'inline-block', maxWidth: '100%' }}>
               Dr. Ghita Ouazzani Tnacheri
             </h2>
-            <p style={{ color: '#f0e6d3', fontSize: '20px', lineHeight: 1.35, marginBottom: '28px', fontWeight: 400, textIndent: '2.5em' }}>
+            <p style={{ color: '#FFFFFF', fontSize: '20px', lineHeight: 1.35, marginBottom: '28px', fontWeight: 400, textIndent: '2.5em' }}>
               Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu.
               Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.
               Sed etiam a ut non lacinia sagittis id. Pretium scelerisque urna eget sit vitae risus
@@ -849,76 +1050,66 @@ export default function Home() {
               tellus auctor. Sed etiam a ut non lacinia sagittis id. Pretium scelerisque urna eget
               sit vitae risus tellus arcu.
             </p>
-            <p style={{ color: '#f0e6d3', fontSize: '20px', lineHeight: 1.35, marginBottom: '44px', fontFamily: "var(--font-seasons-reg)", fontWeight: 400, textIndent: '2.5em' }}>
+            <p style={{ color: '#FFFFFF', fontSize: '20px', lineHeight: 1.35, marginBottom: '44px', fontFamily: "var(--font-seasons-reg)", fontWeight: 400, textIndent: '2.5em' }}>
               Sed etiam a ut non lacinia sagittis id. Pretium scelerisque urna eget sit vitae
               risus tellus arcu. Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet au.
             </p>
             <div>
-             <Link href="/pages/Appointment">
-  <button
-    style={{
-      background: 'transparent',
-      border: '1.5px solid #c8960a',
-      color: '#f0e6d3',
-      padding: '12px 30px',
-      borderRadius: '999px',
-      fontSize: '14px',
-      fontFamily: "var(--font-seasons-reg)",
-      fontWeight: 500,
-      letterSpacing: '0.04em',
-      cursor: 'pointer',
-      transition: 'background 0.3s, color 0.3s',
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLButtonElement).style.background = '#591727'; // maroon
-      (e.currentTarget as HTMLButtonElement).style.color = '#f0e6d3';
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-      (e.currentTarget as HTMLButtonElement).style.color = '#f0e6d3';
-    }}
-  >
-    Prendre rendez-vous
-  </button>
-</Link>
+              <Link href="/pages/Appointment">
+                <button
+                  style={{ background: 'transparent', border: '1.5px solid #FFFFFF', color: '#FFFFFF', padding: '12px 30px', borderRadius: '999px', fontSize: '14px', fontFamily: "var(--font-seasons-reg)", fontWeight: 500, letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.3s, color 0.3s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#591727'; (e.currentTarget as HTMLButtonElement).style.color = '#f0e6d3'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#f0e6d3'; }}
+                >
+                  Prendre rendez-vous
+                </button>
+              </Link>
             </div>
-            <div className="about-doc-img">
+
+            {/* Desktop image */}
+            <div className="about-doc-img-desktop">
               <Image
                 src="/images/aboutDoc.png"
                 alt="Dr. Ghita Ouazzani Tnacheri"
                 fill
-                style={{
-                  filter: 'grayscale(100%)',
-                  marginTop:'46px',
-                  objectFit: 'contain',
-                  objectPosition: 'bottom right',
-                  transform: 'translateX(480px) scale(0.88)',
-                  minHeight:'520px'
-                }}
+                style={{ filter: 'grayscale(100%)', marginTop: '46px', objectFit: 'contain', objectPosition: 'bottom right', transform: 'translateX(480px) scale(0.88)', minHeight: '520px' }}
                 priority
               />
             </div>
           </div>
           <div style={{ flex: '1', position: 'relative', minHeight: '320px', zIndex: 10 }} />
         </div>
+
+        {/* Mobile image */}
+        <div className="about-doc-img-mobile">
+          <Image
+            src="/images/aboutDoc.png"
+            alt="Dr. Ghita Ouazzani Tnacheri"
+            fill
+            style={{ filter: 'grayscale(100%)', objectFit: 'contain', objectPosition: 'bottom right' }}
+            priority
+          />
+        </div>
       </section>
 
       {/* ───────────────── Reviews Section ───────────────── */}
-      <section
+ <section
         className="reviews-section"
         style={{
-          background: '#f4eee1',
+          background: '#FFFFFF',
           
           overflow: 'hidden',
           padding: '60px 79px 10px',
           position: 'relative',
         }}
       >
-        <div style={{ overflow: 'hidden', width: '100%' }}>
+        <div className="reviews-container-wrapper" style={{ overflow: 'hidden', width: '100%' }}>
           <div className="reviews-track">
             {[0, 1, 2, 0].map((setIndex, i) => (
               <div
                 key={i}
+                className="reviews-grid"
+
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 388px)',
@@ -941,7 +1132,7 @@ export default function Home() {
                 </div>
 
                 {/* ── Row 1, Col 2 ── */}
-                <div style={{ width: '360px', height: '280px', background: '#ffe9bf', borderRadius: '24px', padding: '30px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                <div style={{ width: '360px', height: '280px', background: '#f0f0f0', borderRadius: '24px', padding: '30px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', fontSize: '26px', letterSpacing: '4px' }}>★★★★★</div>
                   <p style={{ color: '#3d0818', fontSize: '17px', lineHeight: 1.4, fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[setIndex % reviews.length]?.text}"</p>
                   <span style={{ color: '#3d0818', fontSize: '17px', fontWeight: 400, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif" }}>-{reviews[setIndex % reviews.length]?.name}</span>
@@ -955,7 +1146,7 @@ export default function Home() {
                 </div>
 
                 {/* ── Row 2, Col 1 ── */}
-                <div style={{ width: '360px', height: '280px', background: '#ffe9bf', borderRadius: '25px 25px 25px 180px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                <div style={{ width: '360px', height: '280px', background: '#f0f0f0', borderRadius: '25px 25px 25px 180px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', marginLeft:'20px', fontSize: '25px', letterSpacing: '3px' }}>★★★★★</div>
                   <p style={{ color: '#3d0818', fontSize: '17px', lineHeight: 1.4,  fontWeight: 400, margin: '10px 20px', flex: 1 }}>"{reviews[(setIndex + 2) % reviews.length]?.text}"</p>
                   <span style={{ color: '#3d0818', fontSize: '17px', fontWeight: 400, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif", marginLeft: '56px' }}>-{reviews[(setIndex + 2) % reviews.length]?.name}</span>
@@ -980,22 +1171,32 @@ export default function Home() {
         </div>
 
         {/* Pagination dots */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '36px' }}>
-          <div style={{ position: 'relative', display: 'flex', gap: '10px' }}>
-            {[...Array(TOTAL_PAGES)].map((_, i) => (
-              <div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#c4a87a' }} />
-            ))}
-            <div
-              className="active-dot-indicator"
-              style={{ position: 'absolute', left: '0px', width: '32px', height: '10px', borderRadius: '999px', background: '#6b1228', animation: 'dots-scroll 12s ease-in-out infinite', marginLeft: '-11px' }}
-            />
-          </div>
-        </div>
+       {/* Pagination dots */}
+{/* Pagination dots */}
+<div style={{ display: 'flex', justifyContent: 'center', marginTop: '36px' }}>
+  <div style={{ position: 'relative', display: 'flex', gap: '10px', alignItems: 'center' }}>
+    {[...Array(TOTAL_PAGES)].map((_, i) => (
+      <div key={i} style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#c4a87a' }} />
+    ))}
+    <div
+  className="active-dot-indicator"
+  style={{
+    position: 'absolute',
+    left: '0px',
+    width: '10px',
+    height: '8px',
+    borderRadius: '999px',
+    background: '#3d0814',
+    animation: 'dots-scroll 15s linear infinite',
+  }}
+/>
+  </div>
+</div>
       </section>
 
       {/* ───────────────── Blog Carousel Section ───────────────── */}
-      <section style={{ background: '#f4eee1', fontFamily: "var(--font-seasons-reg)", padding: '70px 0 80px', overflow: 'hidden' }}>
-        <div className="blog-header" style={{ padding: '0 70px', marginBottom: '48px', marginLeft:"15px" }}>
+      <section style={{ background: '#FFFFFF', fontFamily: "var(--font-seasons-reg)", padding: '70px 0 80px', overflow: 'hidden' }}>
+        <div className="blog-header" style={{ padding: '0 70px', marginBottom: '48px', marginLeft: '15px' }}>
           <div className="flex items-center gap-3 mb-4">
             <div style={{ width: '36px', height: '1.1px', background: '#6b1228' }} />
             <span style={{ color: '#6b1228', fontSize: '15px', fontStyle: 'italic', letterSpacing: '0.04em' }}>Perspicacité et Inspiration</span>
@@ -1010,20 +1211,20 @@ export default function Home() {
           </p>
         </div>
         <div style={{ overflow: 'hidden', width: '100%' }}>
-          <div className="blog-track" style={{ 
-            display: 'flex', 
-            gap: '24px', 
-            width: 'max-content', 
+          <div className="blog-track" style={{
+            display: 'flex',
+            gap: '24px',
+            width: 'max-content',
             animation: 'blog-scroll 30s linear infinite',
             animationPlayState: isBlogPaused ? 'paused' : 'running',
-            paddingLeft: '60px' 
+            paddingLeft: '60px',
           }}>
             {[...blogPosts, ...blogPosts].map((post, i) => (
-              <BlogCard 
-                key={i} 
-                post={post} 
-                onPause={() => setIsBlogPaused(true)} 
-                onResume={() => setIsBlogPaused(false)} 
+              <BlogCard
+                key={i}
+                post={post}
+                onPause={() => setIsBlogPaused(true)}
+                onResume={() => setIsBlogPaused(false)}
               />
             ))}
           </div>
@@ -1035,70 +1236,43 @@ export default function Home() {
       {/* ───────────────── Why Choose Us Video Section ───────────────── */}
       <section
         className="why-section"
-        style={{
-          background: '#f4eee1',
-          fontFamily: "var(--font-seasons-reg)",
-          padding: '0px 60px',
-          marginBottom:'70px'
-        }}
+        style={{ background: '#FFFFFF', fontFamily: "var(--font-seasons-reg)", padding: '0px 60px', marginBottom: '70px' }}
       >
-        {/* Top: two-column header */}
+        {/* Header */}
         <div
           className="why-header"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: '48px',
-            gap: '410px',
-          }}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px', gap: '410px' }}
         >
-          {/* LEFT: title */}
-          <div style={{ flex: '0 0 380px', marginLeft:'25px' }}>
-            <p style={{ color: '#6b1228', fontSize: '16px', fontStyle: 'italic', marginBottom: '16px', marginTop:'20px', letterSpacing: '0.04em' }}>
+          <div style={{ flex: '0 0 380px', marginLeft: '25px' }}>
+            <p style={{ color: '#6b1228', fontSize: '16px', fontStyle: 'italic', marginBottom: '16px', marginTop: '20px', letterSpacing: '0.04em' }}>
               Nous servons des patients du monde entier.
             </p>
             <h2 style={{ color: '#6b1228', fontSize: '29px', fontWeight: 600, fontFamily: "var(--font-cinzel)", textTransform: 'uppercase', lineHeight: 1.1, letterSpacing: '0.02em' }}>
               Pourquoi nous choisir
             </h2>
           </div>
-
-          {/* RIGHT: description + button */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', paddingTop: '28px' }}>
             <p style={{ color: '#6b1228', fontSize: '17px', lineHeight: 1.6, fontFamily: "var(--font-seasons-reg)", fontWeight: 400, maxWidth: '480px' }}>
               Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu.
               Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.
             </p>
-           <Link href="/pages/Appointment">
-  <button
-    style={{
-      background: '#5c0d2a',
-      border: 'none',
-      color: '#f0e6d3',
-      padding: '14px 32px',
-      borderRadius: '999px',
-      fontSize: '15px',
-      fontFamily: "var(--font-seasons-reg)",
-      fontWeight: 600,
-      letterSpacing: '0.04em',
-      cursor: 'pointer',
-      transition: 'background 0.3s',
-    }}
-    onMouseEnter={e => (e.currentTarget.style.background = '#7a1038')}
-    onMouseLeave={e => (e.currentTarget.style.background = '#5c0d2a')}
-  >
-    Prendre rendez-vous
-  </button>
-</Link>
+            <Link href="/pages/Appointment">
+              <button
+                style={{ background: '#5c0d2a', border: 'none', color: '#f0e6d3', padding: '14px 32px', borderRadius: '999px', fontSize: '15px', fontFamily: "var(--font-seasons-reg)", fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.3s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#7a1038')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#5c0d2a')}
+              >
+                Prendre rendez-vous
+              </button>
+            </Link>
           </div>
         </div>
 
-        {/* Bottom: video + right column */}
-        <div className="why-body" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginLeft:'10px' }}>
-          {/* LEFT: Video player */}
+        {/* Body: video + right col */}
+        <div className="why-body" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginLeft: '10px' }}>
           <div
             className="why-video-col"
-            style={{ flex: '0 0 62%', position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#1a1008', aspectRatio: '17/9', cursor: 'pointer' }}
+            style={{ flex: '0 0 62%', position: 'relative', border: '1px solid #753141', borderRadius: '16px', overflow: 'hidden', background: '#1a1008', aspectRatio: '17/9', cursor: 'pointer' }}
             onMouseEnter={() => setIsVideoHovered(true)}
             onMouseLeave={() => setIsVideoHovered(false)}
             onClick={() => {
@@ -1118,16 +1292,15 @@ export default function Home() {
             />
             {(!isVideoPlaying || isVideoHovered) && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '3px solid #c8960a', background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c8960a', fontSize: '26px' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '3px solid #711C31', background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#711C31', fontSize: '26px' }}>
                   ▶
                 </div>
               </div>
             )}
           </div>
 
-          {/* RIGHT: image + text */}
           <div className="why-right-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', aspectRatio: '5/3' }}>
+            <div style={{ width: '100%', borderRadius: '16px', border: '1px solid #753141', overflow: 'hidden', position: 'relative', aspectRatio: '5/3' }}>
               <Image src="/images/treatment.jpg" alt="Clinic treatment" fill style={{ objectFit: 'cover' }} />
             </div>
             <p style={{ color: '#5c0d2a', fontSize: '17px', lineHeight: 1.4, fontFamily: "var(--font-seasons-reg)", fontWeight: 400 }}>

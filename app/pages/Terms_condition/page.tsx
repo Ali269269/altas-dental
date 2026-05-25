@@ -4,16 +4,14 @@ export default function TermsConditionpage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Cormorant:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap');
 
         .terms-page {
           background: #EFE7CE;
           min-height: 100vh;
-          font-family: 'Cormorant Garamond', 'Georgia', serif;
+          font-seasons !important;
         }
 
         .terms-eyebrow {
-          
           font-size: 14px;
           font-weight: 600;
           letter-spacing: 0em;
@@ -24,7 +22,6 @@ export default function TermsConditionpage() {
         }
 
         .terms-main-title {
-       
           font-size: 36px;
           font-weight: 600;
           color: #591727;
@@ -34,15 +31,9 @@ export default function TermsConditionpage() {
           letter-spacing: 0.01em;
         }
 
-        .terms-main-title span.cap {
-        
-        }
-
         .terms-date {
-       
           font-size: 20px;
           font-weight: 400;
-          
           color: #591727;
           text-align: center;
           margin-bottom: 0;
@@ -54,7 +45,6 @@ export default function TermsConditionpage() {
           padding: 72px 64px 48px;
           margin: 36px auto 0;
           max-width: 900px;
-         
         }
 
         .terms-section {
@@ -66,18 +56,15 @@ export default function TermsConditionpage() {
         }
 
         .terms-section-title {
-       
           font-size: 22px;
           font-weight: 600;
-         
           color: #591727;
           margin-bottom: 14px;
           line-height: 1.3;
         }
 
         .terms-body {
-          
-          font-size: 18px;
+          font-size: 14px;
           font-weight: 600;
           color: #5D5153;
           line-height: 1.28;
@@ -99,10 +86,8 @@ export default function TermsConditionpage() {
         }
 
         .terms-contact-text {
-          
           font-size: 17.5px;
           font-weight: 600;
-          
           color: #5D5153;
           margin-bottom: 8px;
           line-height: 1.6;
@@ -116,11 +101,85 @@ export default function TermsConditionpage() {
           text-decoration: none;
           display: block;
           text-align: center;
-        
         }
 
         .terms-contact-email:hover {
           opacity: 0.75;
+        }
+
+        /* ── Tablet (641px – 1024px) ── */
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .terms-page section {
+            padding: 140px 40px 56px !important;
+          }
+          .terms-main-title {
+            font-size: 30px !important;
+          }
+          .terms-card {
+            padding: 52px 40px 40px !important;
+            max-width: 100% !important;
+          }
+          .terms-section-title {
+            font-size: 19px !important;
+          }
+          .terms-body {
+            font-size: 14px !important;
+            line-height: 1.55 !important;
+          }
+          .terms-contact-text {
+            font-size: 15px !important;
+          }
+          .terms-contact-email {
+            font-size: 16px !important;
+          }
+        }
+
+        /* ── Mobile (≤ 640px) ── */
+        @media (max-width: 640px) {
+          .terms-page section {
+            padding: 140px 16px 48px !important;
+          }
+          .terms-eyebrow {
+            font-size: 11px !important;
+            letter-spacing: 0.1em !important;
+            margin-bottom: 10px !important;
+          }
+          .terms-main-title {
+            font-size: 22px !important;
+            line-height: 1.3 !important;
+            margin-bottom: 8px !important;
+          }
+          .terms-date {
+            font-size: 14px !important;
+          }
+          .terms-card {
+            padding: 28px 18px 28px !important;
+            margin: 20px auto 0 !important;
+            max-width: 100% !important;
+            border-radius: 12px !important;
+          }
+          .terms-section {
+            margin-bottom: 24px !important;
+          }
+          .terms-section-title {
+            font-size: 16px !important;
+            margin-bottom: 10px !important;
+          }
+          .terms-body {
+            font-size: 11px !important;
+            line-height: 1.65 !important;
+            margin-bottom: 12px !important;
+          }
+          .terms-divider {
+            margin: 28px 0 20px !important;
+          }
+          .terms-contact-text {
+            font-size: 13px !important;
+          }
+          .terms-contact-email {
+            font-size: 14px !important;
+            word-break: break-all !important;
+          }
         }
       `}</style>
 

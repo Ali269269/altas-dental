@@ -19,7 +19,7 @@
 /* ================= Variables ================= */
 
 :root {
-  --background: #f4eee1;
+  --background: #ffffff;
   --foreground: #711C31;
 
   --font-seasons: "The Seasons", serif;
@@ -31,17 +31,15 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --color-primary: #711C31;
-  --color-secondary: #F2E5C5;
+  --color-primary: #FFFFFF;
+  --color-secondary: #FFFFFF;
 
   --font-cinzel: var(--font-cinzel);
   --font-seasons: var(--font-seasons);
 }
 
 /* ================= Base ================= */
-* {
-  font-family: var(--font-seasons);
-}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -64,5 +62,162 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-seasons);
 }
 .numeric-font {
-  font-family: var(--font-cinzel) !important;
+  font-family: var(--font-cinzel);
+}
+
+/* ================ Notre Centre Responsive Adjustments ================ */
+
+@media (max-width: 1024px) {
+  .notre-centre-hero,
+  .notre-centre-whattoexpect,
+  .notre-centre-explore,
+  .notre-centre-cta {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .notre-centre-hero {
+    flex-direction: column;
+    padding: 140px 30px 40px;
+    gap: 28px;
+    align-items: center;
+  }
+
+  .notre-centre-text {
+    width: 100%;
+  }
+
+  .notre-centre-image {
+    width: 100% !important;
+    max-width: 500px !important;
+    height: auto !important;
+    margin-right: 0 !important;
+    border-radius: 12px;
+  }
+
+  .howto-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+
+  .notre-centre-explore { padding: 40px 20px 50px !important; }
+  .notre-centre-whattoexpect { padding: 40px 24px 50px !important; }
+
+  .notre-centre-cta {
+    width: calc(100% - 40px) !important;
+    margin-left: 20px !important;
+    padding: 60px 30px 60px 40px !important;
+    padding-right: 80px !important;
+  }
+
+  .notre-centre-hero h2,
+  .notre-centre-whattoexpect h2,
+  .notre-centre-explore h2 {
+    font-size: 26px;
+  }
+
+  .notre-centre-text p { font-size: 18px; line-height: 1.3; margin-left: 0 !important; }
+
+  .explore-carousel-track { width: 100%; max-width: 100%; }
+  .step-card { width: 100% !important; }
+  .step-card-image { width: calc(100% - 32px) !important; height: 220px !important; }
+  .step-card-image img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+}
+
+@media (max-width: 768px) {
+  .notre-centre-hero {
+    padding: 90px 16px 30px;
+    gap: 18px;
+    align-items: flex-start;
+  }
+
+  .notre-centre-text { order: 1; padding: 0 6px; }
+  .notre-centre-image { order: 2; width: 100% !important; max-width: 100% !important; height: auto !important; margin-right: 0 !important; }
+
+  .howto-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+
+  .notre-centre-explore { padding: 30px 12px 40px !important; }
+  .notre-centre-whattoexpect { padding: 30px 12px 40px !important; }
+
+  .notre-centre-cta { width: calc(100% - 24px) !important; margin-left: 12px !important; padding: 40px 20px 40px 20px !important; border-radius: 16px; padding-right: 60px !important; }
+
+  .notre-centre-hero h2,
+  .notre-centre-whattoexpect h2,
+  .notre-centre-explore h2 { font-size: 22px; text-align: left; }
+
+  .notre-centre-text p { font-size: 16px; margin-left: 0 !important; padding-right: 0 !important; }
+  .notre-centre-main { padding-bottom: 40px; }
+
+  .explore-carousel-track { display: flex; gap: 12px; align-items: center; overflow-x: auto; padding: 0 12px; }
+  .explore-slide.center { width: 100% !important; height: auto !important; margin: 0 !important; }
+  .explore-slide.left,
+  .explore-slide.right { width: 120px !important; height: auto !important; opacity: 0.8 !important; }
+  .explore-slide img { width: 100% !important; height: auto !important; }
+  .step-card { width: 100% !important; max-width: 440px !important; margin: 0 auto !important; padding-bottom: 16px !important; }
+  .step-card-image { width: calc(100% - 24px) !important; max-width: 100% !important; height: 180px !important; margin: 0 auto !important; }
+  .step-card-image img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+  .step-card p { padding: 16px 16px 0 !important; font-size: 15px !important; line-height: 1.35 !important; }
+
+  .notre-centre-cta { margin-left: 12px !important; width: calc(100% - 24px) !important; padding-right: 60px !important; }
+  .notre-centre-cta .cta-hand { right: 0 !important; bottom: 0 !important; }
+  .notre-centre-cta .cta-hand img { width: 140px !important; transform: scaleX(-1) scale(1) translateY(0) !important; }
+}
+
+@media (max-width: 768px) {
+  .step-card { width: 100% !important; max-width: 100% !important; padding: 10px 12px 14px !important; }
+  .step-card-image { width: 100% !important; max-width: 100% !important; height: 170px !important; margin: 0 auto !important; border-radius: 16px !important; }
+  .step-card-image img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+  .step-card p { padding: 14px 12px 0 !important; font-size: 15px !important; line-height: 1.4 !important; }
+  .step-card span { font-size: 14px !important; }
+  .notre-centre-whattoexpect .howto-grid { gap: 12px !important; }
+  .notre-centre-explore { padding: 30px 12px 32px !important; }
+  .notre-centre-cta { padding-right: 24px !important; overflow: visible !important; }
+  .notre-centre-cta .cta-hand { right: 0 !important; bottom: 0 !important; }
+  .notre-centre-cta .cta-hand img { width: 140px !important; transform: scaleX(-1) scale(1) translateY(0) !important; margin-right: 0 !important; }
+}
+
+/* CTA hand image adjustments to prevent overlap */
+@media (max-width: 1024px) {
+  .notre-centre-cta .cta-hand { right: 8px !important; bottom: -10px !important; }
+  .notre-centre-cta .cta-hand img { width: 160px !important; transform: scaleX(-1) scale(1) translateY(0) !important; }
+}
+
+@media (max-width: 768px) {
+  .notre-centre-cta .cta-hand { right: 6px !important; bottom: -20px !important; }
+  .notre-centre-cta .cta-hand img { width: 120px !important; transform: scaleX(-1) scale(0.95) translateY(8px) !important; opacity: 0.9 !important; }
+}
+
+@media (max-width: 480px) {
+  .notre-centre-cta .cta-hand { right: 0 !important; bottom: 0 !important; }
+  .notre-centre-cta .cta-hand img { width: 120px !important; transform: scaleX(-1) scale(0.95) translateY(0) !important; }
+}
+
+/* Carousel & StepCard responsive overrides */
+@media (max-width: 1024px) {
+  .explore-carousel-track { width: 100%; max-width: 960px; }
+  .explore-slide.center { width: 68% !important; height: auto !important; }
+  .explore-slide.left, .explore-slide.right { width: 140px !important; height: auto !important; }
+  .explore-slide img { height: auto !important; }
+  .explore-dots { margin-top: 18px !important; }
+
+  .step-card { width: 100% !important; }
+  .step-card > div[style] { height: 240px !important; }
+}
+
+@media (max-width: 768px) {
+  .explore-carousel-track { display: flex; gap: 12px; align-items: center; overflow-x: auto; padding: 0 12px; }
+  .explore-slide.center { width: 100% !important; height: auto !important; margin: 0 !important; }
+  .explore-slide.left, .explore-slide.right { width: 120px !important; height: auto !important; opacity: 0.8 !important; }
+  .explore-slide img { width: 100% !important; height: auto !important; }
+
+  .howto-grid { grid-template-columns: 1fr !important; }
+  .step-card > div[style] { height: 230px !important; }
+
+  .notre-centre-hero { padding-top: 130px !important; }
+  .notre-centre-text h2 { font-size: 22px !important; margin-left: 8px !important; }
+  .notre-centre-text p { margin-left: 3px !important; padding-right: 12px !important; }
+
+  .notre-centre-cta { margin-left: 12px !important; width: calc(100% - 24px) !important; }
 }

@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 
 const sections = [
@@ -50,16 +49,13 @@ export default function PrivacyPolicypage() {
   return (
     <>
       <style>{`
-        
-
         .pp-page {
           background: #f4eee1;
           min-height: 100vh;
-          
         }
 
         .pp-title {
-         font-size: 36px;
+          font-size: 36px;
           font-weight: 600;
           color: #591727;
           text-align: center;
@@ -69,10 +65,8 @@ export default function PrivacyPolicypage() {
         }
 
         .pp-date {
-          
           font-size: 15.5px;
           font-weight: 400;
-          
           color: #7a6a5a;
           text-align: center;
           margin-bottom: 0;
@@ -81,8 +75,6 @@ export default function PrivacyPolicypage() {
 
         .pp-accordion-wrap {
           max-width: 760px;
-        
-          
           margin: 52px auto 0;
           display: flex;
           flex-direction: column;
@@ -115,9 +107,8 @@ export default function PrivacyPolicypage() {
         }
 
         .pp-accordion-title {
-        font-size: 22px;
+          font-size: 22px;
           font-weight: 500;
-         
           color: #591727;
           margin-bottom: 14px;
           line-height: 1.3;
@@ -137,24 +128,23 @@ export default function PrivacyPolicypage() {
         }
 
         .pp-accordion-inner {
-         background: #ede8dc;
-  border-radius: 8px;
-  padding: 24px 28px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 500;
-  font-size: 18px;
-  color: #2a1e14;
-  line-height: 1.75;
+          background: #ede8dc;
+          border-radius: 8px;
+          padding: 24px 28px;
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-weight: 500;
+          font-size: 18px;
+          color: #2a1e14;
+          line-height: 1.75;
         }
 
         .pp-accordion-text {
-          
-  font-size: 16px;        /* larger than before — matches the screenshot size */
-  font-weight: 500;       /* medium weight for that high-contrast look */
-  color: #2a1e14;         /* very dark brown, almost black */
-  line-height: 1.35;
-  letter-spacing: 0.01em;
-  margin: 0;
+          font-size: 16px;
+          font-weight: 500;
+          color: #2a1e14;
+          line-height: 1.35;
+          letter-spacing: 0.01em;
+          margin: 0;
         }
 
         .pp-accordion-content {
@@ -170,10 +160,44 @@ export default function PrivacyPolicypage() {
         .pp-accordion-content-inner {
           overflow: hidden;
         }
+
+        @media (max-width: 640px) {
+          .pp-section {
+            padding: 140px 20px 60px !important;
+          }
+          .pp-title {
+            font-size: 26px;
+          }
+          .pp-date {
+            font-size: 13.5px;
+          }
+          .pp-accordion-wrap {
+            margin: 32px auto 0;
+            gap: 12px;
+          }
+          .pp-accordion-header {
+            padding: 12px 16px;
+          }
+          .pp-accordion-title {
+            font-size: 17px;
+            margin-bottom: 0;
+          }
+          .pp-accordion-body {
+            padding: 0 14px 20px;
+          }
+          .pp-accordion-inner {
+            padding: 16px 18px;
+            font-size: 15px;
+          }
+          .pp-accordion-text {
+            font-size: 14px;
+            line-height: 1.6;
+          }
+        }
       `}</style>
 
       <main className="pp-page">
-        <section style={{ padding: "180px 80px 80px", background: "#f4eee1" }}>
+        <section className="pp-section" style={{ padding: "180px 80px 80px", background: "#f4eee1" }}>
 
           {/* Main Title */}
           <h1 className="pp-title">
