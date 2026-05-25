@@ -186,7 +186,7 @@ export default function ContactPage() {
             display: none !important;
           }
           .contact-cta-hand {
-            width: 130px !important;
+            display:none !important;
           }
         }
       `}</style>
