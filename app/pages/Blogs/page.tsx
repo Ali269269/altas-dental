@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -261,7 +262,7 @@ function FilterDropdown({ activeFilter, activeSpecialite, onFilterChange, onSpec
 }
 
 // ─── Blog Card ────────────────────────────────────────────────────────────────
-function BlogCard({ blog }: { blog: Blog }) {
+function BlogCard({ blog, compact = false }: { blog: Blog; compact?: boolean }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -274,15 +275,21 @@ function BlogCard({ blog }: { blog: Blog }) {
       <div style={{
         borderRadius: "24px",
         background: hovered ? "#5c0d2a" : "#d3d3d3",
-        padding: "14px 14px 24px",
+        padding: compact ? "10px 10px 16px" : "14px 14px 24px",
         display: "flex", flexDirection: "column",
         cursor: "pointer", transition: "background 0.4s ease",
         height: "100%", boxSizing: "border-box",
       }}>
+        {/* Image */}
         <div style={{
-          width: "100%", height: "220px", borderRadius: "16px",
-          overflow: "hidden", marginBottom: "16px", flexShrink: 0,
-          position: "relative", background: "#c8b89a",
+          width: "100%",
+          height: compact ? "130px" : "220px",
+          borderRadius: "16px",
+          overflow: "hidden",
+          marginBottom: compact ? "10px" : "16px",
+          flexShrink: 0,
+          position: "relative",
+          background: "#c8b89a",
         }}>
           <Image src={blog.image} alt={blog.title} fill style={{ objectFit: "cover" }} />
           {blog.tag && (
@@ -297,32 +304,48 @@ function BlogCard({ blog }: { blog: Blog }) {
           )}
         </div>
 
+        {/* Date */}
         <p style={{
-          color: hovered ? "#ffffff" : "#3d0818", fontSize: "14px",
+          color: hovered ? "#ffffff" : "#3d0818",
+          fontSize: compact ? "11px" : "14px",
           letterSpacing: "0.03em", textAlign: "right",
           fontFamily: "'Cormorant Garamond', Georgia, serif",
-          transition: "color 0.4s", paddingRight: "4px", margin: "0 0 10px 0",
+          transition: "color 0.4s", paddingRight: "4px", margin: `0 0 ${compact ? "6px" : "10px"} 0`,
         }}>
           {blog.date}
         </p>
 
+        {/* Title + Arrow */}
         <div style={{
           display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-          gap: "12px", paddingLeft: "6px", paddingRight: "6px", flex: 1,
+          gap: compact ? "8px" : "12px",
+          paddingLeft: compact ? "4px" : "6px",
+          paddingRight: compact ? "4px" : "6px",
+          flex: 1,
         }}>
           <h3 style={{
-            color: hovered ? "#f0e6d3" : "#3d0818", fontSize: "15px",
-            fontWeight: 400, lineHeight: 1.6,
+            color: hovered ? "#f0e6d3" : "#3d0818",
+            fontSize: compact ? "12px" : "15px",
+            fontWeight: 400, lineHeight: 1.5,
             fontFamily: "'Cormorant Garamond', Georgia, serif",
             flex: 1, transition: "color 0.4s", margin: 0,
+            display: "-webkit-box",
+            WebkitLineClamp: compact ? 3 : undefined,
+            WebkitBoxOrient: "vertical" as const,
+            overflow: compact ? "hidden" : undefined,
           }}>
             {blog.title}
           </h3>
           <div style={{
-            flexShrink: 0, width: "49px", height: "49px", borderRadius: "50%",
+            flexShrink: 0,
+            width: compact ? "34px" : "49px",
+            height: compact ? "34px" : "49px",
+            borderRadius: "50%",
             background: hovered ? "#D3D3D3" : "#5c0d2a",
             display: "flex", alignItems: "center", justifyContent: "center",
-            color: hovered ? "#711c31" : "#FFFFFF", fontSize: "25px", marginBottom: "2px",
+            color: hovered ? "#711c31" : "#FFFFFF",
+            fontSize: compact ? "18px" : "25px",
+            marginBottom: "2px",
             transition: "background 0.4s ease, color 0.4s ease",
           }}>
             ↗
@@ -354,21 +377,23 @@ export default function BlogsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [activeSpecialite, setActiveSpecialite] = useState("Toutes");
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [mobileBlogPage, setMobileBlogPage] = useState(0);
 
-  // ── Meilleurs Choix carousel ──
-  // We use an "extended" index for seamless looping:
-  // The real index into BEST_PICKS is (carouselIndex % total).
-  // When the last card finishes, we instantly (no animation) reset to index 0,
-  // then resume — so the user never sees the backward slide.
+  // ── Carousel state ──
   const total = BEST_PICKS.length;
-  const [carouselIndex, setCarouselIndex] = useState(0); // real 0-based index
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isResettingRef = useRef(false);
 
+  // ── Single unified resize handler ──
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768);
+    const check = () => {
+      const w = window.innerWidth;
+      setIsMobile(w <= 425);
+      setIsTablet(w > 425 && w <= 768);
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -377,41 +402,45 @@ export default function BlogsPage() {
   // Reset mobile blog page when filter changes
   useEffect(() => { setMobileBlogPage(0); }, [activeFilter, activeSpecialite]);
 
-  // ── Pixel-accurate translation for carousel ──
+  // ── Cards visible in carousel per breakpoint ──
+  const cardsVisible = isMobile ? 1 : isTablet ? 2 : 3;
+  // Gap between cards in px (matches marginRight on card)
+  const CAROUSEL_GAP = isMobile ? 0 : 20;
+  // Total dot positions
+  const totalDots = Math.ceil(total / cardsVisible);
+
+  // ── Pixel-accurate translation ──
   const applyTranslate = (index: number, animated: boolean) => {
     if (!trackRef.current) return;
     const cardEl = trackRef.current.children[0] as HTMLElement;
     if (!cardEl) return;
     const cardWidth = cardEl.getBoundingClientRect().width;
-    const gap = isMobile ? 0 : 20;
     trackRef.current.style.transition = animated
       ? "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
       : "none";
-    trackRef.current.style.transform = `translateX(-${index * (cardWidth + gap)}px)`;
+    trackRef.current.style.transform = `translateX(-${index * (cardWidth + CAROUSEL_GAP)}px)`;
   };
 
   useEffect(() => {
     applyTranslate(carouselIndex, true);
-  }, [carouselIndex, isMobile]);
+  }, [carouselIndex, isMobile, isTablet]);
 
-  // ── Clamp index on viewport switch ──
+  // ── Clamp index when viewport switches ──
   useEffect(() => {
-    const desktopMax = Math.ceil(total / 3) - 1;
-    const max = isMobile ? total - 1 : desktopMax;
+    const max = totalDots - 1;
     if (carouselIndex > max) {
       setCarouselIndex(0);
       applyTranslate(0, false);
     }
-  }, [isMobile]);
+  }, [isMobile, isTablet]);
 
-  // ── Auto-play on mobile with seamless loop ──
+  // ── Auto-play (mobile only) with seamless loop ──
   const startAutoPlay = () => {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current);
     autoPlayRef.current = setInterval(() => {
       setCarouselIndex((prev) => {
         const next = prev + 1;
         if (next >= total) {
-          // Reached end: jump back to 0 without animation, then let next tick advance normally
           isResettingRef.current = true;
           return 0;
         }
@@ -429,15 +458,13 @@ export default function BlogsPage() {
     return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
   }, [isMobile]);
 
-  // ── When resetting to 0, disable animation for that one frame ──
+  // ── Instant reset when looping back to 0 ──
   useEffect(() => {
     if (isResettingRef.current) {
       isResettingRef.current = false;
-      applyTranslate(0, false); // instant jump, no slide-back
+      applyTranslate(0, false);
     }
   }, [carouselIndex]);
-
-  const totalDots = isMobile ? total : Math.ceil(total / 3);
 
   const filteredBlogs = applyFilter(ALL_BLOGS, activeFilter, activeSpecialite);
   const mobileTotalPages = Math.ceil(filteredBlogs.length / MOBILE_PAGE_SIZE);
@@ -449,6 +476,16 @@ export default function BlogsPage() {
   const handleFilterChange = (filter: FilterType) => { setActiveFilter(filter); setCurrentPage(1); };
   const handleSpecialiteChange = (s: string) => { setActiveSpecialite(s); setCurrentPage(1); };
 
+  // Card width calculation for carousel
+  // On tablet: 2 cards, gap 20px → each card = (100% - 20px) / 2
+  // On desktop: 3 cards, gap 20px × 2 = 40px → each card = (100% - 40px) / 3
+  // On mobile: 1 card = 100%
+  const cardWidthStyle = isMobile
+    ? "100%"
+    : isTablet
+    ? "calc(50% - 10px)"
+    : "calc(33.333% - 14px)";
+
   return (
     <>
       <style>{`
@@ -457,48 +494,132 @@ export default function BlogsPage() {
           grid-template-columns: repeat(3, 1fr);
           gap: 20px;
         }
-        .pagination-btn { transition: background 0.2s, color 0.2s; }
-        .pagination-btn:hover { background: rgba(113,28,49,0.1); }
+
+        .pagination-btn {
+          transition: background 0.2s, color 0.2s;
+        }
+
+        .pagination-btn:hover {
+          background: rgba(113,28,49,0.1);
+        }
 
         /* Show desktop elements, hide mobile elements by default */
-        .desktop-only { display: grid; }
-        .desktop-pagination { display: flex; }
-        .mobile-only { display: none; }
-
-        @media (max-width: 900px) {
-          .blog-grid { grid-template-columns: repeat(2, 1fr); }
+        .desktop-only {
+          display: grid;
         }
 
-        @media (max-width: 768px) {
-          .blogs-nos-section { padding: 120px 16px 40px !important; }
-          .blogs-header-row {
-            flex-wrap: wrap !important; gap: 12px !important;
-            padding: 10px 0 !important; margin-bottom: 14px !important;
+        .desktop-pagination {
+          display: flex;
+        }
+
+        .mobile-only {
+          display: none;
+        }
+
+        /* 769px to 900px = 2 cards */
+        @media (max-width: 900px) and (min-width: 769px) {
+          .blog-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
           }
-          .blogs-header-row h1 { font-size: 22px !important; }
+        }
+/* ───────── FIX: Tablet landscape (768px–1024px) ───────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .blog-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
 
-          /* Hide desktop grid and pagination, show mobile versions */
-          .desktop-only { display: none !important; }
-          .desktop-pagination { display: none !important; }
-          .mobile-only { display: flex !important; }
+  /* Reduce card vertical space */
+  .blog-grid a > div {
+    padding: 12px 12px 16px !important;
+  }
 
-          .blogs-best-section { padding: 36px 16px 44px !important; }
-          .blogs-best-section h2 { font-size: 20px !important; margin-bottom: 20px !important; }
-          .blogs-best-dots { gap: 6px !important; }
+  /* Reduce image height */
+  .blog-grid a > div > div {
+    height: 150px !important;
+  }
+
+  /* Reduce title size */
+  .blog-grid h3 {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Reduce date spacing */
+  .blog-grid p {
+    font-size: 12px !important;
+    margin-bottom: 6px !important;
+  }
+    .blogs-best-section {
+            padding: 36px 6px 64px !important;
+          }
+  
+}
+        /* Tablet: 426px–768px = 2 columns (not 3 — prevents tall cards) */
+        @media (min-width: 426px) and (max-width: 768px) {
+          .blog-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+          }
+
+          .blogs-best-section {
+            padding: 36px 16px 44px !important;
+          }
         }
 
-        @media (max-width: 400px) {
-          .blogs-nos-section { padding: 100px 12px 32px !important; }
-          .blogs-header-row h1 { font-size: 18px !important; }
+        /* Mobile layout */
+        @media (max-width: 425px) {
+          .blogs-nos-section {
+            padding: 120px 16px 40px !important;
+          }
+
+          .blogs-header-row {
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            padding: 10px 0 !important;
+            margin-bottom: 14px !important;
+          }
+
+          .blogs-header-row h1 {
+            font-size: 22px !important;
+          }
+
+          .desktop-only {
+            display: none !important;
+          }
+
+          .desktop-pagination {
+            display: none !important;
+          }
+
+          .mobile-only {
+            display: flex !important;
+          }
+
+          .blogs-best-section {
+            padding: 36px 16px 44px !important;
+          }
+
+          .blogs-best-section h2 {
+            font-size: 20px !important;
+            margin-bottom: 20px !important;
+          }
+
+          .blogs-best-dots {
+            gap: 6px !important;
+          }
+
+          
         }
       `}</style>
 
-      <main style={{ background: "#EFE7CE" }}>
+      <main style={{ background: "#ffffff" }}>
 
         {/* ══════════════════════════════════════════
             NOS BLOGS SECTION
         ══════════════════════════════════════════ */}
-        <section className="blogs-nos-section" style={{ background: "#EFE7CE", padding: "158px 40px 52px" }}>
+        <section className="blogs-nos-section" style={{ background: "#ffffff", padding: "158px 40px 52px" }}>
 
           <div className="blogs-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px", padding: "20px" }}>
             <h1 style={{
@@ -534,14 +655,14 @@ export default function BlogsPage() {
 
           {filteredBlogs.length > 0 ? (
             <>
-              {/* ── Desktop: full grid (hidden on mobile via CSS) ── */}
+              {/* ── Desktop/Tablet grid (hidden on mobile) ── */}
               <div className="blog-grid desktop-only" style={{ marginBottom: "36px" }}>
                 {filteredBlogs.map((blog) => (
-                  <BlogCard key={blog.id} blog={blog} />
+                  <BlogCard key={blog.id} blog={blog} compact={isTablet} />
                 ))}
               </div>
 
-              {/* ── Mobile: 2 cards + arrow navigation (hidden on desktop via CSS) ── */}
+              {/* ── Mobile: 2 cards + arrow navigation ── */}
               <div className="mobile-only" style={{ flexDirection: "column", gap: "0", marginBottom: "0" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px" }}>
                   {mobileVisibleBlogs.map((blog) => (
@@ -595,7 +716,7 @@ export default function BlogsPage() {
             </div>
           )}
 
-          {/* ── Desktop pagination (hidden on mobile via CSS) ── */}
+          {/* ── Desktop pagination (hidden on mobile) ── */}
           <div className="desktop-pagination blogs-pagination" style={{ alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               style={{ background: "none", border: "none", color: "#5a4a3a", fontSize: "18px", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center" }}>
@@ -627,9 +748,10 @@ export default function BlogsPage() {
         {/* ══════════════════════════════════════════
             MEILLEURS CHOIX SECTION
         ══════════════════════════════════════════ */}
-        <section className="blogs-best-section"
-          style={{ background: "#711C31", padding: "48px 40px 56px", boxShadow: "inset 0 -120px 120px rgba(40, 0, 15, 0.85)" }}>
-
+        <section
+          className="blogs-best-section"
+          style={{ background: "#711C31", padding: "48px 40px 56px", boxShadow: "inset 0 -120px 120px rgba(40, 0, 15, 0.85)" }}
+        >
           <h2 style={{
             fontFamily: "'Cinzel', 'Cormorant Garamond', serif", fontSize: "26px",
             fontWeight: 600, color: "#f0e6d3", textTransform: "uppercase",
@@ -638,37 +760,44 @@ export default function BlogsPage() {
             Meilleurs Choix
           </h2>
 
-          <div style={{ position: "relative", overflow: "hidden", marginBottom: "32px" }}>
+          {/* Carousel viewport — clips overflow */}
+          <div style={{ overflow: "hidden", marginBottom: "32px" }}>
             <div
               ref={trackRef}
               style={{
-                display: "flex", flexWrap: "nowrap",
+                display: "flex",
+                flexWrap: "nowrap",
+                gap: `${CAROUSEL_GAP}px`,
                 willChange: "transform",
-                // transition is set imperatively in applyTranslate
               }}
             >
               {BEST_PICKS.map((blog) => (
-                <div key={blog.id} style={{
-                  minWidth: isMobile ? "100%" : `calc(${100 / 3}% - 14px)`,
-                  width: isMobile ? "100%" : `calc(${100 / 3}% - 14px)`,
-                  flexShrink: 0,
-                  marginRight: isMobile ? "0px" : "20px",
-                  boxSizing: "border-box",
-                }}>
-                  <BlogCard blog={blog} />
+                <div
+                  key={blog.id}
+                  style={{
+                    // Fixed width so carousel math is exact
+                    width: cardWidthStyle,
+                    minWidth: cardWidthStyle,
+                    flexShrink: 0,
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <BlogCard blog={blog} compact={isTablet} />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="blogs-best-dots"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          {/* Dots */}
+          <div
+            className="blogs-best-dots"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+          >
             {Array.from({ length: totalDots }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => {
                   setCarouselIndex(i);
-                  // Reset auto-play timer from this dot
                   if (isMobile) startAutoPlay();
                 }}
                 style={{

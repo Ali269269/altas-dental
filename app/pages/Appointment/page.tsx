@@ -460,7 +460,128 @@ export default function AppointmentPage() {
            MOBILE RESPONSIVE — max-width: 768px
            Desktop/laptop styles are 100% untouched
         ══════════════════════════════════════════ */
-        @media (max-width: 768px) {
+
+        @media (min-width: 768px) and (max-width: 1024px) {
+
+  /* Make booking section less narrow */
+  .appt-booking-section {
+    padding: 0 80px 50px !important;
+  }
+
+  /* Make card bigger */
+  .appt-booking-card {
+    padding: 50px 40px 55px !important;
+    border-radius: 22px !important;
+  }
+
+  /* Increase form width feel */
+  .appt-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 18px 22px !important;
+  }
+
+  /* Optional: slightly bigger divider */
+  .appt-divider {
+    width: 60% !important;
+  }
+}
+
+       @media (max-width: 768px) {
+
+  /* ── Page title ── */
+  .appt-title-section {
+    padding: 120px 20px 24px !important;
+  }
+
+  .appt-title-section h1 {
+    font-size: 28px !important;
+    text-align: center !important;
+  }
+
+  /* ── Booking section ── */
+  .appt-booking-section {
+    padding: 0 20px 40px !important;
+  }
+
+  .appt-booking-card {
+    padding: 30px 20px 40px !important;
+    border-radius: 20px !important;
+  }
+
+  .appt-booking-card h2 {
+    font-size: 18px !important;
+    text-align: center !important;
+  }
+
+  .appt-divider {
+    width: 100% !important;
+  }
+
+  /* ── Form Grid ── */
+  .appt-form-grid {
+    grid-template-row: 1fr !important;
+    gap: 16px !important;
+    margin-top: 18px !important;
+  }
+
+  /* ── Inputs ── */
+  .appt-input,
+  .appt-booking-card input,
+  .appt-booking-card textarea,
+  .appt-booking-card button:not([aria-label]) {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 14px !important;
+  }
+
+  /* ── Calendar popup ── */
+  .appt-booking-card [style*="position: absolute"] {
+    width: calc(100vw - 60px) !important;
+    max-width: 100% !important;
+    left: 0 !important;
+  }
+
+  /* ── Contact section ── */
+  .appt-contact-section {
+    padding: 40px 20px 50px !important;
+  }
+
+  .appt-contact-inner {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 30px !important;
+  }
+
+  .appt-contact-image {
+    width: 100% !important;
+    height: 260px !important;
+    border-radius: 18px !important;
+  }
+
+  .appt-contact-info {
+    width: 100% !important;
+    padding-top: 0 !important;
+  }
+
+  .appt-contact-info h2 {
+    font-size: 24px !important;
+    margin-bottom: 18px !important;
+    text-align: center !important;
+  }
+
+  .appt-contact-rows {
+    max-width: 100% !important;
+  }
+  .appt-submit-btn {
+  width: auto !important;
+  min-width: 160px !important;
+  padding: 12px 28px !important;
+  display: block !important;
+  margin: 24px auto 0 !important;
+}
+}
+
+        @media (max-width: 425px) {
 
           /* ── Page title ── */
           .appt-title-section {

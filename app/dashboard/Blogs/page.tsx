@@ -277,9 +277,9 @@ export default function BlogsPage() {
     return (
       <>
         <style>{`
-          .bl-page { margin-left: 40px; margin-top: 40px; }
+          .bl-page { margin-left: 0px; margin-top: 40px; }
           @media (max-width: 768px) {
-            .bl-page { margin-left: 0 !important; margin-top: 16px !important; padding: 0 4px !important; }
+            .bl-page { margin-left: 0px !important; margin-top: 16px !important; padding: 0 4px !important; }
           }
         `}</style>
         <div className="bl-page min-h-full transition-colors duration-300">
@@ -326,7 +326,7 @@ export default function BlogsPage() {
           .bl-img-box  { width: 300px; height: 170px; }
           .bl-cat-btn  { width: 290px; }
           @media (max-width: 768px) {
-            .bl-page     { margin-left: 0 !important; margin-top: 16px !important; padding: 0 4px !important; }
+            .bl-page     { margin-left: 0 !important; margin-top: 46px !important; padding: 0 4px !important; }
             .bl-img-card { width: 100% !important; box-sizing: border-box; }
             .bl-img-box  { width: 100% !important; height: 180px !important; }
             .bl-cat-btn  { width: 100% !important; }
@@ -562,7 +562,7 @@ export default function BlogsPage() {
         .bl-table { width: 100%; font-size: 14px; min-width: 560px; }
         .bl-pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-top: 1px solid ${borderCol}; }
         @media (max-width: 768px) {
-          .bl-page { margin-left: 600 !important; margin-top: 16px !important; padding: 0 4px !important; }
+          .bl-page { margin-left: 0px !important; margin-top: 46px !important; padding: 0 4px !important; }
           .bl-list-header { flex-direction: column; align-items: flex-start; gap: 12px; }
           .bl-list-header button { width: 100%; justify-content: center; }
           .bl-pagination { flex-direction: column; gap: 10px; align-items: flex-start; }

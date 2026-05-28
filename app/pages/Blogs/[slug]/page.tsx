@@ -46,7 +46,7 @@ function RelatedCard({ blog }: { blog: RelatedBlog }) {
   return (
     <Link
       href={`/pages/Blogs/${blog.slug}`}
-      style={{ textDecoration: "none", display: "block", height: "100%" }}
+      style={{ textDecoration: "none", display: "block" }}  // ← remove height: "100%"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -59,8 +59,9 @@ function RelatedCard({ blog }: { blog: RelatedBlog }) {
           flexDirection: "column",
           cursor: "pointer",
           transition: "background 0.4s ease",
-          height: "100%",
+          height: "380px",        // ← fixed height, not "100%"
           boxSizing: "border-box",
+          overflow: "hidden",     // ← clip overflowing content
         }}
       >
         {/* Image */}
@@ -136,6 +137,10 @@ function RelatedCard({ blog }: { blog: RelatedBlog }) {
               flex: 1,
               transition: "color 0.4s",
               margin: 0,
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical" as const,
             }}
           >
             {blog.title}
@@ -168,23 +173,28 @@ function RelatedCard({ blog }: { blog: RelatedBlog }) {
 // ─── Responsive Carousel ──────────────────────────────────────────────────────
 function ResponsiveCarousel() {
   const [carouselDot, setCarouselDot] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const [viewMode, setViewMode] = useState<"mobile" | "tablet" | "desktop">("desktop");
   const trackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768);
+    const check = () => {
+      const w = window.innerWidth;
+      if (w <= 425) setViewMode("mobile");
+      else if (w <= 768) setViewMode("tablet");
+      else setViewMode("desktop");
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const totalDots = isMobile
-    ? RELATED_BLOGS.length
-    : Math.max(1, RELATED_BLOGS.length - 2);
+  const perView = viewMode === "mobile" ? 1 : viewMode === "tablet" ? 2 : 3;
+  const gap = 20;
+  const totalDots = Math.max(1, RELATED_BLOGS.length - perView + 1);
 
   useEffect(() => {
     if (carouselDot >= totalDots) setCarouselDot(0);
-  }, [isMobile, totalDots, carouselDot]);
+  }, [viewMode, totalDots, carouselDot]);
 
   return (
     <div>
@@ -196,21 +206,20 @@ function ResponsiveCarousel() {
           style={{
             display: "flex",
             flexWrap: "nowrap",
+            alignItems: "flex-start", // ← prevents vertical stretching
             transition: "transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)",
-            transform: isMobile 
-              ? `translateX(-${carouselDot * 100}%)` 
-              : `translateX(calc(-${carouselDot} * (100% + 20px) / 3))`,
+            transform: `translateX(calc(-${carouselDot} * ((100% + ${gap}px) / ${perView})))`,
             willChange: "transform",
           }}
         >
           {RELATED_BLOGS.map((blog) => (
-            <div
+              <div
               key={blog.id}
               style={{
-                minWidth: isMobile ? "100%" : "calc((100% - 40px) / 3)",
-                width: isMobile ? "100%" : "calc((100% - 40px) / 3)",
+                minWidth: `calc((100% - ${gap * (perView - 1)}px) / ${perView})`,
+                width: `calc((100% - ${gap * (perView - 1)}px) / ${perView})`,
                 flexShrink: 0,
-                marginRight: isMobile ? "0px" : "20px",
+                marginRight: `${gap}px`,
                 boxSizing: "border-box",
               }}
             >
@@ -221,14 +230,7 @@ function ResponsiveCarousel() {
       </div>
 
       {/* Dots */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
         {Array.from({ length: totalDots }).map((_, i) => (
           <button
             key={i}
@@ -249,14 +251,13 @@ function ResponsiveCarousel() {
     </div>
   );
 }
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function BlogDetailPage() {
   return (
     <>
       <style>{`
         .blog-detail-body {
-          background: #EFE7CE;
+          background: #ffffff;
         }
         .article-col {
           max-width: 800px;
@@ -376,7 +377,7 @@ export default function BlogDetailPage() {
         {/* ══════════════════════════════════════════
             ARTICLE HEADER
         ══════════════════════════════════════════ */}
-        <section style={{ background: "#EFE7CE", paddingTop: "186px", paddingBottom: "0" }}>
+        <section style={{ background: "#ffffff", paddingTop: "186px", paddingBottom: "0" }}>
           <div className="article-col">
 
             <h1 style={{
@@ -422,7 +423,7 @@ export default function BlogDetailPage() {
         {/* ══════════════════════════════════════════
             ARTICLE BODY
         ══════════════════════════════════════════ */}
-        <section style={{ background: "#EFE7CE", paddingBottom: "64px" }}>
+        <section style={{ background: "#ffffff", paddingBottom: "64px" }}>
           <div className="article-col">
 
             <h2 className="section-heading">Redéfinir le Soin Dentaire</h2>

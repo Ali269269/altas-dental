@@ -231,7 +231,31 @@ export default function AvantApresPage() {
            All desktop/laptop styles are untouched
            because these rules only fire on mobile.
         ════════════════════════════════════════ */
+.cta-wrapper {
+  margin: 0 auto 80px auto !important; /* bottom gap fixed */
+  max-width: 1200px;
+  width: 100% !important;
+  box-sizing: border-box;
+  padding: 70px 40px; /* default padding */
+}
 
+/* LARGE DESKTOPS */
+@media (min-width: 1440px) {
+  .cta-wrapper {
+    padding: 70px 60px !important;
+    margin-bottom: 120px !important; /* extra bottom spacing */
+  }
+}
+
+/* TABLET / SMALL LAPTOP */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .cta-wrapper {
+   padding: 70px 40px !important;
+    margin: 0 24px 80px 24px !important; /* 👈 adds left/right gap */
+    width: auto !important; /* prevents full edge stretch */
+    box-sizing: border-box;
+  }
+}
         @media (max-width: 768px) {
 
           /* ── Section 1: Hero ── */
@@ -296,7 +320,7 @@ export default function AvantApresPage() {
             letter-spacing: 0.5px !important;
           }
           .cta-body {
-            font-size: 15px !important;
+            font-size: 12px !important;
             max-width: 100% !important;
           }
           .cta-body br {

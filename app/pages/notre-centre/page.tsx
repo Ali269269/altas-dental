@@ -17,7 +17,17 @@ function ExploreCarousel() {
   const [isMobile, setIsMobile] = useState(false);
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const total = SPACE_SLIDES.length;
+  const [isTablet, setIsTablet] = useState(false);
+useEffect(() => {
+  const checkSize = () => {
+    setIsTablet(window.innerWidth >= 426 && window.innerWidth <= 768);
+  };
 
+  checkSize(); // run on mount
+  window.addEventListener("resize", checkSize);
+
+  return () => window.removeEventListener("resize", checkSize);
+}, []);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
     check();
@@ -62,7 +72,7 @@ function ExploreCarousel() {
         >
           <div style={{
             width: "100%",
-            height: 220,
+            height: isTablet ? 320 : 220,
             opacity: animating ? 0.75 : 1,
             transition: "opacity 0.35s ease, transform 0.35s ease",
             transform: animating
@@ -271,6 +281,13 @@ export default function NotreCentrePage() {
         /* ══════════════════════════════════════════════
            LARGE DESKTOPS  1441px+
         ══════════════════════════════════════════════ */
+
+        .cta-wrapper {
+  margin: 0 auto 80px auto !important; 
+  max-width: 1200px;   /* key fix */
+  width: 100% !important;
+  box-sizing: border-box;
+}
         @media (min-width: 1441px) {
           .notre-centre-hero {
             padding: 200px 120px 70px !important;
@@ -287,9 +304,26 @@ export default function NotreCentrePage() {
             padding: 70px 0 80px !important;
           }
           .cta-wrapper {
-            margin-top: 80px !important;
-            margin-bottom: 80px !important;
-            padding: 100px 60px !important;
+
+               @media (max-width: 1280px) and (min-width: 1025px) {
+          .notre-centre-hero {
+            gap: 60px !important;
+            padding: 160px 40px 50px !important;
+          }
+          .notre-centre-image {
+            width: 400px !important;
+            height: 320px !important;
+          }
+          .notre-centre-whattoexpect {
+            padding: 50px 50px 60px !important;
+          }
+          .howto-grid {
+            gap: 18px !important;
+          }
+          .cta-wrapper {
+            padding: 70px 60px !important;
+          }
+        }
           }
         }
 
@@ -312,7 +346,10 @@ export default function NotreCentrePage() {
             gap: 18px !important;
           }
           .cta-wrapper {
-            padding: 70px 40px !important;
+             padding: 70px 40px !important;
+  margin: 0 auto !important;
+  width: calc(100% - 80px) !important; /* creates left + right gap */
+  box-sizing: border-box;
           }
         }
 
@@ -322,9 +359,9 @@ export default function NotreCentrePage() {
         @media (max-width: 1024px) and (min-width: 769px) {
           /* Hero: stack to column, center-aligned */
           .notre-centre-hero {
-            flex-direction: column !important;
+            flex-direction: row !important;
             gap: 36px !important;
-            padding: 140px 40px 50px !important;
+            padding: 170px 40px 50px !important;
             align-items: center !important;
           }
           .notre-centre-text {
@@ -354,9 +391,58 @@ export default function NotreCentrePage() {
             margin-bottom: 28px !important;
           }
           .howto-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 20px !important;
-          }
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+  padding: 0 !important;
+}
+
+/* slightly increase card width feel */
+.step-card {
+  padding-bottom: 10px !important;
+  overflow: hidden !important;
+  min-height: auto !important;
+}
+
+/* keep image same */
+.step-card-image {
+  margin-top: -170px !important;
+  height: 70px !important;
+  margin-bottom: -8px !important;
+}
+
+/* keep header same */
+.step-card > div:first-child {
+  padding: 6px 10px !important;
+  transform: translateY(-80px) !important;
+}
+
+/* text alignment fix */
+.step-card h3 {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  margin-bottom: 4px !important;
+
+  /* helps equal alignment across cards */
+  min-height: 36px !important;
+}
+
+/* IMPORTANT: equal paragraph alignment */
+.step-card p {
+  margin-top: 2px !important;
+  margin-bottom: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+
+  /* key fix for equal ending line */
+  min-height: 60px !important;
+
+  display: flex !important;
+  align-items: flex-start !important;
+}
 
           /* Explore carousel: already handles tablet via desktop branch */
           .notre-centre-explore {
@@ -387,7 +473,7 @@ export default function NotreCentrePage() {
            LARGE MOBILE  481px – 768px
            (exact original rules — untouched)
         ══════════════════════════════════════════════ */
-        @media (max-width: 768px) {
+       @media (min-width: 426px) and (max-width: 768px) {
 
           /* ── Section 1: Hero ── */
           .notre-centre-hero {
@@ -412,7 +498,7 @@ export default function NotreCentrePage() {
           }
           .notre-centre-image {
             width: 100% !important;
-            height: 230px !important;
+            height: 330px !important;
             flex-shrink: unset !important;
             margin-right: 0 !important;
           }
@@ -425,39 +511,59 @@ export default function NotreCentrePage() {
             font-size: 22px !important;
             margin-bottom:24px !important;
           }
-          .howto-grid {
-            grid-template-columns: 1fr !important;
-            gap: 18px !important;
-            padding: 0 0px !important;
-            max-width: 490px;
-            margin: 0 auto;
-          }
-          .step-card {
-            padding-bottom: 10px !important;
-          }
-          .step-card > div:first-child {
-            padding: 4px 12px 2px !important;
-          }
-          .step-card-image {
-            margin-top: -148px !important;
-            height: 160px !important;
-          }
-          .step-card p {
-            margin-top: 5px !important;
-          }
-          .step-card-image {
-            height: 90px !important;
-            margin-bottom: 0 !important;
-          }
-          .step-card > div:first-child {
-            padding: 3px 12px 2px !important;
-          }
-          .step-card > div:first-child {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
-            transform: translateY(-80px);
-          }
+      .howto-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+  padding: 0 !important;
+}
 
+/* slightly increase card width feel */
+.step-card {
+  padding-bottom: 10px !important;
+  overflow: hidden !important;
+  min-height: auto !important;
+}
+
+/* keep image same */
+.step-card-image {
+  margin-top: -170px !important;
+  height: 70px !important;
+  margin-bottom: -8px !important;
+}
+
+/* keep header same */
+.step-card > div:first-child {
+  padding: 6px 10px !important;
+  transform: translateY(-80px) !important;
+}
+
+/* text alignment fix */
+.step-card h3 {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  margin-bottom: 4px !important;
+
+  /* helps equal alignment across cards */
+  min-height: 36px !important;
+}
+
+/* IMPORTANT: equal paragraph alignment */
+.step-card p {
+  margin-top: 2px !important;
+  margin-bottom: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+
+  /* key fix for equal ending line */
+  min-height: 60px !important;
+
+  display: flex !important;
+  align-items: flex-start !important;
+}
           /* ── Section 3: Explore carousel ── */
           .notre-centre-explore {
             padding: 40px 0 50px !important;
@@ -490,7 +596,7 @@ export default function NotreCentrePage() {
           }
           .cta-hand-img {
             display: none !important;
-            width: 130px !important;
+            
           }
         }
 
@@ -520,9 +626,44 @@ export default function NotreCentrePage() {
           .notre-centre-whattoexpect h2 {
             font-size: 20px !important;
           }
-          .howto-grid {
-            gap: 14px !important;
-          }
+           .howto-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    max-width: 390px !important;
+    margin: 0 auto;
+  }
+
+  .step-card {
+    padding-bottom: 10 !important;
+    min-height: auto !important;
+    overflow: hidden !important;
+  }
+
+  .step-card-image {
+    height: 70px !important;
+    margin-top: -150px !important;
+    margin-bottom: 2px !important;
+   
+  }
+
+  .step-card > div:first-child {
+    padding: 6px 10px !important;
+    transform: translateY(-67px) !important;
+  }
+
+  .step-card h3 {
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.2 !important;
+  }
+
+  .step-card p {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    margin-top: 2px !important;
+    margin-bottom: 0 !important;
+  }
+
 
           .notre-centre-explore {
             padding: 30px 0 40px !important;
@@ -540,11 +681,16 @@ export default function NotreCentrePage() {
             padding: 48px 16px !important;
             border-radius: 14px !important;
           }
+          
           .cta-title {
             font-size: 16px !important;
           }
           .cta-body {
-            font-size: 14px !important;
+            font-size: 12px !important;
+          }
+            .cta-hand-img {
+            display: none !important;
+            
           }
         }
 

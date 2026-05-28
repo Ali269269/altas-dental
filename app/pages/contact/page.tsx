@@ -100,7 +100,7 @@ export default function ContactPage() {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: "400px",
+   width: "100%",
     background: "transparent",
     border: "1px solid #FFFFFF",
     borderRadius: 3,
@@ -116,7 +116,40 @@ export default function ContactPage() {
   return (
     <>
       <style>{`
-        /* ── Mobile responsiveness ── */
+
+        /* LARGE DESKTOPS */
+        @media (min-width: 1440px) {
+          .cta-outer {
+            padding: 0 100px !important;
+          }
+        }
+
+        /* TABLET / SMALL LAPTOP */
+        @media (max-width: 1024px) and (min-width: 769px) {
+          .cta-outer {
+            padding: 0 48px !important;
+          }
+            .contact-card-wrapper {
+    display: flex !important;
+    flex-direction: row !important; /* keep row */
+  }
+
+  .contact-form-panel {
+    width: 50% !important;
+    padding: 32px 24px !important;
+  }
+
+  .contact-card-section {
+    padding: 10px 60px 30px 60px !important;
+  }
+
+  button[type="submit"] {
+    width: 100% !important;
+  }
+
+
+        }
+
         @media (max-width: 768px) {
 
           /* Section 1 — Title */
@@ -167,8 +200,13 @@ export default function ContactPage() {
             gap: 16px !important;
           }
 
-          /* CTA section */
-          .contact-cta-section {
+          /* CTA outer wrapper */
+          .cta-outer {
+            padding: 0 16px !important;
+          }
+
+          /* CTA inner card */
+          .cta-wrapper {
             margin-top: 40px !important;
             margin-bottom: 40px !important;
             padding: 60px 20px !important;
@@ -179,14 +217,14 @@ export default function ContactPage() {
             letter-spacing: 0.5px !important;
           }
           .cta-body {
-            font-size: 15px !important;
+            font-size: 12px !important;
             max-width: 100% !important;
           }
           .cta-body br {
             display: none !important;
           }
           .contact-cta-hand {
-            display:none !important;
+            display: none !important;
           }
         }
       `}</style>
@@ -303,7 +341,8 @@ export default function ContactPage() {
                   type="submit"
                   style={{
                     marginTop: 4,
-                    width: "400px",
+                    width: "100%",
+                    maxWidth: "100%",
                     background: "#ffffff",
                     border: "1px solid #ffffff",
                     borderRadius: 3,
@@ -427,118 +466,122 @@ export default function ContactPage() {
         {/* ═══════════════════════════════════════════════════════
             SECTION 3 — CTA
         ═══════════════════════════════════════════════════════ */}
-        <div
-          className="contact-cta-section"
-          style={{
-            backgroundImage: "url(/images/bgsub.png)",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "100% 100%",
-            backgroundPosition: "center",
-            borderRadius: 20,
-            padding: "80px 40px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            overflow: "hidden",
-            textAlign: "center",
-            width: "100%",
-            marginLeft: "0px",
-            marginTop: "60px",
-            marginBottom: "60px",
-          }}
-        >
-          {/* Hand image */}
+        {/* ── Outer padding wrapper — keeps left/right edge spacing on all screen sizes ── */}
+        <div className="cta-outer" style={{ padding: "0 100px", boxSizing: "border-box" }}>
           <div
+            className="cta-wrapper"
             style={{
-              position: "absolute",
-              right: 0,
-              bottom: 0,
-              opacity: 0.9,
-            }}
-          >
-            <img
-              src="/images/shand.png"
-              alt="Hand"
-              className="contact-cta-hand"
-              style={{
-                width: 220,
-                objectFit: "contain",
-                display: "block",
-                transform: "scaleX(-1) scale(1.3) translateY(15px)",
-              }}
-            />
-          </div>
-
-          {/* Center Content */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 2,
+              backgroundImage: "url(/images/bgsub.png)",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "100% 100%",
+              backgroundPosition: "center",
+              borderRadius: 20,
+              padding: "80px 40px",
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
+              position: "relative",
+              overflow: "hidden",
+              textAlign: "center",
+              width: "100%",
+              marginTop: "60px",
+              marginBottom: "60px",
+              boxSizing: "border-box",
             }}
           >
-            <h2
-              className="cta-title"
+            {/* Hand image */}
+            <div
               style={{
-                fontSize: 27,
-                fontWeight: 500,
-                color: "#D3D3D3",
-                marginBottom: 14,
-                textTransform: "uppercase",
-                letterSpacing: "1px",
+                position: "absolute",
+                right: 0,
+                bottom: 0,
+                opacity: 0.9,
               }}
             >
-              Assurez votre consultation privée
-            </h2>
+              <img
+                src="/images/shand.png"
+                alt="Hand"
+                className="contact-cta-hand"
+                style={{
+                  width: 220,
+                  objectFit: "contain",
+                  display: "block",
+                  transform: "scaleX(-1) scale(1.3) translateY(15px)",
+                }}
+              />
+            </div>
 
-            <p
-              className="cta-body"
+            {/* Center Content */}
+            <div
               style={{
-                fontSize: 20,
-                color: "#FFFFFF",
-                fontWeight: 300,
-                lineHeight: 1.6,
-                maxWidth: 600,
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              Sélectionnez un horaire qui vous convient, et notre équipe
-              <br />
-              préparera une présentation adaptée pour votre session.
-            </p>
+              <h2
+                className="cta-title"
+                style={{
+                  fontSize: 27,
+                  fontWeight: 500,
+                  color: "#D3D3D3",
+                  marginBottom: 14,
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                }}
+              >
+                Assurez votre consultation privée
+              </h2>
 
-            <a
-              href="/pages/Appointment"
-              style={{
-                marginTop: 28,
-                display: "inline-block",
-                background: "transparent",
-                border: "1.5px solid #FFFFFF",
-                color: "#FFFFFF",
-                padding: "13px 30px",
-                borderRadius: 50,
-                fontSize: 14,
-                fontFamily: "'Jost', sans-serif",
-                cursor: "pointer",
-                textDecoration: "none",
-                transition: "all 0.3s",
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.background =
-                  "rgba(255,255,255,0.1)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.background =
-                  "transparent")
-              }
-            >
-              Prendre rendez-vous
-            </a>
+              <p
+                className="cta-body"
+                style={{
+                  fontSize: 20,
+                  color: "#FFFFFF",
+                  fontWeight: 300,
+                  lineHeight: 1.6,
+                  maxWidth: 600,
+                }}
+              >
+                Sélectionnez un horaire qui vous convient, et notre équipe
+                <br />
+                préparera une présentation adaptée pour votre session.
+              </p>
+
+              <a
+                href="/pages/Appointment"
+                style={{
+                  marginTop: 28,
+                  display: "inline-block",
+                  background: "transparent",
+                  border: "1.5px solid #FFFFFF",
+                  color: "#FFFFFF",
+                  padding: "13px 30px",
+                  borderRadius: 50,
+                  fontSize: 14,
+                  fontFamily: "'Jost', sans-serif",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  transition: "all 0.3s",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLAnchorElement).style.background =
+                    "rgba(255,255,255,0.1)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLAnchorElement).style.background =
+                    "transparent")
+                }
+              >
+                Prendre rendez-vous
+              </a>
+            </div>
           </div>
         </div>
+
       </main>
     </>
   );

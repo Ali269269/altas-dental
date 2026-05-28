@@ -221,3 +221,12 @@ h1, h2, h3, h4, h5, h6 {
 
   .notre-centre-cta { margin-left: 12px !important; width: calc(100% - 24px) !important; }
 }
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}

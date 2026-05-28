@@ -387,6 +387,69 @@ export default function Home() {
 
       {/* ───────────────── All Styles (desktop unchanged + mobile additions) ───────────────── */}
       <style>{`
+
+       @media (min-width: 426px) and (max-width: 769px) {
+
+          body, html { overflow-x: hidden !important; max-width: 100vw !important; }
+
+          .hero-section {
+            flex-direction: row !important;
+            align-items: flex-end !important;
+            min-height: 480px !important;
+            padding: 120px 20px 0px !important;
+            overflow: visible !important;
+            position: relative !important;
+          }
+
+            .hero-text h1 {
+            font-size: 20px !important;
+            transform: translateY(50px) !important;
+            margin-bottom: 6px !important;
+            line-height: 1.3 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            max-width: 400px !important;
+          }
+
+    @media (min-width: 426px) and (max-width: 769px) {
+
+  .hero-mobile-doctor-col {
+    display: flex !important;
+    flex: 1 !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    overflow: hidden !important;
+    transform: translateX(39px) !important;
+    height: 260px !important;
+    position: relative !important;
+  }
+
+  /* TARGET IMAGE */
+  .hero-mobile-doctor-col img {
+    transform: scale(1.9) !important;
+    transform-origin: bottom center !important;
+    width: auto !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    margin-left:40px !important;
+  }
+
+}
+            .card2 {
+    width: 182px !important;
+    white-space: normal !important;
+  }
+
+  .card2 p,
+  .card2 h3,
+  .card2 span {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 2.3 !important;
+  }
+
+     
+      }
         @keyframes carousel-scroll {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
@@ -436,6 +499,8 @@ export default function Home() {
           animation: reviews-scroll 16s linear infinite;
         }
 
+
+
         /* ── DESKTOP GUARD: hide mobile-only hero elements on big screens ── */
      @media (max-width: 320px) {
 
@@ -465,13 +530,31 @@ export default function Home() {
 .hero-mobile-cards-col > * {
   width: 48% !important;
 }
-}
+   .card1p{
+   margin-bottom:9px !important ;
+   width:102px !important;
+   }
+
+}  
+        @media (max-width:375px){
+         .card1b{
+   padding-bottom:2px !important ;
+   width:70px !important;
+   
+  
+   }
+        }
+   
         @media (min-width: 769px) {
           .hero-mobile-bottom-row { display: none !important; }
           .about-doc-img-desktop  { display: block !important; }
           .about-doc-img-mobile   { display: none !important; }
         
         }
+
+
+
+
 
         /* ── MOBILE (≤768px) ── */
         
@@ -550,7 +633,24 @@ export default function Home() {
             height: 230px !important;
             
           }
-        
+                .card1p{
+   margin-bottom:-2px !important ;
+   width:92px !important;
+   }
+             .card1b{
+      position: relative !important;
+   top: 8px !important;
+   transform: translateY(2px) !important;
+   }  
+    .card2 p {
+    margin-top:10px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    max-width: 95px !important;
+    min-width: 95px !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+  }
           /* ── STATS ── */
           .stats-section-text {
             padding: 40px 20px 20px !important;
@@ -860,39 +960,117 @@ export default function Home() {
 
         /* ── TABLET (769px–1024px) ── */
         @media (min-width: 769px) and (max-width: 1024px) {
-          .hero-section { padding: 80px 30px 30px !important; }
-          .hero-text h1 { font-size: 28px !important; transform: translateY(0) !important; }
-          .hero-text p  { transform: translateY(0) !important; }
-          .hero-cards-row { margin-left: 0 !important; margin-top: 10px !important; }
-          .hero-doctor-img { width: 280px !important; height: 340px !important; }
-          .about-section {
-            width: calc(100% - 40px) !important;
-            max-width: 100% !important;
-            margin-left: 20px !important;
-            margin-right: 20px !important;
-            border-radius: 12px !important;
-          }
-          .faq-inner {
-            flex-direction: column !important;
-            gap: 32px !important;
-            padding: 0 30px !important;
-            margin-right: 0 !important;
-          }
-          .faq-inner > div:first-child { flex: unset !important; }
-          .why-section { padding: 0 30px !important; }
-          .why-header { gap: 40px !important; }
-          .why-body { flex-direction: column !important; }
-          .why-video-col { flex: unset !important; width: 100% !important; }
-          .why-right-col { flex: unset !important; width: 100% !important; }
-          .reviews-container-wrapper { overflow: hidden !important; }
-        }
+       Add these rules inside your existing @media (min-width: 769px) and (max-width: 1024px) block:
+
+/* ── prevent all horizontal overflow ── */
+body, html { overflow-x: hidden !important; max-width: 100vw !important; }
+
+/* ── About section: override fixed 1150px width ── */
+.about-section {
+  width: calc(100% - 40px) !important;
+  max-width: calc(100% - 40px) !important;
+  margin-left: 20px !important;
+  margin-right: 20px !important;
+  height: auto !important;
+  min-height: 400px !important;
+  border-radius: 16px !important;
+}
+
+/* ── Reviews: fluid grid columns instead of fixed 388px ── */
+.reviews-section {
+  padding: 60px 10px 10px !important;
+  overflow: hidden !important;
+}
+.reviews-container-wrapper {
+  overflow: hidden !important;
+  width: 100% !important;
+}
+.reviews-track > div {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100vw !important;
+  min-width: 100vw !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+  padding: 0 20px !important;
+  flex-shrink: 0 !important;
+}
+.reviews-track > div > div {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 220px !important;
+  box-sizing: border-box !important;
+}
+/* Switch animation to per-slide (same as mobile) */
+.reviews-track {
+  animation: reviews-scroll-mobile 15s linear infinite !important;
+  gap: 0px !important;
+  width: max-content !important;
+}
+
+/* ── Hero section ── */
+.hero-section {
+  padding: 140px 24px 30px !important;
+  overflow: hidden !important;
+}
+.hero-text h1 { transform: translateY(0) !important; }
+.hero-text p  { transform: translateY(0) !important; }
+.hero-cards-row {
+  margin-left: 0 !important;
+  margin-top: 20px !important;
+  position: relative !important;
+}
+
+/* ── Stats ── */
+.stats-section-text {
+  padding: 40px 24px 20px !important;
+  max-width: 100% !important;
+}
+.stats-wrapper { overflow: hidden !important; }
+
+/* ── Card carousel header ── */
+.carousel-header { padding: 0 24px !important; }
+
+/* ── Blog ── */
+.blog-header {
+  padding: 0 24px !important;
+  margin-left: 0 !important;
+}
+
+/* ── FAQ ── */
+.faq-inner {
+  padding: 0 24px !important;
+  margin-right: 0 !important;
+  flex-direction: column !important;
+  gap: 32px !important;
+}
+.faq-inner > div:first-child { flex: unset !important; }
+
+/* ── Why section ── */
+.why-section { padding: 0 24px !important; }
+.why-header {
+  flex-direction: row !important;
+  gap: 90px !important;
+  margin-bottom: 28px !important;
+}
+.why-header > div:first-child {
+  flex: unset !important;
+  margin-left: 0 !important;
+}
+.why-body { flex-direction: row !important; margin-left: 0 !important; }
+.why-video-col { flex: unset !important; width: 100% !important; }
+.why-right-col  { flex: unset !important; width: 100% !important; }
+
 
         /* ── MEDIUM DESKTOP (1000px–1280px) — fix about + why overflow ── */
         @media (min-width: 1025px) and (max-width: 1280px) {
           .about-section {
             width: calc(100% - 80px) !important;
             max-width: calc(100% - 80px) !important;
-            margin-left: 40px !important;
+            margin-left: 60px !important;
             margin-right: 40px !important;
           }
           .why-header {
@@ -904,6 +1082,13 @@ export default function Home() {
           .reviews-container-wrapper { overflow: hidden !important; }
           .reviews-section { padding: 60px 30px 10px !important; }
         }
+
+        @media (min-width: 1400px) {
+  .about-section {
+  margin-left:-200px !important;
+    transform: translateX(-100px);
+  }
+}
       `}</style>
 
       {/* ───────────────── Hero Section ───────────────── */}
@@ -936,29 +1121,31 @@ export default function Home() {
           </p>
 
           {/* ── MOBILE ONLY: 2 cards + doctor in one row ── */}
-          <div className="hero-mobile-bottom-row" style={{ display: 'none' }}>
-            <div className="hero-mobile-cards-col">
+          <div  className="hero-mobile-bottom-row" style={{ display: 'none' }}>
+            <div className=" hero-mobile-cards-col">
               {/* Card 1 — Subscribe */}
               <div
-                className="rounded-2xl relative overflow-hidden flex flex-col items-center justify-end"
+                className="card1 rounded-2xl relative overflow-hidden flex flex-col items-center justify-end"
                 style={{ background: '#5c0d2a', padding: '8px', border: '1.5px solid #FFFFFF' }}
               >
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/images/cardhero.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.45, zIndex: 0 }} />
-                <div style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', borderRadius: '8px', padding: '8px 8px 12px', width: '100%', marginBottom: '10px' }}>
-                  <div style={{ position: 'absolute', bottom: '-10px', right: '0px', width: 0, height: 0, borderTop: '18px solid #F0F0F0', borderLeft: '14px solid transparent', borderRight: '2px solid transparent' }} />
+                <div  style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/images/cardhero.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.45, zIndex: 0 }} />
+                <div  className="card1p" style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', borderRadius: '8px', padding: '8px 8px 12px', width: '100%', marginBottom: '10px' }}>
+                  <div   style={{ position: 'absolute', bottom: '-10px', right: '0px', width: 0, height: 0, borderTop: '18px solid #F0F0F0', borderLeft: '14px solid transparent', borderRight: '2px solid transparent' }} />
                   <p style={{ color: '#6b1228', fontSize: '10.5px', lineHeight: 1.45, textAlign: 'center', fontFamily: "var(--font-seasons-reg)", fontWeight: 600, margin: 0 }}>
                     Abonnez-vous à<br />nos actualités et<br />mises à jour
                   </p>
                 </div>
-                <button style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', color: '#6b1228', border: 'none', padding: '4px 12px', borderRadius: '999px', fontFamily: "var(--font-seasons-reg)", fontSize: '10px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transform: 'translateY(-6px)' }}>
+                <div className="card1b">
+                <button  style={{ position: 'relative', zIndex: 1, background: '#F0F0F0', color: '#6b1228', border: 'none', padding: '4px 12px', borderRadius: '999px', fontFamily: "var(--font-seasons-reg)", fontSize: '10px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transform: 'translateY(-6px)' }}>
                   S'abonner
                 </button>
+                </div>
               </div>
 
               {/* Card 2 — Reservation */}
               <Link href="/pages/Appointment" className="block relative z-50" style={{ flex: 1, display: 'flex' }}>
                 <div
-                  className="rounded-2xl flex flex-col items-center justify-center cursor-pointer"
+                  className=" card2 rounded-2xl flex flex-col items-center justify-center cursor-pointer"
                   style={{ border: "1.5px solid #FFFFFF", background: "#898989", padding: "12px 8px", gap: "8px", position: "relative", zIndex: 50, width: '100%' }}
                 >
                   <div style={{ position: "relative", width: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -967,9 +1154,20 @@ export default function Home() {
                       +
                     </div>
                   </div>
-                  <p className="text-center" style={{ color: "#3d0a1e", fontSize: "10.5px", lineHeight: 1.35, fontFamily: "var(--font-seasons-reg)", fontWeight: 700, margin: 0 }}>
-                    Réservation en ligne instantanée
-                  </p>
+                  <p
+  className="text-center"
+  style={{
+    color: "#3d0a1e",
+    fontSize: "10.5px",
+    lineHeight: 1.35,
+    fontFamily: "var(--font-seasons-reg)",
+    fontWeight: 700,
+    margin: 0,
+  }}
+>
+  Réservation en ligne <br />
+  instantanée
+</p>
                 </div>
               </Link>
             </div>
@@ -1190,7 +1388,7 @@ export default function Home() {
           background: '#FFFFFF',
           
           overflow: 'hidden',
-          padding: '60px 79px 10px',
+          padding: '60px 92px 10px',
           position: 'relative',
         }}
       >

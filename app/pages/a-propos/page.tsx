@@ -99,7 +99,67 @@ export default function AProposPage() {
   return (
     <>
       <style>{`
+
+
         /* ──────────────────────────────────────── MOBILE (≤ 768px) ──────────────────────────────────────── */
+      @media (min-width: 426px) and (max-width: 768px) {
+
+  .hero-about-flex {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .hero-about-text {
+    text-align: left !important;
+    max-width: 55% !important;
+    margin-bottom: 0 !important;
+  }
+
+  .doctor-card-wrapper {
+    max-width: 45% !important;
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .doctor-image-container {
+    height: 360px !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+  }
+}
+      
+        @media (max-width: 360px) {
+
+
+
+  .doctor-image-container {
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .doctor-bg-card {
+    width: 100% !important;
+    max-width: 290px !important;
+  }
+
+  .doctor-image {
+    width: 200px !important;
+    transform: scale(1.1) !important;
+    margin-bottom: 46px !important;
+  }
+    .doctor-card-wrapper {
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+}
+        
         @media (max-width: 768px) {
           /* Hero Section */
           .hero-about-section {
@@ -151,10 +211,11 @@ export default function AProposPage() {
 
           .doctor-image-container {
             width: 100% !important;
-            height: 380px !important;
+            height: 370px !important;
             display: flex !important;
             align-items: flex-end !important;
             justify-content: center !important;
+           
           }
 
           .doctor-bg-card {
@@ -172,7 +233,7 @@ export default function AProposPage() {
 
           .doctor-social-icons {
             top: 100px !important;
-            right: -8px !important;
+            right: 24px !important;
             gap: 10px !important;
           }
 
@@ -182,7 +243,8 @@ export default function AProposPage() {
           }
 
           .doctor-fade-overlay {
-            width: 320px !important;
+            width: 100% !important;
+  max-width: 100% !important;
             height: 160px !important;
             bottom: -15px !important;
           }
@@ -273,9 +335,9 @@ export default function AProposPage() {
             margin-bottom: 16px !important;
           }
 
-          .specialities-grid {
-            grid-template-columns: 1fr !important;
-            gap: 26px !important;
+         .specialities-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 20px !important;
             max-width: 100% !important;
           }
 
@@ -292,39 +354,53 @@ export default function AProposPage() {
             font-size: 12px !important;
           }
 
+        
+
           .specialities-image {
-            display: none !important;
+           display:none;
           }
         }
 
-        /* ──────────────────────────────────────── TABLET (769px–1024px) ──────────────────────────────────────── */
         @media (min-width: 769px) and (max-width: 1024px) {
-          /* Hero Section */
+
+          html,
+  body {
+    overflow-x: hidden !important;
+    width: 100%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+        
+        
+        /* Hero Section */
           .hero-about-section {
             height: auto !important;
             margin-top: 130px !important;
-            padding: 50px 30px !important;
+            padding: 70px 10px !important;
+            margin-left:50px;
           }
 
           .hero-about-flex {
-            flex-direction: column !important;
+            flex-direction: row !important;
             align-items: flex-start !important;
           }
 
           .hero-about-text {
             max-width: 100% !important;
             padding: 0 !important;
-            margin-bottom: 30px !important;
+            margin-bottom: 10px !important;
           }
 
           .hero-about-text h1 {
             font-size: 28px !important;
-            line-height: 1.3 !important;
+            line-height: 1.4 !important;
             margin-bottom: 16px !important;
           }
 
           .hero-about-text p {
-            font-size: 16px !important;
+            font-size: 19px !important;
             line-height: 1.6 !important;
             margin-bottom: 12px !important;
             max-width: 100% !important;
@@ -334,7 +410,8 @@ export default function AProposPage() {
           .doctor-card-wrapper {
             width: 100% !important;
             padding: 0 !important;
-            margin-right: 0 !important;
+            
+            margin-right: 120px !important;
             margin-bottom: 20px !important;
           }
 
@@ -347,27 +424,113 @@ export default function AProposPage() {
           }
 
           .doctor-bg-card {
-            top: 30px !important;
-            width: 320px !important;
-            height: 320px !important;
-            margin-top: 50px !important;
+            top: 10px !important;
+            width: 370px !important;
+            height: 360px !important;
+            margin-top: 10px !important;
           }
 
           .doctor-image {
-            width: 280px !important;
+            width: 480px !important;
             margin-bottom: 80px !important;
             transform: scale(1.6) !important;
           }
 
           .doctor-social-icons {
-            top: 120px !important;
+            top:50px !important;
             right: 0 !important;
           }
 
           .doctor-fade-overlay {
-            width: 360px !important;
-            height: 180px !important;
-            bottom: -10px !important;
+            width: 460px !important;
+            height: 210px !important;
+            bottom: -60px !important;
+          }
+}
+
+        /* ──────────────────────────────────────── TABLET (769px–1024px) ──────────────────────────────────────── */
+        @media (min-width: 1025px) and (max-width: 1440px) {
+           html,
+  body {
+    overflow-x: hidden !important;
+    width: 100%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+        
+        
+        /* Hero Section */
+          .hero-about-section {
+            height: auto !important;
+            margin-top: 130px !important;
+            padding: 70px 60px !important;
+          }
+
+          .hero-about-flex {
+            flex-direction: row !important;
+            align-items: flex-start !important;
+          }
+
+          .hero-about-text {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin-bottom: 10px !important;
+          }
+
+          .hero-about-text h1 {
+            font-size: 35px !important;
+            line-height: 1.4 !important;
+            margin-bottom: 16px !important;
+          }
+
+          .hero-about-text p {
+            font-size: 19px !important;
+            line-height: 1.6 !important;
+            margin-bottom: 12px !important;
+            max-width: 100% !important;
+          }
+
+          /* Doctor Image Card */
+          .doctor-card-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            
+            margin-right: 120px !important;
+            margin-bottom: 20px !important;
+          }
+
+          .doctor-image-container {
+            width: 100% !important;
+            height: 340px !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+          }
+
+          .doctor-bg-card {
+            top: 10px !important;
+            width: 370px !important;
+            height: 360px !important;
+            margin-top: 10px !important;
+          }
+
+          .doctor-image {
+            width: 480px !important;
+            margin-bottom: 80px !important;
+            transform: scale(1.6) !important;
+          }
+
+          .doctor-social-icons {
+            top:50px !important;
+            right: 0 !important;
+          }
+
+          .doctor-fade-overlay {
+            width: 460px !important;
+            height: 210px !important;
+            bottom: -60px !important;
           }
 
           /* Philosophy Section */
@@ -382,13 +545,13 @@ export default function AProposPage() {
           }
 
           .philosophy-flex {
-            flex-direction: column !important;
+            flex-direction: row !important;
             gap: 16px !important;
           }
 
           .philosophy-card {
             padding: 20px !important;
-            min-height: 240px !important;
+            min-height: 20px !important;
           }
 
           .philosophy-card h3 {
@@ -465,7 +628,7 @@ export default function AProposPage() {
         >
           <div className="hero-about-flex flex items-stretch w-full h-full">
             {/* Left: text content */}
-            <div className="hero-about-text flex-1 flex flex-col justify-center px-19 py-16 pr-8 max-w-[55%]">
+            <div className="hero-about-text flex-1 flex flex-col justify-center px-19 py-16 pr-8 lg:max-w-[55%] w-full">
               {/* Small italic label */}
               <p
                 className="hero-about-text-label text-[14px] font-light mb-3"
@@ -526,13 +689,13 @@ export default function AProposPage() {
             </div>
 
             {/* Right: doctor image card — matches Figma rounded card with warm gradient bg */}
-            <div
-  className="doctor-card-wrapper relative flex-shrink-0 flex items-center justify-end"
+  <div
+  className="doctor-card-wrapper relative flex items-center justify-center w-full lg:justify-end"
   style={{
-    width: 490,
+    maxWidth: 490,
+    margin: "0 auto",
     paddingRight: "24px",
-     marginRight:"200px",
-     marginBottom:"80px"
+    boxSizing: "border-box",
   }}
 >
   {/* Outer burgundy area */}
@@ -540,7 +703,8 @@ export default function AProposPage() {
     className="doctor-image-container"
     style={{
       position: "relative",
-      width: 300,
+    width: "100%",
+maxWidth: 300,
       height: 520,
       display: "flex",
       alignItems: "flex-end",

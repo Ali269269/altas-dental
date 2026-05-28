@@ -111,7 +111,7 @@ export default function MarketingPage() {
         .mk-bot-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
         .mk-email-stats { display: flex; gap: 80px; }
         @media (max-width: 768px) {
-          .mk-page { margin-left: 200 !important; margin-top: 16px !important; padding: 0 4px !important; }
+          .mk-page { margin-left: 0px !important; margin-top: 46px !important; padding: 0 4px !important; }
           .mk-stat-row { flex-direction: column; }
           .mk-stat-card { min-width: unset !important; width: 100% !important; }
           .mk-mid-grid { grid-template-columns: 1fr !important; }
