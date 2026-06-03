@@ -1,93 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { getToken } from "@/utils/auth";
+import { apiUrl } from "@/utils/api";
+import {
+  DEFAULT_APPOINTMENTS_OVERVIEW,
+  type AppointmentsPageOverview,
+  type AppointmentListItem,
+  type PendingConfirmationItem,
+  type AppointmentDetail,
+  type CalendarEvent,
+  type WeekCalendarEvent,
+  type DayCalendarEvent,
+} from "@/utils/appointmentsData";
+import {
+  applyAppointmentSeenLocally,
+  mergeOverviewLists,
+} from "@/utils/appointmentsOverviewPatch";
+import {
+  chunkIntoGroups,
+  getCarouselSlideStyle,
+  getCarouselTrackStyle,
+  useAutoCarousel,
+} from "@/utils/carousel";
+import {
+  formatAppointmentDateLabels,
+  getTodayAnchorDate,
+} from "@/utils/appointmentDateLabels";
+import type { Patient } from "@/types/patient";
+import type { AppointmentTableRow } from "@/utils/appointmentsData";
+import { appointmentRowToPatient } from "@/utils/patientMapper";
+import { PatientDetail } from "@/components/admin/patient/PatientDetail";
+import { CheckupModal } from "@/components/admin/patient/CheckupModal";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ViewMode    = "month" | "week" | "day";
 type DisplayMode = "list" | "calendar";
 type ModalType   = "none" | "pending" | "addPatient";
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const statCards = [
-  { label:"Total Bookings Today",   value:"12", badge:"-12%", badgeType:"negative" },
-  { label:"Patients seen (Today)",  value:"7",  badge:null,   badgeType:null },
-  { label:"Patients left (Today)",  value:"4",  badge:null,   badgeType:null },
-  { label:"No See",                 value:"1",  badge:null,   badgeType:null },
-];
-
 const MONTH_DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const monthEvents: Record<string,{label:string;color:string}[]> = {
-  "1":[{label:"09:00 AM · Mike ...",    color:"gray"}],
-  "2":[{label:"10:30 AM · Sarah J...",  color:"gray"},{label:"02:00 PM · David ...",color:"gray"}],
-  "3":[{label:"Surgery: Emma W...",     color:"red"}],
-  "4":[{label:"11:45 AM · Lunch ...",   color:"red"},{label:"04:00 PM · Rober...",color:"red"}],
-  "8":[{label:"08:00 AM · Chec...",     color:"gray"}],
-  "10":[{label:"10:00 AM · Sarah ...",  color:"#591727"},{label:"11:00 AM · Paul A...",color:"#591727"}],
-  "17":[{label:"10:00 AM · Sarah ...",  color:"#gray"}],
-};
-const MARCH_OFFSET     = 6;
-const MARCH_DAYS_COUNT = 31;
 
-const WEEK_TIMES = ["08:00","10:00","12:00","02:00","04:00","06:00"];
-const WEEK_DAYS  = [
-  {label:"Mon",date:"07"},{label:"Tue",date:"08"},{label:"Wed",date:"09"},
-  {label:"Thu",date:"10"},{label:"Fri",date:"11"},{label:"Sat",date:"12"},{label:"Sun",date:"13"},
-];
-const weekEvents:{day:number;time:string;label:string;color:string}[] = [
-  {day:1,time:"08:00",label:"08:00 AM · Chec...",            color:"blue"},
-  {day:1,time:"10:00",label:"10:00 AM · Sarah ...",          color:"blue"},
-  {day:1,time:"10:00",label:"11:00 AM · Paul A...",          color:"blue"},
-  {day:3,time:"12:00",label:"12:00 PM · Surgery: Emma W...", color:"red"},
-  {day:3,time:"02:00",label:"03:00 PM · Surgery: Emma W...", color:"red"},
-  {day:4,time:"02:00",label:"02:00 PM · Surgery: Emma W...", color:"gold"},
-  {day:1,time:"06:00",label:"06:00 PM · Paul A...",          color:"blue"},
-];
+function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
-const DAY_TIMES_FULL = [
-  "08:00 AM","09:00 AM","10:00 AM","11:00 AM","12:00 PM",
-  "01:00 PM","02:00 PM","03:00 PM","04:00 PM","05:00 PM","06:00 PM",
-];
-const dayEvents = [
-  {time:"09:00 AM",label:"PARODONTOLOGIE",                    name:"Eleanor Shellstrop", color:"blue"},
-  {time:"09:30 AM",label:"ALIGNEURS",                         name:"Chidi Anagonye",     color:"gold"},
-  {time:"10:00 AM",label:"COMPLEX SURGERY",                   name:"Jason Mendoza",      color:"red"},
-  {time:"01:30 PM",label:"Réhabilitation totale du sourire",  name:"Tahani Al Jamil",    color:"green"},
-  {time:"04:00 PM",label:"Orthodontic Review",                name:"Janet Dell Tebatso", color:"blue"},
-];
-const nextUp = {date:"OCT 24",name:"Janet D.",detail:"Consultation · 4:00 PM"};
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
 
-const upcomingAppointments = [
-  {time:"10:45",period:"AM",name:"Robert T. Chen",   type:"Wisdom Tooth Extraction",  status:"CONFIRMED"},
-  {time:"02:15",period:"PM",name:"Elena Rodriguez",  type:"Teeth Whitening",           status:"CONFIRMED"},
-  {time:"04:00",period:"PM",name:"Marcous Aurelius", type:"Emergency Consultation",    status:"CANCELLED"},
-];
-const patientsSeen = [
-  {time:"10:45",period:"AM",name:"Robert T. Chen",   type:"Wisdom Tooth Extraction",  status:"SEEN"},
-  {time:"02:15",period:"PM",name:"Elena Rodriguez",  type:"Teeth Whitening",           status:"SEEN"},
-  {time:"04:00",period:"PM",name:"Marcous Aurelius", type:"Emergency Consultation",    status:"SEEN"},
-];
-
-const allAppointments = [
-  {name:"Eleanor Vance",    id:"#PV-4492",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 02, 10:30 AM",status:"ACTIVE"},
-  {name:"Theodore Finch",   id:"#PV-5723",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 02, 1:00 PM", status:"PENDING"},
-  {name:"Dorian Gray",      id:"#PV-2684",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 12, 3:30 PM", status:"PENDING"},
-  {name:"Holly Golightly",  id:"#PV-5839",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 23, 4:00 PM", status:"PENDING"},
-  {name:"Elizabeth Bennet", id:"#PV-7510",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 24, 10:00 AM",status:"PENDING"},
-  {name:"Fitzwilliam Darcy",id:"#PV-8921",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 29, 11:30 AM",status:"PENDING"},
-  {name:"Sherlock Holmes",  id:"#PV-9864",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 30, 1:45 PM", status:"PENDING"},
-  {name:"Sherlock Holmes",  id:"#PV-9864",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 30, 1:45 PM", status:"PENDING"},
-  {name:"Sherlock Holmes",  id:"#PV-9864",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 30, 1:45 PM", status:"PENDING"},
-  {name:"Sherlock Holmes",  id:"#PV-9864",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 30, 1:45 PM", status:"PENDING"},
-  {name:"Sherlock Holmes",  id:"#PV-9864",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 30, 1:45 PM", status:"PENDING"},
-  {name:"Sherlock Holmes",  id:"#PV-9864",email:"eleanorvance@gmail.com",  phone:"+971 00 000 0000",specialty:"Aligneurs",lastVisit:"Oct 12, 2023",nextAppt:"Mar 30, 1:45 PM", status:"PENDING"},
-];
-
-const pendingConfirmations = [
-  {name:"Lucy Van Pelt",      service:"Aligneurs",  date:"Oct 28",timeAgo:"2h ago",   time:"8:30 AM"},
-  {name:"Franklin Armstrong", service:"Endodontie", date:"Oct 30",timeAgo:"4h ago",   time:"4:00 PM"},
-  {name:"Franklin Armstrong", service:"Endodontie", date:"Oct 30",timeAgo:"Yesterday",time:"10:30 AM"},
-];
+function shiftAnchorDate(anchor: string, viewMode: ViewMode, direction: -1 | 1): string {
+  const [y, m, d] = anchor.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (viewMode === "month") {
+    date.setMonth(date.getMonth() + direction);
+    date.setDate(1);
+  } else if (viewMode === "week") {
+    date.setDate(date.getDate() + direction * 7);
+  } else {
+    date.setDate(date.getDate() + direction);
+  }
+  return toDateKey(date);
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function statusStyle(status:string){
@@ -127,9 +108,12 @@ type AddForm = { name:string; email:string; phone:string; specialty:string; date
 interface PendingModalProps {
   isDark:boolean; card:string; cardBorder:string; text1:string; text2:string;
   pageBg:string; cardInner:string; inputBg:string; inputBorder:string;
+  pendingConfirmations: PendingConfirmationItem[];
+  onConfirm:(id:string)=>void;
+  onCancel:(id:string)=>void;
   onClose:()=>void;
 }
-function PendingModal({ isDark,card,cardBorder,text1,text2,pageBg,cardInner,onClose }:PendingModalProps){
+function PendingModal({ isDark,card,cardBorder,text1,text2,pageBg,cardInner,pendingConfirmations,onConfirm,onCancel,onClose }:PendingModalProps){
   return(
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/40" onClick={onClose}/>
@@ -152,8 +136,8 @@ function PendingModal({ isDark,card,cardBorder,text1,text2,pageBg,cardInner,onCl
           {pendingConfirmations.length} Appointments need confirmation
         </div>
         <div className="flex flex-col gap-4">
-          {pendingConfirmations.map((p,i)=>(
-            <div key={i} className={`rounded-2xl p-4 sm:p-5 border ${cardBorder}`} style={{backgroundColor:card}}>
+          {pendingConfirmations.map((p)=>(
+            <div key={p.id} className={`rounded-2xl p-4 sm:p-5 border ${cardBorder}`} style={{backgroundColor:card}}>
               <div className="flex items-center justify-between mb-1 gap-2">
                 <span className="text-base font-semibold truncate" style={{color:isDark?"#711C31":"#7A3048"}}>{p.name}</span>
                 <span className="text-xs shrink-0" style={{color:text2}}>{p.timeAgo}</span>
@@ -161,12 +145,205 @@ function PendingModal({ isDark,card,cardBorder,text1,text2,pageBg,cardInner,onCl
               <p className="text-sm mb-1" style={{color:text2}}>{p.service} · {p.date}</p>
               <p className="text-xs mb-4 flex items-center gap-1" style={{color:text2}}><span>⏰</span>{p.time}</p>
               <div className="flex gap-3">
-                <button className="px-5 py-2 rounded-xl text-sm font-semibold text-white" style={{backgroundColor:"#591727"}}>Call</button>
-                <button className={`px-5 py-2 rounded-xl text-sm font-semibold border`}
+                <button type="button" onClick={()=>onCancel(p.id)}
+                  className="px-5 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{backgroundColor:"#8B1A2E"}}>Cancel</button>
+                <button type="button" onClick={()=>onConfirm(p.id)}
+                  className={`px-5 py-2 rounded-xl text-sm font-semibold border`}
                   style={{borderColor:"#591727",color:isDark?"#591727":"#3D0A1F"}}>Confirm</button>
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Appointment Detail Modal ──────────────────────────────────────────────────
+interface AppointmentDetailModalProps {
+  isDark: boolean;
+  card: string;
+  cardBorder: string;
+  text1: string;
+  text2: string;
+  pageBg: string;
+  inputBg: string;
+  inputBorder: string;
+  appointment: AppointmentDetail;
+  loading: boolean;
+  actionLoading: boolean;
+  showCancelForm: boolean;
+  cancelReason: string;
+  onCancelReasonChange: (value: string) => void;
+  onShowCancelForm: () => void;
+  onHideCancelForm: () => void;
+  onConfirm: () => void;
+  onCancelSubmit: () => void;
+  onClose: () => void;
+}
+
+function AppointmentDetailModal({
+  isDark,
+  card,
+  cardBorder,
+  text1,
+  text2,
+  pageBg,
+  inputBg,
+  inputBorder,
+  appointment,
+  loading,
+  actionLoading,
+  showCancelForm,
+  cancelReason,
+  onCancelReasonChange,
+  onShowCancelForm,
+  onHideCancelForm,
+  onConfirm,
+  onCancelSubmit,
+  onClose,
+}: AppointmentDetailModalProps) {
+  const canConfirm = ["NEW", "PENDING"].includes(appointment.status);
+  const canCancel = appointment.status !== "CANCELLED" && appointment.status !== "SEEN";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        className={`relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border p-5 sm:p-6 ${cardBorder}`}
+        style={{ backgroundColor: pageBg }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold" style={{ color: isDark ? "#ffffff" : "#591727" }}>
+              Appointment Details
+            </h2>
+            <span className={`inline-block mt-2 ${statusStyle(appointment.status)}`}>{appointment.status}</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-lg border shrink-0"
+            style={{ borderColor: isDark ? "#5C2A3A" : "#D9C9A8", color: text1 }}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="text-sm py-8 text-center" style={{ color: text2 }}>Loading appointment...</p>
+        ) : (
+          <div className={`rounded-2xl border p-4 sm:p-5 ${cardBorder} flex flex-col gap-3`} style={{ backgroundColor: card }}>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Patient</p>
+              <p className="text-base font-semibold" style={{ color: text1 }}>{appointment.patientName}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Email</p>
+                <p className="text-sm break-all" style={{ color: text1 }}>{appointment.email}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Phone</p>
+                <p className="text-sm" style={{ color: text1 }}>{appointment.phone}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Speciality</p>
+              <p className="text-sm" style={{ color: text1 }}>{appointment.specialty}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Date</p>
+                <p className="text-sm" style={{ color: text1 }}>{appointment.appointmentDateLabel}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Time</p>
+                <p className="text-sm" style={{ color: text1 }}>{appointment.appointmentTime}</p>
+              </div>
+            </div>
+            {appointment.notes ? (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Notes</p>
+                <p className="text-sm whitespace-pre-wrap" style={{ color: text1 }}>{appointment.notes}</p>
+              </div>
+            ) : null}
+            {appointment.cancellationReason ? (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Cancellation reason</p>
+                <p className="text-sm" style={{ color: text1 }}>{appointment.cancellationReason}</p>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {showCancelForm && canCancel && (
+          <div className="mt-4">
+            <label className="text-[11px] font-semibold tracking-wider uppercase mb-2 block" style={{ color: text2 }}>
+              Cancellation reason (sent to patient by email)
+            </label>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => onCancelReasonChange(e.target.value)}
+              rows={3}
+              placeholder="Explain why this appointment is cancelled..."
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none border resize-none"
+              style={{ backgroundColor: inputBg, borderColor: inputBorder, color: text1 }}
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-5">
+          {showCancelForm ? (
+            <>
+              <button
+                type="button"
+                onClick={onHideCancelForm}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border"
+                style={{ borderColor: isDark ? "#5C2A3A" : "#3D0A1F", color: text1 }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={onCancelSubmit}
+                disabled={actionLoading || !cancelReason.trim()}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                style={{ backgroundColor: "#8B1A2E" }}
+              >
+                {actionLoading ? "Cancelling..." : "Confirm cancellation"}
+              </button>
+            </>
+          ) : (
+            <>
+              {canCancel && (
+                <button
+                  type="button"
+                  onClick={onShowCancelForm}
+                  disabled={actionLoading || loading}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                  style={{ backgroundColor: "#8B1A2E" }}
+                >
+                  Cancel appointment
+                </button>
+              )}
+              {canConfirm && (
+                <button
+                  type="button"
+                  onClick={onConfirm}
+                  disabled={actionLoading || loading}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border disabled:opacity-60"
+                  style={{ borderColor: "#591727", color: isDark ? "#591727" : "#3D0A1F" }}
+                >
+                  {actionLoading ? "Confirming..." : "Confirm appointment"}
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -178,9 +355,12 @@ interface AddPatientModalProps {
   isDark:boolean; card:string; cardBorder:string; text1:string; text2:string;
   pageBg:string; inputBg:string; inputBorder:string;
   addForm:AddForm; setAddForm:React.Dispatch<React.SetStateAction<AddForm>>;
+  booking:boolean;
+  onBook:()=>void;
   onClose:()=>void;
 }
-function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inputBorder,addForm,setAddForm,onClose}:AddPatientModalProps){
+function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inputBorder,addForm,setAddForm,booking,onBook,onClose}:AddPatientModalProps){
+  const minAppointmentDate = getTodayAnchorDate();
   const fields = [
     {label:"👤 PATIENT NAME",  key:"name",    type:"text",  ph:"Enter Name"},
     {label:"✉️ EMAIL ADDRESS", key:"email",   type:"email", ph:"Enter Email"},
@@ -234,10 +414,18 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
                   style={{color:isDark?"#591727":"#7A6040"}}>
                   <span style={{color:"#591727"}}>📅</span> SELECT DATE
                 </label>
-                <input type="date" value={addForm.date}
-                  onChange={e=>setAddForm(prev=>({...prev,date:e.target.value}))}
+                <input
+                  type="date"
+                  value={addForm.date}
+                  min={minAppointmentDate}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    if (next && next < minAppointmentDate) return;
+                    setAddForm((prev) => ({ ...prev, date: next }));
+                  }}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none border"
-                  style={{backgroundColor:inputBg,borderColor:inputBorder,color:text1}}/>
+                  style={{ backgroundColor: inputBg, borderColor: inputBorder, color: text1 }}
+                />
               </div>
               <div>
                 <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase mb-2"
@@ -270,9 +458,10 @@ function AddPatientModal({isDark,card,cardBorder,text1,text2,pageBg,inputBg,inpu
               style={{borderColor:isDark?"#5C2A3A":"#3D0A1F",color:text1}}>
               Discard Changes
             </button>
-            <button className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+            <button type="button" disabled={booking} onClick={onBook}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
               style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>
-              Book Appointment
+              {booking ? "Booking..." : "Book Appointment"}
             </button>
           </div>
         </div>
@@ -290,10 +479,477 @@ export default function AppointmentsPage(){
   const [displayMode,setDisplayMode]= useState<DisplayMode>("calendar");
   const [modal,      setModal]      = useState<ModalType>("none");
   const [addForm,    setAddForm]    = useState<AddForm>({name:"",email:"",phone:"",specialty:"",date:"",time:"",notes:""});
+  const [booking,    setBooking]    = useState(false);
+  const todayAnchor = getTodayAnchorDate();
+  const [data,       setData]       = useState<AppointmentsPageOverview>(() => ({
+    ...DEFAULT_APPOINTMENTS_OVERVIEW,
+    anchorDate: todayAnchor,
+    dateLabels: formatAppointmentDateLabels(todayAnchor),
+  }));
+  const [anchorDate, setAnchorDate] = useState(todayAnchor);
+  const [listPage,   setListPage]   = useState(1);
+  const [search,     setSearch]     = useState("");
+  const [searchInput,setSearchInput]= useState("");
+  const [statusFilter,setStatusFilter]= useState("ALL");
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const datePickerRef = useRef<HTMLInputElement | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [checkupPatient, setCheckupPatient] = useState<Patient | null>(null);
+  const [checkupAppointmentId, setCheckupAppointmentId] = useState<string | null>(null);
+  const [patientHistoryByAppointment, setPatientHistoryByAppointment] = useState<
+    Record<string, Patient["historyEntries"]>
+  >({});
+  const [appointmentDetailId, setAppointmentDetailId] = useState<string | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDetail | null>(null);
+  const [appointmentDetailLoading, setAppointmentDetailLoading] = useState(false);
+  const [appointmentActionLoading, setAppointmentActionLoading] = useState(false);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
-  const currentMonth = "March 2026";
-  const currentWeek  = "March 7-13, 2026";
-  const currentDay   = "March 7, 2026";
+  const buildPatientFromRow = useCallback(
+    (row: AppointmentTableRow): Patient =>
+      appointmentRowToPatient(row, {
+        historyEntries: patientHistoryByAppointment[row.id] ?? [],
+      }),
+    [patientHistoryByAppointment]
+  );
+
+  const overviewQueryPayload = useCallback(
+    () => ({
+      date: anchorDate,
+      view: viewMode,
+      page: listPage,
+      limit: 12,
+      search: search || undefined,
+      status: statusFilter !== "ALL" ? statusFilter : undefined,
+    }),
+    [anchorDate, viewMode, listPage, search, statusFilter]
+  );
+
+  const fetchOverview = useCallback(async (): Promise<boolean> => {
+    if (!getToken()) return false;
+
+    try {
+      const params = new URLSearchParams({
+        date: anchorDate,
+        view: viewMode,
+        page: String(listPage),
+        limit: "12",
+      });
+      if (search) params.set("search", search);
+      if (statusFilter && statusFilter !== "ALL") params.set("status", statusFilter);
+
+      const response = await fetch(
+        apiUrl(`/api/statistics/appointments-overview?${params.toString()}`),
+        { headers: authHeaders() }
+      );
+
+      if (response.ok) {
+        const json = await response.json();
+        if (json.data) {
+          setData({
+            statCards: json.data.statCards ?? DEFAULT_APPOINTMENTS_OVERVIEW.statCards,
+            pendingConfirmations: json.data.pendingConfirmations ?? [],
+            dateLabels: json.data.dateLabels ?? DEFAULT_APPOINTMENTS_OVERVIEW.dateLabels,
+            anchorDate: json.data.anchorDate ?? anchorDate,
+            monthCalendar: json.data.monthCalendar ?? DEFAULT_APPOINTMENTS_OVERVIEW.monthCalendar,
+            weekCalendar: json.data.weekCalendar ?? DEFAULT_APPOINTMENTS_OVERVIEW.weekCalendar,
+            dayCalendar: json.data.dayCalendar ?? DEFAULT_APPOINTMENTS_OVERVIEW.dayCalendar,
+            upcomingAppointments: json.data.upcomingAppointments ?? [],
+            patientsSeen: json.data.patientsSeen ?? [],
+            calendarAppointments: json.data.calendarAppointments ?? [],
+            allAppointments: json.data.allAppointments ?? [],
+            pagination: json.data.pagination ?? DEFAULT_APPOINTMENTS_OVERVIEW.pagination,
+          });
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch appointments overview:", error);
+    }
+    return false;
+  }, [anchorDate, viewMode, listPage, search, statusFilter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimer: number | null = null;
+
+    const load = async () => {
+      if (cancelled) return;
+      const ok = await fetchOverview();
+      if (!cancelled && !ok && !getToken()) {
+        retryTimer = window.setTimeout(load, 250);
+      }
+    };
+
+    load();
+    const intervalId = window.setInterval(load, 5000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchOverview]);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+      setListPage(1);
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchInput]);
+
+  const closeAppointmentDetail = () => {
+    setAppointmentDetailId(null);
+    setSelectedAppointment(null);
+    setShowCancelForm(false);
+    setCancelReason("");
+    setAppointmentDetailLoading(false);
+    setAppointmentActionLoading(false);
+  };
+
+  const normalizeCalendarKey = (s: string) =>
+    s.trim().toLowerCase().replace(/\s+/g, " ");
+
+  const calendarIdLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const ref of data.calendarAppointments ?? []) {
+      const time = normalizeCalendarKey(ref.appointmentTime);
+      const name = normalizeCalendarKey(ref.patientName);
+      map.set(`${ref.day}|${time}|${name}`, ref.id);
+      map.set(`date:${ref.appointmentDate}|${time}|${name}`, ref.id);
+    }
+    return map;
+  }, [data.calendarAppointments]);
+
+  const resolveCalendarEventId = useCallback(
+    (
+      ev: CalendarEvent,
+      opts?: { day?: number | null; date?: string }
+    ): string | null => {
+      if (ev.appointmentId) return ev.appointmentId;
+
+      const timeKey = normalizeCalendarKey(ev.time || "");
+      let nameKey = normalizeCalendarKey(ev.patientName || "");
+
+      if (!nameKey && ev.label) {
+        const parts = ev.label.split("·").map((p) => p.trim());
+        if (parts.length >= 2) nameKey = normalizeCalendarKey(parts[1]);
+      }
+
+      if (opts?.date && timeKey && nameKey) {
+        const byDate = calendarIdLookup.get(`date:${opts.date}|${timeKey}|${nameKey}`);
+        if (byDate) return byDate;
+      }
+
+      if (opts?.day != null && timeKey && nameKey) {
+        const byDay = calendarIdLookup.get(`${String(opts.day)}|${timeKey}|${nameKey}`);
+        if (byDay) return byDay;
+      }
+
+      if (ev.label) {
+        const parts = ev.label.split("·").map((p) => p.trim());
+        if (parts.length >= 2) {
+          const t = normalizeCalendarKey(parts[0]);
+          const n = normalizeCalendarKey(parts[1]);
+          if (opts?.day != null) {
+            const hit = calendarIdLookup.get(`${String(opts.day)}|${t}|${n}`);
+            if (hit) return hit;
+          }
+          if (opts?.date) {
+            const hit = calendarIdLookup.get(`date:${opts.date}|${t}|${n}`);
+            if (hit) return hit;
+          }
+        }
+      }
+
+      return null;
+    },
+    [calendarIdLookup]
+  );
+
+  const openAppointmentDetail = useCallback(async (id: string, options?: { showCancelForm?: boolean }) => {
+    if (!getToken()) return;
+    setAppointmentDetailId(id);
+    setSelectedAppointment(null);
+    setShowCancelForm(Boolean(options?.showCancelForm));
+    setCancelReason("");
+    setAppointmentDetailLoading(true);
+
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${id}`), {
+        headers: authHeaders(),
+      });
+      if (response.ok) {
+        const json = await response.json();
+        if (json.data) setSelectedAppointment(json.data as AppointmentDetail);
+      }
+    } catch (error) {
+      console.error("Failed to load appointment:", error);
+    } finally {
+      setAppointmentDetailLoading(false);
+    }
+  }, []);
+
+  const handleCalendarEventClick = useCallback(
+    (ev: CalendarEvent, opts?: { day?: number | null; date?: string }) => {
+      const id = resolveCalendarEventId(ev, opts);
+      if (id) {
+        openAppointmentDetail(id);
+        return;
+      }
+      console.warn("Could not open appointment for calendar event:", ev);
+    },
+    [resolveCalendarEventId, openAppointmentDetail]
+  );
+
+  const handleDeleteAppointment = (row: AppointmentTableRow) => {
+    openAppointmentDetail(row.id, { showCancelForm: true });
+  };
+
+  const handleViewPatient = (row: AppointmentTableRow) => {
+    setSelectedPatient(buildPatientFromRow(row));
+  };
+
+  const handleAddCheckup = (row: AppointmentTableRow) => {
+    setCheckupAppointmentId(row.id);
+    setCheckupPatient(buildPatientFromRow(row));
+  };
+
+  const updateAppointmentStatus = async (
+    id: string,
+    status: string,
+    cancellationReason?: string
+  ) => {
+    const normalized = status.toUpperCase() === "COMPLETED" ? "SEEN" : status.toUpperCase();
+    const body: { status: string; cancellationReason?: string } = { status: normalized };
+    if (normalized === "CANCELLED") {
+      const reason = cancellationReason?.trim();
+      if (!reason) {
+        window.alert("Please provide a cancellation reason.");
+        return false;
+      }
+      body.cancellationReason = reason;
+    }
+
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${id}`), {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        window.alert(err.message || "Failed to update appointment.");
+        return false;
+      }
+
+      const json = await response.json();
+      const listItem = json.data?.listItem as AppointmentListItem | undefined;
+      const detail = json.data?.detail as AppointmentDetail | undefined;
+
+      if (detail) setSelectedAppointment(detail);
+
+      if (normalized === "SEEN" && listItem) {
+        setData((prev) =>
+          applyAppointmentSeenLocally(prev, id, { ...listItem, status: "SEEN" })
+        );
+        return true;
+      }
+
+      await fetchOverview();
+      return true;
+    } catch (error) {
+      console.error("Failed to update appointment:", error);
+      return false;
+    }
+  };
+
+  const handleSaveCheckup = async (entry: Patient["historyEntries"][0]) => {
+    if (!checkupAppointmentId) return;
+    const appointmentId = checkupAppointmentId;
+
+    setData((prev) => {
+      const fromUpcoming = prev.upcomingAppointments.find(
+        (a) => a.id === appointmentId
+      );
+      if (!fromUpcoming) return prev;
+      return applyAppointmentSeenLocally(prev, appointmentId, {
+        ...fromUpcoming,
+        status: "SEEN",
+      });
+    });
+
+    setPatientHistoryByAppointment((prev) => ({
+      ...prev,
+      [appointmentId]: [entry, ...(prev[appointmentId] ?? [])],
+    }));
+    if (selectedPatient) {
+      setSelectedPatient((prev) =>
+        prev
+          ? {
+              ...prev,
+              historyEntries: [entry, ...(prev.historyEntries ?? [])],
+              status: "COMPLETED",
+              upcomingStatus: "COMPLETED",
+            }
+          : prev
+      );
+    }
+
+    try {
+      const response = await fetch(
+        apiUrl(`/api/statistics/appointments/${appointmentId}/checkup`),
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            complaint: entry.complaint,
+            clinicalObs: entry.clinicalObs,
+            diagnostics: entry.diagnostics,
+            treatment: entry.treatment,
+            ...overviewQueryPayload(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Failed to save checkup");
+        return;
+      }
+
+      const json = await response.json();
+      const listItem = json.data?.listItem as AppointmentListItem | undefined;
+
+      if (json.data?.overview) {
+        setData((prev) => mergeOverviewLists(prev, json.data.overview));
+      } else if (listItem) {
+        setData((prev) =>
+          applyAppointmentSeenLocally(prev, appointmentId, {
+            ...listItem,
+            status: "SEEN",
+          })
+        );
+      }
+
+      setCheckupPatient(null);
+      setCheckupAppointmentId(null);
+    } catch (error) {
+      console.error("Failed to save checkup:", error);
+    }
+  };
+
+  const handleConfirmPending = async (id: string) => {
+    setAppointmentActionLoading(true);
+    const ok = await updateAppointmentStatus(id, "CONFIRMED");
+    setAppointmentActionLoading(false);
+    if (ok) {
+      setModal("none");
+      closeAppointmentDetail();
+    }
+  };
+
+  const handleCancelPending = (id: string) => {
+    setModal("none");
+    openAppointmentDetail(id, { showCancelForm: true });
+  };
+
+  const handleConfirmFromDetail = async () => {
+    if (!selectedAppointment) return;
+    setAppointmentActionLoading(true);
+    const ok = await updateAppointmentStatus(selectedAppointment.id, "CONFIRMED");
+    setAppointmentActionLoading(false);
+    if (ok) closeAppointmentDetail();
+  };
+
+  const handleCancelFromDetail = async () => {
+    if (!selectedAppointment) return;
+    setAppointmentActionLoading(true);
+    const ok = await updateAppointmentStatus(
+      selectedAppointment.id,
+      "CANCELLED",
+      cancelReason
+    );
+    setAppointmentActionLoading(false);
+    if (ok) closeAppointmentDetail();
+  };
+
+  const handleBookAppointment = async () => {
+    if (!addForm.name || !addForm.email || !addForm.phone || !addForm.specialty || !addForm.date || !addForm.time) {
+      return;
+    }
+    setBooking(true);
+    try {
+      const response = await fetch(apiUrl("/api/statistics/appointments"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientName: addForm.name,
+          email: addForm.email,
+          phone: addForm.phone,
+          specialty: addForm.specialty,
+          appointmentDate: addForm.date,
+          appointmentTime: addForm.time,
+          notes: addForm.notes,
+          isNewPatient: true,
+        }),
+      });
+      if (response.ok) {
+        setModal("none");
+        setAddForm({ name:"", email:"", phone:"", specialty:"", date:"", time:"", notes:"" });
+        await fetchOverview();
+      }
+    } catch (error) {
+      console.error("Failed to book appointment:", error);
+    } finally {
+      setBooking(false);
+    }
+  };
+
+  const navigateDate = (direction: -1 | 1) => {
+    setAnchorDate((prev) => shiftAnchorDate(prev, viewMode, direction));
+  };
+
+  const openDatePicker = () => {
+    const picker = datePickerRef.current;
+    if (!picker) return;
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+    } else {
+      picker.click();
+    }
+  };
+
+  const statCards = data.statCards;
+  const pendingConfirmations = data.pendingConfirmations;
+  const upcomingAppointments = data.upcomingAppointments;
+  const patientsSeen = data.patientsSeen;
+  const allAppointments = data.allAppointments;
+  const { pagination } = data;
+  const clientDateLabels = formatAppointmentDateLabels(anchorDate);
+  const upcomingGroups = chunkIntoGroups(upcomingAppointments, 3);
+  const seenGroups = chunkIntoGroups(patientsSeen, 3);
+  const carouselEnabled = displayMode === "calendar";
+  const upcomingCarousel = useAutoCarousel(
+    upcomingGroups.length,
+    4000,
+    carouselEnabled
+  );
+  const seenCarousel = useAutoCarousel(
+    seenGroups.length,
+    4000,
+    carouselEnabled
+  );
+
+  const currentMonth = data.dateLabels.month || clientDateLabels.month;
+  const currentWeek  = data.dateLabels.week || clientDateLabels.week;
+  const currentDay   = data.dateLabels.day || clientDateLabels.day;
 
   // Color tokens
   const card        = isDark ? "#c9a898" : "#f0f0f0";
@@ -310,9 +966,27 @@ export default function AppointmentsPage(){
   const dateTop    = viewMode==="week"?"WEEK":viewMode==="day"?"TODAY":"MONTH";
   const dateBottom = viewMode==="month"?currentMonth:viewMode==="week"?currentWeek:currentDay;
 
+  if (selectedPatient) {
+    return (
+      <PatientDetail
+        patient={selectedPatient}
+        onBack={() => setSelectedPatient(null)}
+        isDark={isDark}
+        card={card}
+        cardBorder={cardBorder}
+        cardInner={cardInner}
+        text1={text1}
+        text2={text2}
+        pageBg={pageBg}
+        sectionLabel="APPOINTMENTS"
+      />
+    );
+  }
+
   // ── Calendar renderers ────────────────────────────────────────────────────
   function renderMonthCalendar(){
-    const cells:(number|null)[]=[...Array(MARCH_OFFSET).fill(null),...Array.from({length:MARCH_DAYS_COUNT},(_,i)=>i+1)];
+    const { offset, daysInMonth, today, events } = data.monthCalendar;
+    const cells:(number|null)[]=[...Array(offset).fill(null),...Array.from({length:daysInMonth},(_,i)=>i+1)];
     while(cells.length%7!==0)cells.push(null);
     const weeks:(number|null)[][]=[];
     for(let i=0;i<cells.length;i+=7)weeks.push(cells.slice(i,i+7));
@@ -326,8 +1000,8 @@ export default function AppointmentsPage(){
             {weeks.map((week,wi)=>(
               <div key={wi} className="grid grid-cols-7 gap-px">
                 {week.map((day,di)=>{
-                  const events=day?(monthEvents[String(day)]||[]):[];
-                  const isToday=day===4;
+                  const dayEvents=day?(events[String(day)]||[]):[];
+                  const isToday=day!==null&&today!==null&&day===today;
                   return(
                     <div key={di} className={`min-h-[70px] sm:min-h-[80px] p-1 sm:p-1.5 rounded-lg border transition-colors ${cardBorder}`}
                       style={{backgroundColor:day?cardInner:"transparent"}}>
@@ -338,8 +1012,19 @@ export default function AppointmentsPage(){
                             {day}
                           </div>
                           <div className="flex flex-col gap-0.5">
-                            {events.map((ev,ei)=>(
-                              <div key={ei} className={`text-[10px] sm:text-[12px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)}`}>{ev.label}</div>
+                            {dayEvents.map((ev: CalendarEvent, ei)=>(
+                              <button
+                                key={ev.appointmentId || `${day}-${ei}-${ev.label}`}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCalendarEventClick(ev, { day: day ?? undefined });
+                                }}
+                                className={`text-left w-full cursor-pointer text-[10px] sm:text-[11px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)} hover:opacity-90 hover:ring-1 hover:ring-[#591727]/40`}
+                                title={`${ev.patientName || ""} — ${ev.status || ""}`}
+                              >
+                                {ev.label || `${ev.time} · ${ev.patientName}`}
+                              </button>
                             ))}
                           </div>
                         </>
@@ -356,28 +1041,40 @@ export default function AppointmentsPage(){
   }
 
   function renderWeekCalendar(){
+    const { days: weekDays, timeSlots: weekTimes, events: weekEvents } = data.weekCalendar;
     return(
       <div className="overflow-x-auto">
         <div className="min-w-[500px]">
           <div className="grid grid-cols-[50px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] gap-px mb-1">
             <div/>
-            {WEEK_DAYS.map(d=>(
-              <div key={d.date} className="text-center py-2 numeric-font">
+            {weekDays.map(d=>(
+              <div key={d.fullDate} className="text-center py-2 numeric-font">
                 <div className="text-[11px]" style={{color:text2}}>{d.label}</div>
                 <div className="text-base font-bold" style={{color:text1}}>{d.date}</div>
               </div>
             ))}
           </div>
           <div>
-            {WEEK_TIMES.map(t=>(
+            {weekTimes.map(t=>(
               <div key={t} className="grid grid-cols-[50px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] gap-px min-h-[70px] numeric-font">
                 <div className="text-[11px] pt-1 pr-2 text-right" style={{color:text2}}>{t}</div>
-                {WEEK_DAYS.map((_,di)=>{
-                  const evs=weekEvents.filter(e=>e.day===di&&e.time===t);
+                {weekDays.map((wd,di)=>{
+                  const evs=weekEvents.filter(e=>e.day===di&&e.gridSlot===t);
                   return(
                     <div key={di} className={`border-t ${cardBorder} p-1 flex flex-col gap-0.5`}>
-                      {evs.map((ev,ei)=>(
-                        <div key={ei} className={`text-[10px] sm:text-[12px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)}`}>{ev.label}</div>
+                      {evs.map((ev: WeekCalendarEvent, ei)=>(
+                        <button
+                          key={ev.appointmentId || `${di}-${ei}-${ev.label}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCalendarEventClick(ev, { date: wd.fullDate });
+                          }}
+                          className={`text-left w-full cursor-pointer text-[10px] sm:text-[11px] px-1 py-0.5 rounded truncate ${eventColor(ev.color)} hover:opacity-90 hover:ring-1 hover:ring-[#591727]/40`}
+                          title={`${ev.patientName || ""} — ${ev.status || ""}`}
+                        >
+                          {ev.label || `${ev.time} · ${ev.patientName}`}
+                        </button>
                       ))}
                     </div>
                   );
@@ -391,6 +1088,7 @@ export default function AppointmentsPage(){
   }
 
   function renderDayCalendar(){
+    const { dayNumber, dayName, monthLabel, timeSlots, events: dayEvents, nextUp } = data.dayCalendar;
     return(
       /* On mobile stack vertically; on sm+ side-by-side */
       <div className="flex flex-col sm:flex-row gap-4">
@@ -398,13 +1096,13 @@ export default function AppointmentsPage(){
           <div className="text-center mb-4">
             <div className="inline-flex flex-col items-center justify-center w-14 h-14 rounded-full"
               style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>
-              <span className="text-2xl font-bold text-white numeric-font">07</span>
+              <span className="text-2xl font-bold text-white numeric-font">{dayNumber}</span>
             </div>
-            <div className="text-lg font-bold mt-1" style={{color:text1}}>Monday</div>
-            <div className="text-xs" style={{color:text2}}>MARCH 2026</div>
+            <div className="text-lg font-bold mt-1" style={{color:text1}}>{dayName}</div>
+            <div className="text-xs" style={{color:text2}}>{monthLabel}</div>
           </div>
           <div className="relative">
-            {DAY_TIMES_FULL.map(t=>{
+            {timeSlots.map(t=>{
               const evs=dayEvents.filter(e=>e.time===t);
               return(
                 <div key={t} className="flex gap-3 min-h-[60px]">
@@ -412,15 +1110,24 @@ export default function AppointmentsPage(){
                     <div className="numeric-font">{t.split(" ")[0]}</div><div className="numeric-font">{t.split(" ")[1]}</div>
                   </div>
                   <div className={`flex-1 border-t ${cardBorder} pt-1 flex flex-col gap-1`}>
-                    {evs.map((ev,i)=>{
+                    {evs.map((ev: DayCalendarEvent, i)=>{
                       const c=eventColorDay(ev.color);
                       return(
-                        <div key={i} className="rounded-lg px-3 py-2"
-                          style={{borderLeft:`3px solid ${c.bar}`,backgroundColor:isDark?"#4A2030":"#FDFAF4"}}>
-                          <div className="text-[12px] font-semibold uppercase tracking-wide" style={{color:c.bar}}>{ev.label}</div>
-                          <div className="text-sm font-semibold" style={{color:text1}}>{ev.name}</div>
-                          <div className="text-[10px]" style={{color:text2}}>⏰ {t}</div>
-                        </div>
+                        <button
+                          key={ev.appointmentId || `${i}-${ev.label}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCalendarEventClick(ev, { date: anchorDate });
+                          }}
+                          className="rounded-lg px-3 py-2 text-left w-full cursor-pointer hover:opacity-90 transition-opacity hover:ring-1 hover:ring-[#591727]/30"
+                          style={{borderLeft:`3px solid ${c.bar}`,backgroundColor:isDark?"#4A2030":"#FDFAF4"}}
+                          title={`${ev.patientName || ev.name || ""} — ${ev.status || ""}`}
+                        >
+                          <div className="text-[12px] font-semibold uppercase tracking-wide" style={{color:c.bar}}>{ev.label || `${ev.time} · ${ev.patientName}`}</div>
+                          <div className="text-sm font-semibold" style={{color:text1}}>{ev.name || ev.patientName}</div>
+                          <div className="text-[10px]" style={{color:text2}}>⏰ {ev.time || t}</div>
+                        </button>
                       );
                     })}
                   </div>
@@ -436,17 +1143,30 @@ export default function AppointmentsPage(){
               <span className="text-xs font-bold tracking-widest uppercase" style={{color:text2}}>NEXT UP</span>
               <span className="text-base">🔔</span>
             </div>
+            {nextUp ? (
             <div className={`rounded-xl p-3 border ${cardBorder}`} style={{backgroundColor:card}}>
               <div className="text-[10px] font-bold" style={{color:text2}}>{nextUp.date}</div>
               <div className="text-sm font-bold my-0.5" style={{color:text1}}>{nextUp.name}</div>
               <div className="text-[11px] mb-2" style={{color:text2}}>{nextUp.detail}</div>
               <div className="flex gap-2">
-                <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-white"
-                  style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>Call</button>
-                <button className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border`}
+                {nextUp.phone ? (
+                  <a href={`tel:${nextUp.phone}`}
+                    className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-white text-center"
+                    style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>Call</a>
+                ) : (
+                  <button type="button"
+                    className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-white"
+                    style={{backgroundColor:isDark?"#8B1A2E":"#3D0A1F"}}>Call</button>
+                )}
+                <button type="button"
+                  onClick={() => updateAppointmentStatus(nextUp.appointmentId, "CANCELLED")}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border`}
                   style={{borderColor:isDark?"#5C2A3A":"#3D0A1F",color:text1}}>Cancel</button>
               </div>
             </div>
+            ) : (
+              <p className="text-xs italic" style={{color:text2}}>No upcoming appointments.</p>
+            )}
           </div>
         </div>
       </div>
@@ -462,7 +1182,50 @@ export default function AppointmentsPage(){
         <PendingModal
           isDark={isDark} card={card} cardBorder={cardBorder} cardInner={cardInner}
           text1={text1} text2={text2} pageBg={pageBg} inputBg={inputBg} inputBorder={inputBorder}
+          pendingConfirmations={pendingConfirmations}
+          onConfirm={handleConfirmPending}
+          onCancel={handleCancelPending}
           onClose={()=>setModal("none")}
+        />
+      )}
+      {appointmentDetailId && (
+        <AppointmentDetailModal
+          isDark={isDark}
+          card={card}
+          cardBorder={cardBorder}
+          text1={text1}
+          text2={text2}
+          pageBg={pageBg}
+          inputBg={inputBg}
+          inputBorder={inputBorder}
+          appointment={
+            selectedAppointment ?? {
+              id: appointmentDetailId,
+              patientName: "",
+              email: "",
+              phone: "",
+              specialty: "",
+              appointmentDateLabel: "",
+              appointmentTime: "",
+              notes: "",
+              status: "PENDING",
+              cancellationReason: "",
+              isNewPatient: false,
+            }
+          }
+          loading={appointmentDetailLoading}
+          actionLoading={appointmentActionLoading}
+          showCancelForm={showCancelForm}
+          cancelReason={cancelReason}
+          onCancelReasonChange={setCancelReason}
+          onShowCancelForm={() => setShowCancelForm(true)}
+          onHideCancelForm={() => {
+            setShowCancelForm(false);
+            setCancelReason("");
+          }}
+          onConfirm={handleConfirmFromDetail}
+          onCancelSubmit={handleCancelFromDetail}
+          onClose={closeAppointmentDetail}
         />
       )}
       {modal==="addPatient" && (
@@ -470,7 +1233,25 @@ export default function AppointmentsPage(){
           isDark={isDark} card={card} cardBorder={cardBorder}
           text1={text1} text2={text2} pageBg={pageBg} inputBg={inputBg} inputBorder={inputBorder}
           addForm={addForm} setAddForm={setAddForm}
+          booking={booking}
+          onBook={handleBookAppointment}
           onClose={()=>{setModal("none");setAddForm({name:"",email:"",phone:"",specialty:"",date:"",time:"",notes:""}); }}
+        />
+      )}
+      {checkupPatient && (
+        <CheckupModal
+          patient={checkupPatient}
+          onClose={() => {
+            setCheckupPatient(null);
+            setCheckupAppointmentId(null);
+          }}
+          onSave={handleSaveCheckup}
+          isDark={isDark}
+          card={card}
+          cardBorder={cardBorder}
+          text1={text1}
+          text2={text2}
+          sectionLabel="APPOINTMENTS"
         />
       )}
 
@@ -485,7 +1266,15 @@ export default function AppointmentsPage(){
               {pendingConfirmations.length}
             </span>
           </button>
-          <button onClick={()=>setModal("addPatient")}
+          <button
+            onClick={() => {
+              const today = getTodayAnchorDate();
+              setAddForm((prev) => ({
+                ...prev,
+                date: prev.date && prev.date >= today ? prev.date : "",
+              }));
+              setModal("addPatient");
+            }}
             className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold border transition-colors ${isDark?"border-[#FFFFFF] text-white hover:bg-[#c9a898] hover:text-[#3D0A1F]":"border-[#711C31] bg-[#591727] text-white hover:bg-[#711C31]"}`}>
             + Add Patient
           </button>
@@ -510,17 +1299,38 @@ export default function AppointmentsPage(){
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         {/* Date indicator */}
         <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border ${cardBorder} w-full sm:w-auto`} style={{backgroundColor:card}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#711C31" : "#591727"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+          <button
+            type="button"
+            onClick={openDatePicker}
+            className="shrink-0"
+            aria-label="Select date"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#711C31" : "#591727"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </button>
+          <input
+            ref={datePickerRef}
+            type="date"
+            value={anchorDate}
+            onChange={(e) => {
+              if (e.target.value) {
+                setAnchorDate(e.target.value);
+                setViewMode("month");
+              }
+            }}
+            className="absolute opacity-0 pointer-events-none w-0 h-0"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-bold tracking-widest uppercase" style={{color:text2}}>{dateTop}</div>
             <div className="text-xs sm:text-sm font-semibold truncate" style={{color:text1}}>{dateBottom}</div>
           </div>
           <div className="flex gap-1 shrink-0">
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:bg-black/5" style={{color:text2}}>‹</button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:bg-black/5" style={{color:text2}}>›</button>
+            <button type="button" onClick={()=>navigateDate(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:bg-black/5" style={{color:text2}}>‹</button>
+            <button type="button" onClick={()=>navigateDate(1)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:bg-black/5" style={{color:text2}}>›</button>
           </div>
         </div>
 
@@ -578,28 +1388,66 @@ export default function AppointmentsPage(){
               <h3 className="text-base font-semibold mb-3" style={{color:text1}}>
                 Upcoming Appointments ({viewMode==="month"?"This Month":viewMode==="week"?"This week":"Today"})
               </h3>
-              <div className="flex flex-col gap-2">
-                {upcomingAppointments.map((a,i)=>(
-                  <div key={i} className={`flex items-center justify-between p-3 rounded-xl border gap-2 ${cardBorder}`} style={{backgroundColor:cardInner}}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="text-center min-w-[36px] shrink-0">
-                        <div className="text-sm font-bold numeric-font" style={{color:text1}}>{a.time}</div>
-                        <div className="text-[10px]" style={{color:text2}}>{a.period}</div>
+              <div
+                className="overflow-hidden min-h-[208px] w-full"
+                onMouseEnter={upcomingCarousel.onMouseEnter}
+                onMouseLeave={upcomingCarousel.onMouseLeave}
+              >
+                {upcomingAppointments.length === 0 ? (
+                  <p className="text-center py-4 text-sm italic" style={{color:text2}}>No upcoming appointments.</p>
+                ) : (
+                  <div style={getCarouselTrackStyle(upcomingCarousel.slide, upcomingGroups.length)}>
+                    {upcomingGroups.map((group, gi) => (
+                      <div key={gi} className="flex flex-col gap-2" style={getCarouselSlideStyle(upcomingGroups.length)}>
+                        {group.map((a,i)=>(
+                          <div
+                            key={a.id ?? `${gi}-${i}`}
+                            role={a.id ? "button" : undefined}
+                            tabIndex={a.id ? 0 : undefined}
+                            onClick={() => a.id && openAppointmentDetail(a.id)}
+                            onKeyDown={(e) => {
+                              if (a.id && (e.key === "Enter" || e.key === " ")) {
+                                e.preventDefault();
+                                openAppointmentDetail(a.id);
+                              }
+                            }}
+                            className={`flex items-center justify-between p-3 rounded-xl border gap-2 ${cardBorder} ${a.id ? "cursor-pointer hover:opacity-90" : ""}`}
+                            style={{backgroundColor:cardInner}}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="text-center min-w-[36px] shrink-0">
+                                <div className="text-sm font-bold numeric-font" style={{color:text1}}>{a.time}</div>
+                                <div className="text-[10px]" style={{color:text2}}>{a.period}</div>
+                              </div>
+                              <div className="w-px h-8 shrink-0" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate" style={{color:text1}}>{a.name}</div>
+                                <div className="text-[11px] truncate" style={{color:text2}}>{a.type}</div>
+                              </div>
+                            </div>
+                            <span className={`${statusStyle(a.status)} shrink-0`}>{a.status}</span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="w-px h-8 shrink-0" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{color:text1}}>{a.name}</div>
-                        <div className="text-[11px] truncate" style={{color:text2}}>{a.type}</div>
-                      </div>
-                    </div>
-                    <span className={`${statusStyle(a.status)} shrink-0`}>{a.status}</span>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
               <div className="flex justify-center gap-1.5 mt-3">
-                <div className="w-5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#D4A574":"#3D0A1F"}}/>
-                <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
-                <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
+                {upcomingGroups.length <= 1 ? (
+                  <div className="w-5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#D4A574":"#3D0A1F"}}/>
+                ) : (
+                  upcomingGroups.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => upcomingCarousel.setSlide(idx)}
+                      className={`${upcomingCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                      style={{backgroundColor: upcomingCarousel.slide === idx ? (isDark?"#D4A574":"#3D0A1F") : (isDark?"#5C2A3A":"#D4B896")}}
+                      aria-label={`Show upcoming group ${idx + 1}`}
+                    />
+                  ))
+                )}
               </div>
             </div>
             {/* Patients seen */}
@@ -607,28 +1455,66 @@ export default function AppointmentsPage(){
               <h3 className="text-base font-semibold mb-3" style={{color:text1}}>
                 Patients seen ({viewMode==="month"?"This Month":viewMode==="week"?"This week":"Today"})
               </h3>
-              <div className="flex flex-col gap-2">
-                {patientsSeen.map((a,i)=>(
-                  <div key={i} className={`flex items-center justify-between p-3 rounded-xl border gap-2 ${cardBorder}`} style={{backgroundColor:cardInner}}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="text-center min-w-[36px] shrink-0">
-                        <div className="text-sm font-bold" style={{color:text1}}>{a.time}</div>
-                        <div className="text-[10px]" style={{color:text2}}>{a.period}</div>
+              <div
+                className="overflow-hidden min-h-[208px] w-full"
+                onMouseEnter={seenCarousel.onMouseEnter}
+                onMouseLeave={seenCarousel.onMouseLeave}
+              >
+                {patientsSeen.length === 0 ? (
+                  <p className="text-center py-4 text-sm italic" style={{color:text2}}>No patients seen yet.</p>
+                ) : (
+                  <div style={getCarouselTrackStyle(seenCarousel.slide, seenGroups.length)}>
+                    {seenGroups.map((group, gi) => (
+                      <div key={gi} className="flex flex-col gap-2" style={getCarouselSlideStyle(seenGroups.length)}>
+                        {group.map((a,i)=>(
+                          <div
+                            key={a.id ?? `${gi}-${i}`}
+                            role={a.id ? "button" : undefined}
+                            tabIndex={a.id ? 0 : undefined}
+                            onClick={() => a.id && openAppointmentDetail(a.id)}
+                            onKeyDown={(e) => {
+                              if (a.id && (e.key === "Enter" || e.key === " ")) {
+                                e.preventDefault();
+                                openAppointmentDetail(a.id);
+                              }
+                            }}
+                            className={`flex items-center justify-between p-3 rounded-xl border gap-2 ${cardBorder} ${a.id ? "cursor-pointer hover:opacity-90" : ""}`}
+                            style={{backgroundColor:cardInner}}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="text-center min-w-[36px] shrink-0">
+                                <div className="text-sm font-bold" style={{color:text1}}>{a.time}</div>
+                                <div className="text-[10px]" style={{color:text2}}>{a.period}</div>
+                              </div>
+                              <div className="w-px h-8 shrink-0" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate" style={{color:text1}}>{a.name}</div>
+                                <div className="text-[11px] truncate" style={{color:text2}}>{a.type}</div>
+                              </div>
+                            </div>
+                            <span className={`${statusStyle(a.status)} shrink-0`}>{a.status}</span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="w-px h-8 shrink-0" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{color:text1}}>{a.name}</div>
-                        <div className="text-[11px] truncate" style={{color:text2}}>{a.type}</div>
-                      </div>
-                    </div>
-                    <span className={`${statusStyle(a.status)} shrink-0`}>{a.status}</span>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
               <div className="flex justify-center gap-1.5 mt-3">
-                <div className="w-5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#D4A574":"#3D0A1F"}}/>
-                <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
-                <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#5C2A3A":"#D4B896"}}/>
+                {seenGroups.length <= 1 ? (
+                  <div className="w-5 h-1.5 rounded-full" style={{backgroundColor:isDark?"#D4A574":"#3D0A1F"}}/>
+                ) : (
+                  seenGroups.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => seenCarousel.setSlide(idx)}
+                      className={`${seenCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                      style={{backgroundColor: seenCarousel.slide === idx ? (isDark?"#D4A574":"#3D0A1F") : (isDark?"#5C2A3A":"#D4B896")}}
+                      aria-label={`Show seen group ${idx + 1}`}
+                    />
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -642,12 +1528,16 @@ export default function AppointmentsPage(){
               style={{backgroundColor:inputBg,borderColor:inputBorder}}>
               <span style={{color:text2}}>🔍</span>
               <input type="text" placeholder="Search by name, ID or phone..."
+                value={searchInput}
+                onChange={(e)=>setSearchInput(e.target.value)}
                 className="flex-1 text-sm bg-transparent outline-none" style={{color:text1}}/>
             </div>
             <div className="flex gap-2">
-              <select className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none"
+              <select value={statusFilter}
+                onChange={(e)=>{ setStatusFilter(e.target.value); setListPage(1); }}
+                className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none"
                 style={{backgroundColor:inputBg,borderColor:inputBorder,color:text2}}>
-                <option>All Statuses</option><option>Active</option><option>Pending</option><option>Cancelled</option>
+                <option value="ALL">All Statuses</option><option value="ACTIVE">Active</option><option value="PENDING">Pending</option><option value="SEEN">Seen</option><option value="CANCELLED">Cancelled</option>
               </select>
               <button className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm"
                 style={{backgroundColor:inputBg,borderColor:inputBorder,color:text2}}>
@@ -671,14 +1561,25 @@ export default function AppointmentsPage(){
                 </tr>
               </thead>
               <tbody>
-                {allAppointments.map((row,i)=>(
-                  <tr key={i} className="transition-colors cursor-pointer"
+                {allAppointments.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm italic" style={{color:text2}}>
+                      No appointments found.
+                    </td>
+                  </tr>
+                )}
+                {allAppointments.map((row)=>(
+                  <tr
+                    key={row.id}
+                    className="transition-colors cursor-pointer"
                     style={{borderBottom:`1px solid ${isDark?"#5C2A3A":"#D9C9A8"}`}}
+                    onClick={() => openAppointmentDetail(row.id)}
                     onMouseEnter={e=>(e.currentTarget.style.backgroundColor=tableRowHover)}
-                    onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}>
+                    onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}
+                  >
                     <td className="px-3 sm:px-4 py-3">
                       <div className="font-semibold whitespace-nowrap" style={{color:text1}}>{row.name}</div>
-                      <div className="text-[13px] numeric-font" style={{color:text2}}>ID: {row.id}</div>
+                      <div className="text-[13px] numeric-font" style={{color:text2}}>ID: {row.patientId}</div>
                     </td>
                     <td className="px-3 sm:px-4 py-3">
                       <div className="text-[13px] whitespace-nowrap" style={{color:text2}}>{row.email}</div>
@@ -698,17 +1599,44 @@ export default function AppointmentsPage(){
                     <td className="px-3 sm:px-4 py-3"><span className={statusStyle(row.status)}>{row.status}</span></td>
                     <td className="px-3 sm:px-4 py-3">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <button title="Delete" className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-red-100 hover:scale-105" style={{color:text2}}>
+                        <button
+                          type="button"
+                          title="Delete patient"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAppointment(row);
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-red-100"
+                          style={{ color: text2 }}
+                        >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                           </svg>
                         </button>
-                        <button title="View" className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-blue-100 hover:scale-105" style={{color:text2}}>
+                        <button
+                          type="button"
+                          title="View patient details"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewPatient(row);
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-blue-100"
+                          style={{ color: text2 }}
+                        >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                           </svg>
                         </button>
-                        <button title="Add" className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-green-100 hover:scale-105" style={{color:text2}}>
+                        <button
+                          type="button"
+                          title="Add checkup"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddCheckup(row);
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-green-100"
+                          style={{ color: text2 }}
+                        >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
                           </svg>
@@ -723,18 +1651,46 @@ export default function AppointmentsPage(){
 
           {/* Pagination */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-3" style={{borderTop:`1px solid ${isDark?"#5C2A3A":"#D9C9A8"}`}}>
-            <span className="text-xs" style={{color:text2}}>Showing 1 to 12 of 2,842 results</span>
+            <span className="text-xs" style={{color:text2}}>
+              {pagination.total === 0
+                ? "Showing 0 results"
+                : `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} results`}
+            </span>
             <div className="flex items-center gap-1">
-              <button className="w-7 h-7 rounded flex items-center justify-center text-xs" style={{color:text2}}>‹</button>
-              {[1,2,3].map(n=>(
-                <button key={n} className="w-7 h-7 rounded flex items-center justify-center text-xs font-semibold"
-                  style={{backgroundColor:n===1?(isDark?"#8B1A2E":"#3D0A1F"):"transparent",color:n===1?"#F5ECD7":text2}}>
-                  {n}
-                </button>
-              ))}
-              <span className="text-xs px-1" style={{color:text2}}>...</span>
-              <button className="w-7 h-7 rounded flex items-center justify-center text-xs" style={{color:text2}}>71</button>
-              <button className="w-7 h-7 rounded flex items-center justify-center text-xs" style={{color:text2}}>›</button>
+              <button type="button" disabled={pagination.page <= 1}
+                onClick={()=>setListPage((p)=>Math.max(1, p - 1))}
+                className="w-7 h-7 rounded flex items-center justify-center text-xs disabled:opacity-40" style={{color:text2}}>‹</button>
+              {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                let pageNum: number;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+                return (
+                  <button key={pageNum} type="button" onClick={()=>setListPage(pageNum)}
+                    className="w-7 h-7 rounded flex items-center justify-center text-xs font-semibold"
+                    style={{backgroundColor:pageNum===pagination.page?(isDark?"#8B1A2E":"#3D0A1F"):"transparent",color:pageNum===pagination.page?"#F5ECD7":text2}}>
+                    {pageNum}
+                  </button>
+                );
+              })}
+              {pagination.totalPages > 5 && pagination.page < pagination.totalPages - 2 && (
+                <>
+                  <span className="text-xs px-1" style={{color:text2}}>...</span>
+                  <button type="button" onClick={()=>setListPage(pagination.totalPages)}
+                    className="w-7 h-7 rounded flex items-center justify-center text-xs" style={{color:text2}}>
+                    {pagination.totalPages}
+                  </button>
+                </>
+              )}
+              <button type="button" disabled={pagination.page >= pagination.totalPages}
+                onClick={()=>setListPage((p)=>Math.min(pagination.totalPages, p + 1))}
+                className="w-7 h-7 rounded flex items-center justify-center text-xs disabled:opacity-40" style={{color:text2}}>›</button>
             </div>
           </div>
         </div>

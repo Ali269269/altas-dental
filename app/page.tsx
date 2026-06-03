@@ -17,11 +17,11 @@ const cards = [
 ];
 
 const reviews = [
-  { name: "Paul H.", text: "\"J'ai eu une expérience incroyable chez le dentiste aujourd'hui. Toute la visite a été incroyablement professionnelle du début à la fin. Le personnel était accueillant et m'a mis à l'aise immédiatement.\"", bg: "#c8a87a", stars: 5 },
-  { name: "Nic C.", text: "\"J'ai eu une expérience merveilleuse ici ! Le personnel est incroyablement amical et se soucie vraiment du bien-être de ses patients. Je me suis vraiment senti à l'aise ici.\"", bg: "#7a3a4a", stars: 5 },
-  { name: "Paul H.", text: "\"J'ai eu une expérience incroyable chez le dentiste aujourd'hui. Toute la visite a été incroyablement professionnelle du début à la fin. Le personnel était accueillant et m'a mis à l'aise immédiatement.\"", bg: "#e8dcc8", stars: 5 },
-  { name: "Ashley N.", text: "\"Je suis incroyablement anxieux quand il s'agit du dentiste. J'ai dû subir une procédure difficile, mais ils m'ont aidé à la traverser. Je ne peux pas imaginer avoir une équipe plus patiente et.\"", bg: "#b09070", stars: 5 },
-  { name: "Paul H.", text: "\"J'ai eu une expérience incroyable chez le dentiste aujourd'hui. Toute la visite a été incroyablement professionnelle du début à la fin. Le personnel était accueillant et m'a mis à l'aise immédiatement.\"", bg: "#8a4a5a", stars: 5 },
+  { name: "Nihad Cherkaoui Sellami.", text: 'J’ai eu une urgence dentaire le jour de l’aid et Dr Ghita a gentiment accepté de me recevoir rapidement. Elle a pris le temps de m’expliquer l’origine du problème et de me soulager rapidement. Un grand merci pour ta bienveillance, je recommande vivement!.', bg: "#c8a87a", stars: 5 },
+  { name: "driss baddouri.", text: "Première visite à l’Atlas Dental Center et je suis pleinement satisfait. Une prise en charge sérieuse, des soins de qualité et une équipe professionnelle. Je recommande.​​​​​​​​​​​​​​​​", bg: "#7a3a4a", stars: 5 },
+  { name: "youssef sehbani.", text: "Très beau cabinet accueillant. Médecin a l’écoute , travail minutieux et résultat satisfaisant . Très bonne expérience sachant que j’ai la phobie.", bg: "#e8dcc8", stars: 5 },
+  { name: "REDA EL.", text: "I was very satisfied with my experience at this dental practice in Rabat. The dentist was very professional, attentive, and reassuring. The practice is modern, clean, and well-organized. I highly recommend it.", bg: "#b09070", stars: 5 },
+  { name: "Oumaima Ainouz.", text: "Docteur Ghita est très compétente et douce. Elle explique chaque étape avant d’agir, ce qui rend l’expérience rassurante. Le cabinet est moderne, équipé d’un matériel de pointe. Une excellente expérience, je recommande!", bg: "#8a4a5a", stars: 5 },
 ];
 
 const blogPosts = [
@@ -65,7 +65,7 @@ function ReviewCard({
           <span key={i} style={{ color: "#c8960a", fontSize: "16px" }}>★</span>
         ))}
       </div>
-      <p style={{ color: textColor, fontSize: "13px", lineHeight: 1.75, fontFamily: "var(--font-seasons-reg)", fontWeight: 500, flex: 1, marginBottom: "18px" }}>
+      <p style={{ color: textColor, fontSize: "13px", lineHeight: 1.75, fontFamily: "var(--font-seasons-reg)", fontWeight: 100, flex: 1, marginBottom: "198px" }}>
         {review.text}
       </p>
       <p style={{ color: nameColor, fontSize: "13px", fontWeight: 600, fontFamily: "var(--font-seasons-reg)", letterSpacing: "0.02em" }}>
@@ -515,8 +515,9 @@ export default function Home() {
   }
 
   .hero-mobile-doctor-col img {
-    transform: scale(1.05) !important;
+     transform: scale(1.08) translateX(-16px) !important;
     object-fit: cover !important;
+   transformOrigin: 'bottom right' !important;
   }
 
   .hero-mobile-doctor-col span img {
@@ -1003,6 +1004,7 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
   height: auto !important;
   min-height: 220px !important;
   box-sizing: border-box !important;
+  
 }
 /* Switch animation to per-slide (same as mobile) */
 .reviews-track {
@@ -1176,11 +1178,11 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
             <div className="hero-mobile-doctor-col">
               <div className="relative" style={{ width: '100%', height: '230px', position: 'relative' }}>
                 <Image
-                  src="/images/doctor.png"
+                  src="/images/drghitau.png"
                   alt="Dental doctor"
                   fill
                   className="object-contain object-bottom"
-                  style={{ transform: 'translateY(4px) scale(1.35)', transformOrigin: 'bottom center' }}
+                  style={{ transform: 'translateY(4px) scale(1.35)', transformOrigin: 'bottom right'}}
                   priority
                 />
               </div>
@@ -1223,7 +1225,7 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
         {/* ── DESKTOP ONLY: Doctor image ── */}
         <div className="hero-doctor-img relative z-0 flex flex-1 justify-end items-end self-stretch pointer-events-none">
           <div className="relative w-[390px] h-[460px]">
-            <Image src="/images/doctor.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-4 scale-150" priority />
+            <Image src="/images/drghitau.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-8 scale-140 " priority />
           </div>
         </div>
       </section>
@@ -1423,35 +1425,35 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
                 {/* ── Row 1, Col 2 ── */}
                 <div style={{ width: '360px', height: '280px', background: '#f0f0f0', borderRadius: '24px', padding: '30px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', fontSize: '26px', letterSpacing: '4px' }}>★★★★★</div>
-                  <p style={{ color: '#3d0818', fontSize: '17px', lineHeight: 1.4, fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[setIndex % reviews.length]?.text}"</p>
+                  <p style={{ color: '#3d0818', fontSize: '15px', lineHeight: 1.4, fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[setIndex % reviews.length]?.text}"</p>
                   <span style={{ color: '#3d0818', fontSize: '17px', fontWeight: 400, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif" }}>-{reviews[setIndex % reviews.length]?.name}</span>
                 </div>
 
                 {/* ── Row 1, Col 3 ── */}
                 <div style={{ width: '360px', height: '280px', background: '#a86e70', borderRadius: '25px 180px 25px 25px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', fontSize: '22px', letterSpacing: '3px' }}>★★★★★</div>
-                  <p style={{ color: '#6b1228', fontSize: '17px', lineHeight: 1.4, fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[(setIndex + 1) % reviews.length]?.text}"</p>
+                  <p style={{ color: '#6b1228', fontSize: '15px', lineHeight: 1.4, fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[(setIndex + 1) % reviews.length]?.text}"</p>
                   <span style={{ color: '#6b1228', fontSize: '17px', fontWeight: 500, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif" }}>-{reviews[(setIndex + 1) % reviews.length]?.name}</span>
                 </div>
 
                 {/* ── Row 2, Col 1 ── */}
                 <div style={{ width: '360px', height: '280px', background: '#f0f0f0', borderRadius: '25px 25px 25px 180px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', marginLeft:'20px', fontSize: '25px', letterSpacing: '3px' }}>★★★★★</div>
-                  <p style={{ color: '#3d0818', fontSize: '17px', lineHeight: 1.4,  fontWeight: 400, margin: '10px 20px', flex: 1 }}>"{reviews[(setIndex + 2) % reviews.length]?.text}"</p>
+                  <p style={{ color: '#3d0818', fontSize: '15px', lineHeight: 1.4,  fontWeight: 400, margin: '10px 20px', flex: 1 }}>"{reviews[(setIndex + 2) % reviews.length]?.text}"</p>
                   <span style={{ color: '#3d0818', fontSize: '17px', fontWeight: 400, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif", marginLeft: '56px' }}>-{reviews[(setIndex + 2) % reviews.length]?.name}</span>
                 </div>
 
                 {/* ── Row 2, Col 2 ── */}
                 <div style={{ width: '360px', height: '280px', background: '#c7ae9a', borderRadius: '24px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', fontSize: '22px', letterSpacing: '3px' }}>★★★★★</div>
-                  <p style={{ color: '#3d0818', fontSize: '17px', lineHeight: 1.4,  fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[(setIndex + 3) % reviews.length]?.text}"</p>
+                  <p style={{ color: '#3d0818', fontSize: '15px', lineHeight: 1.4,  fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[(setIndex + 3) % reviews.length]?.text}"</p>
                   <span style={{ color: '#3d0818', fontSize: '17px', fontWeight: 400, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif" }}>-{reviews[(setIndex + 3) % reviews.length]?.name}</span>
                 </div>
 
                 {/* ── Row 2, Col 3 ── */}
                 <div style={{ width: '360px', height: '280px', background: '#936562', borderRadius: '25px 25px 180px 25px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                   <div style={{ color: '#6b1228', fontSize: '22px', letterSpacing: '3px' }}>★★★★★</div>
-                  <p style={{ color: '#6b1228', fontSize: '17px', lineHeight: 1.4,fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[(setIndex + 4) % reviews.length]?.text}"</p>
+                  <p style={{ color: '#6b1228', fontSize: '15px', lineHeight: 1.4,fontWeight: 400, margin: '10px 0', flex: 1 }}>"{reviews[(setIndex + 4) % reviews.length]?.text}"</p>
                   <span style={{ color: '#6b1228', fontSize: '17px', fontWeight: 400, letterSpacing: '0.04em', fontFamily: "'Cormorant Garamond', serif" }}>-{reviews[(setIndex + 4) % reviews.length]?.name}</span>
                 </div>
               </div>
@@ -1558,10 +1560,10 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
         </div>
 
         {/* Body: video + right col */}
-        <div className="why-body" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginLeft: '10px' }}>
+        <div className="why-body" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginLeft: '10px',}}>
           <div
             className="why-video-col"
-            style={{ flex: '0 0 62%', position: 'relative', border: '1px solid #753141', borderRadius: '16px', overflow: 'hidden', background: '#1a1008', aspectRatio: '17/9', cursor: 'pointer' }}
+            style={{ flex: '0 0 62%', position: 'relative', border: '1px solid #753141', borderRadius: '16px', overflow: 'hidden', background: '#1a1008', aspectRatio: '17/9', cursor: 'pointer',marginTop: '40px' }}
             onMouseEnter={() => setIsVideoHovered(true)}
             onMouseLeave={() => setIsVideoHovered(false)}
             onClick={() => {
@@ -1589,10 +1591,12 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
           </div>
 
           <div className="why-right-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ width: '100%', borderRadius: '16px', border: '1px solid #753141', overflow: 'hidden', position: 'relative', aspectRatio: '5/3' }}>
-              <Image src="/images/treatment.jpg" alt="Clinic treatment" fill style={{ objectFit: 'cover' }} />
+            <div style={{ width: '100%', borderRadius: '16px', border: '1px solid #753141', overflow: 'hidden', position: 'relative',aspectRatio: '13/14',
+ }}>
+              <Image src="/images/drfooter.jpeg" alt="Clinic treatment" fill style={{      objectPosition: 'center',
+    transform: 'scale(0.99)', }} />
             </div>
-            <p style={{ color: '#5c0d2a', fontSize: '17px', lineHeight: 1.4, fontFamily: "var(--font-seasons-reg)", fontWeight: 400 }}>
+            <p style={{ color: '#5c0d2a', fontSize: '14px', lineHeight: 1.4, fontFamily: "var(--font-seasons-reg)", fontWeight: 40 }}>
               Nous croyons que des soins de santé de qualité sont la base d'une vie épanouissante.
               Nos services de santé complets sont conçus pour améliorer votre bien-être global,
               offrant des soins personnalisés et des solutions innovantes pour répondre à vos besoins

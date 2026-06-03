@@ -795,7 +795,7 @@ export default function NotreCentrePage() {
             border: "1px solid #753141",
           }}
         >
-          <img src="/images/ourcenter.jpg" alt="Notre centre" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src="/images/notrecenter.jpeg" alt="Notre centre" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </div>
       </section>
 

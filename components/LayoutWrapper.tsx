@@ -10,8 +10,9 @@ import { ReactNode } from "react";
 export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isDashboard = pathname?.startsWith("/dashboard");
+  const isAuthPage = pathname === "/login" || pathname?.startsWith("/login/");
 
-  if (isDashboard) {
+  if (isDashboard || isAuthPage) {
     return (
       <ThemeProvider>
         {children}

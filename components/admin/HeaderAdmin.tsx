@@ -1,30 +1,34 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { Search, Bell, Sun, Moon, X, Menu } from "lucide-react";
 import Image from "next/image";
+import { getToken } from "@/utils/auth";
+import { apiUrl } from "@/utils/api";
 
-interface Notification {
-  id: number;
-  name: string;
-  service: string;
-  date: string;
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  isRead: boolean;
   timeAgo: string;
+  details: {
+    appointmentId: string | null;
+    patientName: string;
+    service: string;
+    appointmentDate: string | null;
+    appointmentTime: string;
+    phone: string;
+  };
 }
 
 interface HeaderAdminProps {
   title: string;
   userImage?: string;
   userName?: string;
-  onMenuClick?: () => void; // ← new
+  onMenuClick?: () => void;
 }
-
-const DEMO_NOTIFICATIONS: Notification[] = [
-  { id: 1, name: "Lucy Van Pelt",      service: "Aligneurs",  date: "Oct 28", timeAgo: "2h ago" },
-  { id: 2, name: "Franklin Armstrong", service: "Endodontie", date: "Oct 30", timeAgo: "4h ago" },
-  { id: 3, name: "Franklin Armstrong", service: "Endodontie", date: "Oct 30", timeAgo: "4h ago" },
-];
 
 export default function HeaderAdmin({
   title,
@@ -35,10 +39,114 @@ export default function HeaderAdmin({
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
 
-  const [notifOpen, setNotifOpen]     = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [scrolled, setScrolled]       = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(apiUrl("/api/statistics/notifications?limit=15"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) return;
+
+      const json = await response.json();
+      const payload = json?.data;
+      if (!payload) return;
+
+      setNotifications(payload.notifications ?? []);
+      setUnreadCount(Number(payload.unreadCount ?? 0));
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    const token = getToken();
+    if (!token || unreadCount === 0) return;
+
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+
+    try {
+      await fetch(apiUrl("/api/statistics/notifications/read-all"), {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+      fetchNotifications();
+    }
+  }, [fetchNotifications, unreadCount]);
+
+  const markOneAsRead = useCallback(
+    async (id: string) => {
+      const token = getToken();
+      if (!token) return;
+
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      try {
+        await fetch(apiUrl(`/api/statistics/notifications/${id}/read`), {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+        fetchNotifications();
+      }
+    },
+    [fetchNotifications]
+  );
+
+  const confirmFromNotification = useCallback(
+    async (notification: NotificationItem) => {
+      const appointmentId = notification.details.appointmentId;
+      if (!appointmentId) {
+        markOneAsRead(notification.id);
+        return;
+      }
+
+      const token = getToken();
+      if (!token) return;
+
+      try {
+        const response = await fetch(apiUrl(`/api/statistics/appointments/${appointmentId}`), {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "CONFIRMED" }),
+        });
+
+        if (response.ok) {
+          await markOneAsRead(notification.id);
+        }
+      } catch (error) {
+        console.error("Failed to confirm appointment notification:", error);
+      }
+    },
+    [markOneAsRead]
+  );
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -56,6 +164,31 @@ export default function HeaderAdmin({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!cancelled) await fetchNotifications();
+    };
+
+    load();
+    const intervalId = window.setInterval(load, 5000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    if (notifOpen) {
+      markAllNotificationsRead();
+    }
+  }, [notifOpen, markAllNotificationsRead]);
+
   const initials = userName
     .split(" ")
     .map((n) => n[0])
@@ -71,10 +204,7 @@ export default function HeaderAdmin({
   });
 
   return (
-    <header
-      className="fixed top-0 right-0 z-30 h-[72px] flex items-center justify-between px-4 lg:px-8 transition-all duration-300 left-0 lg:left-[285px] lg:rounded-l-2xl bg-transparent"
-    >
-      {/* ── Left: Title + Date only ── */}
+    <header className="fixed top-0 right-0 z-30 h-[72px] flex items-center justify-between px-4 lg:px-8 transition-all duration-300 left-0 lg:left-[285px] lg:rounded-l-2xl backdrop-blur-md bg-white/10 dark:bg-black/10">
       <div className="flex items-center gap-3">
         <div className="flex flex-col justify-center leading-tight">
           <h1
@@ -91,10 +221,7 @@ export default function HeaderAdmin({
         </div>
       </div>
 
-      {/* ── Right: Search + Theme + Notif + Avatar + Hamburger ── */}
       <div className="flex items-center gap-2 lg:gap-3">
-
-        {/* Search — hidden on very small screens */}
         <div
           className={`
             hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-40 lg:w-52
@@ -122,7 +249,7 @@ export default function HeaderAdmin({
             </button>
           )}
         </div>
-        {/* Hamburger — mobile only, now on the RIGHT */}
+
         <button
           onClick={onMenuClick}
           aria-label="Open menu"
@@ -137,7 +264,7 @@ export default function HeaderAdmin({
         >
           <Menu size={18} />
         </button>
-        {/* Theme toggle */}
+
         <button
           onClick={toggleTheme}
           title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -153,7 +280,6 @@ export default function HeaderAdmin({
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-        {/* Notification Bell */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setNotifOpen((v) => !v)}
@@ -167,9 +293,9 @@ export default function HeaderAdmin({
             `}
           >
             <Bell size={16} />
-            {DEMO_NOTIFICATIONS.length > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#8B1A2E] text-white text-[9px] font-bold flex items-center justify-center">
-                {DEMO_NOTIFICATIONS.length}
+                {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
           </button>
@@ -200,35 +326,57 @@ export default function HeaderAdmin({
                   Pending Confirmations
                 </span>
                 <span className="w-5 h-5 rounded-full bg-[#8B1A2E] text-white text-[10px] font-bold flex items-center justify-center">
-                  {DEMO_NOTIFICATIONS.length}
+                  {notifications.length}
                 </span>
               </div>
 
               <div className="px-4 flex flex-col gap-3 pb-3">
-                {DEMO_NOTIFICATIONS.map((n) => (
+                {notifications.length === 0 && (
+                  <div className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#EBD9B8]"}`}>
+                    <p className={`text-sm ${isDark ? "text-[#F5ECD7]" : "text-[#591727]"}`}>
+                      No new notifications.
+                    </p>
+                  </div>
+                )}
+
+                {notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#EBD9B8]"}`}
+                    className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#EBD9B8]"} ${!n.isRead ? "ring-1 ring-[#8B1A2E]/60" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
                       <span
                         className={`text-sm font-semibold ${isDark ? "text-[#F5ECD7]" : "text-[#591727]"}`}
                         style={{ fontFamily: "var(--font-body, 'Lato', sans-serif)" }}
                       >
-                        {n.name}
+                        {n.details.patientName || n.title}
                       </span>
                       <span className={`text-xs ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
                         {n.timeAgo}
                       </span>
                     </div>
                     <p className={`text-xs mb-2.5 ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
-                      {n.service} · {n.date}
+                      {n.details.service || n.message}
                     </p>
                     <div className="flex gap-2">
-                      <button className="flex-1 py-1.5 rounded-lg bg-[#591727] text-[#F5ECD7] text-xs font-semibold hover:bg-[#5C1A30] transition-colors">
-                        Call
-                      </button>
+                      {n.details.phone ? (
+                        <a
+                          href={`tel:${n.details.phone}`}
+                          className="flex-1 py-1.5 rounded-lg bg-[#591727] text-[#F5ECD7] text-xs font-semibold hover:bg-[#5C1A30] transition-colors text-center"
+                          onClick={() => markOneAsRead(n.id)}
+                        >
+                          Call
+                        </a>
+                      ) : (
+                        <button
+                          onClick={() => markOneAsRead(n.id)}
+                          className="flex-1 py-1.5 rounded-lg bg-[#591727] text-[#F5ECD7] text-xs font-semibold hover:bg-[#5C1A30] transition-colors"
+                        >
+                          Call
+                        </button>
+                      )}
                       <button
+                        onClick={() => confirmFromNotification(n)}
                         className={`
                           flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors
                           ${isDark
@@ -258,9 +406,7 @@ export default function HeaderAdmin({
             </div>
           )}
         </div>
-        
 
-        {/* Avatar */}
         <div className="w-9 h-9 rounded-lg overflow-hidden bg-[#D3D3D3] border border-[#753141] shrink-0">
           {userImage ? (
             <Image
@@ -276,9 +422,6 @@ export default function HeaderAdmin({
             </div>
           )}
         </div>
-
-       
-
       </div>
     </header>
   );

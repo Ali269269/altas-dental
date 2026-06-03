@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { apiUrl } from "@/utils/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPECIALITIES = [
@@ -21,6 +22,76 @@ const MONTHS = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December",
 ];
+
+type FormErrors = {
+  nom?: string;
+  email?: string;
+  telephone?: string;
+  speciality?: string;
+  date?: string;
+  time?: string;
+};
+
+function validateAppointmentForm(
+  form: { nom: string; email: string; telephone: string },
+  speciality: string,
+  selectedDate: Date | null,
+  timeTouched: boolean
+): FormErrors {
+  const errors: FormErrors = {};
+  const nom = form.nom.trim();
+  const email = form.email.trim();
+  const phone = form.telephone.trim();
+
+  if (!nom) errors.nom = "Le nom est obligatoire.";
+  else if (nom.length < 2) errors.nom = "Entrez un nom valide (au moins 2 caractères).";
+
+  if (!email) errors.email = "L'email est obligatoire.";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = "Entrez une adresse email valide.";
+  }
+
+  if (!phone) errors.telephone = "Le numéro de téléphone est obligatoire.";
+  else if (phone.replace(/\D/g, "").length < 8) {
+    errors.telephone = "Entrez un numéro de téléphone valide (au moins 8 chiffres).";
+  }
+
+  if (!speciality) errors.speciality = "Veuillez sélectionner une spécialité.";
+
+  if (!selectedDate) {
+    errors.date = "Veuillez sélectionner une date de rendez-vous.";
+  } else {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const picked = new Date(selectedDate);
+    picked.setHours(0, 0, 0, 0);
+    if (picked < today) {
+      errors.date = "La date doit être aujourd'hui ou dans le futur.";
+    }
+  }
+
+  if (!timeTouched) errors.time = "Veuillez sélectionner une heure de rendez-vous.";
+
+  return errors;
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p
+      role="alert"
+      style={{
+        margin: "6px 0 0",
+        fontSize: 12,
+        color: "#ffc9c9",
+        fontFamily: "'Jost', sans-serif",
+        lineHeight: 1.4,
+      }}
+    >
+      {message}
+    </p>
+  );
+}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const CalIcon = () => (
@@ -77,9 +148,12 @@ function CalendarPopup({
   onClose: () => void;
 }) {
   const today = new Date();
-  const [view, setView] = useState(selected ?? today);
+  today.setHours(0, 0, 0, 0);
+  const initialView = selected && selected >= today ? selected : today;
+  const [view, setView] = useState(initialView);
   const year = view.getFullYear();
   const month = view.getMonth();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
   const firstDay = new Date(year, month, 1).getDay();
   const offset = (firstDay === 0 ? 6 : firstDay - 1);
@@ -89,8 +163,18 @@ function CalendarPopup({
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
-  const prevMonth = () => setView(new Date(year, month - 1, 1));
+  const canGoPrev = new Date(year, month, 1) > currentMonthStart;
+  const prevMonth = () => {
+    if (!canGoPrev) return;
+    setView(new Date(year, month - 1, 1));
+  };
   const nextMonth = () => setView(new Date(year, month + 1, 1));
+
+  const isPastDay = (d: number) => {
+    const cell = new Date(year, month, d);
+    cell.setHours(0, 0, 0, 0);
+    return cell < today;
+  };
 
   const isSelected = (d: number) =>
     selected?.getFullYear() === year &&
@@ -116,7 +200,20 @@ function CalendarPopup({
           {MONTHS[month]} {year}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#FFFFFF", cursor: "pointer", padding: 4 }}><ChevLeft /></button>
+          <button
+            onClick={prevMonth}
+            disabled={!canGoPrev}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#FFFFFF",
+              cursor: canGoPrev ? "pointer" : "not-allowed",
+              padding: 4,
+              opacity: canGoPrev ? 1 : 0.35,
+            }}
+          >
+            <ChevLeft />
+          </button>
           <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#FFFFFF", cursor: "pointer", padding: 4 }}><ChevRight /></button>
         </div>
       </div>
@@ -128,30 +225,35 @@ function CalendarPopup({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "2px 0" }}>
-        {cells.map((d, i) => (
-          <div
-            key={i}
-            onClick={() => d && onSelect(new Date(year, month, d))}
-            style={{
-              textAlign: "center",
-              padding: "6px 0",
-              fontSize: 13,
-              cursor: d ? "pointer" : "default",
-              color: d ? "rgba(255,255,255,0.6)" : "transparent",
-              background: isSelected(d!) ? "#7B2D3E" : "transparent",
-              borderRadius: "50%",
-              width: 30,
-              height: 30,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto",
-              transition: "background 0.15s",
-            }}
-          >
-            {d}
-          </div>
-        ))}
+        {cells.map((d, i) => {
+          const past = d ? isPastDay(d) : false;
+          const selectable = d && !past;
+          return (
+            <div
+              key={i}
+              onClick={() => selectable && onSelect(new Date(year, month, d))}
+              style={{
+                textAlign: "center",
+                padding: "6px 0",
+                fontSize: 13,
+                cursor: selectable ? "pointer" : "default",
+                color: d ? (past ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.6)") : "transparent",
+                background: d && isSelected(d) ? "#7B2D3E" : "transparent",
+                borderRadius: "50%",
+                width: 30,
+                height: 30,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto",
+                transition: "background 0.15s",
+                pointerEvents: selectable ? "auto" : "none",
+              }}
+            >
+              {d}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -312,7 +414,15 @@ function TimePickerPopup({
 }
 
 // ─── Speciality Dropdown ──────────────────────────────────────────────────────
-function SpecialityDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SpecialityDropdown({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  hasError?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -331,7 +441,7 @@ function SpecialityDropdown({ value, onChange }: { value: string; onChange: (v: 
         style={{
           width: "100%",
           background: "transparent",
-          border: "1px solid #FFFFFF",
+          border: hasError ? "1px solid #f5a0a0" : "1px solid #FFFFFF",
           borderRadius: 8,
           padding: "12px 14px",
           color: value ? "#fff" : "rgba(255,255,255,0.5)",
@@ -404,6 +514,9 @@ export default function AppointmentPage() {
   const [minute, setMinute] = useState(0);
   const [period, setPeriod] = useState<"AM"|"PM">("PM");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [timeTouched, setTimeTouched] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const calRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
@@ -422,6 +535,71 @@ export default function AppointmentPage() {
 
   const formatTime = () =>
     `${String(hour).padStart(2,"0")}:${String(minute).padStart(2,"0")} ${period}`;
+
+  const toApiDate = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  const validationErrors = validateAppointmentForm(
+    form,
+    speciality,
+    selectedDate,
+    timeTouched
+  );
+  const isFormValid = Object.keys(validationErrors).length === 0;
+  const showErrors = submitAttempted;
+
+  const fieldBorder = (hasError: boolean) =>
+    hasError ? "1px solid #f5a0a0" : "1px solid #FFFFFF";
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    setSubmitAttempted(true);
+    const errors = validateAppointmentForm(form, speciality, selectedDate, timeTouched);
+    if (Object.keys(errors).length > 0) return;
+
+    if (!selectedDate) return;
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(apiUrl("/api/statistics/appointments"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientName: form.nom.trim(),
+          email: form.email.trim(),
+          phone: form.telephone.trim(),
+          specialty: speciality,
+          appointmentDate: toApiDate(selectedDate),
+          appointmentTime: formatTime(),
+          notes: form.message.trim(),
+          isNewPatient: true,
+        }),
+      });
+
+      const json = await response.json().catch(() => ({}));
+
+      if (json.success) {
+        setSent(true);
+        setSubmitAttempted(false);
+        setTimeTouched(false);
+        setForm({ nom: "", email: "", telephone: "", message: "" });
+        setSpeciality("");
+        setSelectedDate(null);
+        setShowCal(false);
+        setShowTime(false);
+        return;
+      }
+
+      if (!response.ok) {
+        console.error("Appointment booking failed:", json.message || response.status);
+      }
+    } catch (error) {
+      console.error("Appointment booking error:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const inputBase: React.CSSProperties = {
     width: "100%",
@@ -715,31 +893,50 @@ export default function AppointmentPage() {
 
               {/* LEFT column */}
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <input
-                  className="appt-input"
-                  type="text"
-                  placeholder="Votre nom"
-                  value={form.nom}
-                  onChange={e => setForm({ ...form, nom: e.target.value })}
-                  style={inputBase}
-                />
-                <input
-                  className="appt-input"
-                  type="email"
-                  placeholder="Votre email"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  style={inputBase}
-                />
-                <SpecialityDropdown value={speciality} onChange={setSpeciality} />
-                <input
-                  className="appt-input"
-                  type="tel"
-                  placeholder="Votre téléphone"
-                  value={form.telephone}
-                  onChange={e => setForm({ ...form, telephone: e.target.value })}
-                  style={inputBase}
-                />
+                <div>
+                  <input
+                    className="appt-input"
+                    type="text"
+                    placeholder="Votre nom"
+                    value={form.nom}
+                    onChange={e => setForm({ ...form, nom: e.target.value })}
+                    style={{ ...inputBase, border: fieldBorder(showErrors && !!validationErrors.nom) }}
+                    aria-invalid={showErrors && !!validationErrors.nom}
+                  />
+                  <FieldError message={showErrors ? validationErrors.nom : undefined} />
+                </div>
+                <div>
+                  <input
+                    className="appt-input"
+                    type="email"
+                    placeholder="Votre email"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    style={{ ...inputBase, border: fieldBorder(showErrors && !!validationErrors.email) }}
+                    aria-invalid={showErrors && !!validationErrors.email}
+                  />
+                  <FieldError message={showErrors ? validationErrors.email : undefined} />
+                </div>
+                <div>
+                  <SpecialityDropdown
+                    value={speciality}
+                    onChange={v => setSpeciality(v)}
+                    hasError={showErrors && !!validationErrors.speciality}
+                  />
+                  <FieldError message={showErrors ? validationErrors.speciality : undefined} />
+                </div>
+                <div>
+                  <input
+                    className="appt-input"
+                    type="tel"
+                    placeholder="Votre téléphone"
+                    value={form.telephone}
+                    onChange={e => setForm({ ...form, telephone: e.target.value })}
+                    style={{ ...inputBase, border: fieldBorder(showErrors && !!validationErrors.telephone) }}
+                    aria-invalid={showErrors && !!validationErrors.telephone}
+                  />
+                  <FieldError message={showErrors ? validationErrors.telephone : undefined} />
+                </div>
               </div>
 
               {/* RIGHT column */}
@@ -747,19 +944,23 @@ export default function AppointmentPage() {
                 {/* Date picker */}
                 <div ref={calRef} style={{ position: "relative" }}>
                   <button
+                    type="button"
                     onClick={() => { setShowCal(!showCal); setShowTime(false); }}
                     style={{
                       ...inputBase,
+                      border: fieldBorder(showErrors && !!validationErrors.date),
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       cursor: "pointer",
                       color: selectedDate ? "#fff" : "rgba(255,255,255,0.45)",
                     }}
+                    aria-invalid={showErrors && !!validationErrors.date}
                   >
                     <span>{selectedDate ? formatDate(selectedDate) : "Sélectionner la date"}</span>
                     <span style={{ color: "#FFFFFF" }}><CalIcon /></span>
                   </button>
+                  <FieldError message={showErrors ? validationErrors.date : undefined} />
                   {showCal && (
                     <CalendarPopup
                       selected={selectedDate}
@@ -772,24 +973,34 @@ export default function AppointmentPage() {
                 {/* Time picker */}
                 <div ref={timeRef} style={{ position: "relative" }}>
                   <button
-                    onClick={() => { setShowTime(!showTime); setShowCal(false); }}
+                    type="button"
+                    onClick={() => {
+                      setTimeTouched(true);
+                      setShowTime(!showTime);
+                      setShowCal(false);
+                    }}
                     style={{
                       ...inputBase,
+                      border: fieldBorder(showErrors && !!validationErrors.time),
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       cursor: "pointer",
-                      color: "rgba(255,255,255,0.45)",
+                      color: timeTouched ? "#fff" : "rgba(255,255,255,0.45)",
                     }}
+                    aria-invalid={showErrors && !!validationErrors.time}
                   >
-                    <span style={{ color: "#ada1a7" }}>{formatTime()}</span>
+                    <span style={{ color: timeTouched ? "#fff" : "#ada1a7" }}>{formatTime()}</span>
                     <span style={{ color: "rgba(255,255,255,0.6)" }}><ChevDown /></span>
                   </button>
+                  <FieldError message={showErrors ? validationErrors.time : undefined} />
                   {showTime && (
                     <TimePickerPopup
                       hour={hour} minute={minute} period={period}
-                      setHour={setHour} setMinute={setMinute} setPeriod={setPeriod}
-                      onClose={() => setShowTime(false)}
+                      setHour={h => { setTimeTouched(true); setHour(h); }}
+                      setMinute={m => { setTimeTouched(true); setMinute(m); }}
+                      setPeriod={p => { setTimeTouched(true); setPeriod(p); }}
+                      onClose={() => { setTimeTouched(true); setShowTime(false); }}
                     />
                   )}
                 </div>
@@ -800,16 +1011,95 @@ export default function AppointmentPage() {
                   placeholder="Votre message"
                   value={form.message}
                   onChange={e => setForm({ ...form, message: e.target.value })}
-                  rows={5}
+                  rows={3}
                   style={{ ...inputBase, resize: "none", flex: 1 }}
                 />
               </div>
             </div>
 
+            {sent && (
+              <div
+                role="dialog"
+                aria-live="polite"
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 2000,
+                  background: "rgba(0,0,0,0.45)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
+                }}
+                onClick={() => setSent(false)}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: "#541524",
+                    borderRadius: 16,
+                    padding: "28px 32px",
+                    maxWidth: 420,
+                    width: "100%",
+                    textAlign: "center",
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#fff",
+                      fontSize: 15,
+                      lineHeight: 1.6,
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 400,
+                      margin: "0 0 20px",
+                    }}
+                  >
+                    Votre formulaire a été envoyé. Veuillez attendre la confirmation de notre équipe.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSent(false)}
+                    style={{
+                      background: "#ffffff",
+                      border: "1.5px solid rgba(255,255,255,0.55)",
+                      color: "#711C31",
+                      padding: "10px 32px",
+                      borderRadius: 2,
+                      fontSize: 14,
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showErrors && !isFormValid && (
+              <p
+                role="alert"
+                style={{
+                  marginTop: 20,
+                  textAlign: "center",
+                  fontSize: 13,
+                  color: "#ffc9c9",
+                  fontFamily: "'Jost', sans-serif",
+                }}
+              >
+                Veuillez corriger les champs en surbrillance avant d&apos;envoyer le formulaire.
+              </p>
+            )}
+
             {/* Submit */}
             <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
               <button
-                onClick={() => { setSent(true); setTimeout(() => setSent(false), 3000); }}
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || !isFormValid}
                 style={{
                   background: "#ffffff",
                   border: "1.5px solid rgba(255,255,255,0.55)",
@@ -819,14 +1109,15 @@ export default function AppointmentPage() {
                   fontSize: 14,
                   fontFamily: "'Jost', sans-serif",
                   fontWeight: 500,
-                  cursor: "pointer",
+                  cursor: submitting ? "wait" : !isFormValid ? "not-allowed" : "pointer",
                   letterSpacing: "0.5px",
                   transition: "background 0.25s",
+                  opacity: submitting || !isFormValid ? 0.55 : 1,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = "F2E5C5")}
                 onMouseLeave={e => (e.currentTarget.style.background = "F2E5C5")}
               >
-                {sent ? "Envoyé ✓" : "Envoyez"}
+                {sent ? "Envoyé ✓" : submitting ? "Envoi..." : "Envoyez"}
               </button>
             </div>
           </div>

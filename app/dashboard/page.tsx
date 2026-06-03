@@ -1,54 +1,35 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
-
-// ── Data ─────────────────────────────────────────────────────────────────────
-
-const statCards = [
-  { label: "Total Bookings Today",    value: "18", badge: "-12%",         badgeType: "negative" },
-  { label: "Pending Confirmations",   value: "5",  badge: "Action Needed", badgeType: "warning"  },
-  { label: "New Patients",            value: "5",  badge: "-2 today",     badgeType: "neutral"  },
-];
+import { useRouter } from "next/navigation";
+import { getToken, getAdmin } from "@/utils/auth";
+import { apiUrl } from "@/utils/api";
+import {
+  DEFAULT_DASHBOARD_OVERVIEW,
+  DEFAULT_NEXT_PATIENT,
+  type DashboardOverview,
+  type DisplayAppointment,
+} from "@/utils/dashboardData";
+import {
+  chunkIntoGroups,
+  getCarouselSlideStyle,
+  getCarouselTrackStyle,
+  useAutoCarousel,
+} from "@/utils/carousel";
 
 const DAYS  = ["MON","TUE","WED","THU","FRI","SAT","SUN"];
 const TIMES = ["08:00","10:00","12:00","14:00","16:00","18:00"];
-const occupancyData: number[][] = [
-  [0,2,2,2,2,1,0],
-  [2,4,3,3,2,0,0],
-  [3,4,3,3,2,0,0],
-  [2,2,3,3,1,0,0],
-  [1,1,1,1,0,1,0],
-  [1,1,1,1,0,1,0],
-];
+const CAROUSEL_DOTS = 3;
 
-const services = [
-  { name: "Aligneurs",                        pct: 42 },
-  { name: "Parodontologie",                   pct: 35 },
-  { name: "Endodontie",                       pct: 12 },
-  { name: "Réhabilitation totale du sourire", pct:  8 },
-];
-
-const ALL_APPOINTMENTS = [
-  { time:"09:30", period:"AM", name:"Sarah Jenkins",    type:"Routine Checkup",        status:"CONFIRMED", dayOffset: 0 },
-  { time:"10:45", period:"AM", name:"Robert T. Chen",   type:"Wisdom Tooth Extraction", status:"PENDING",   dayOffset: 0 },
-  { time:"02:45", period:"PM", name:"Elena Rodriguez",  type:"Teeth Whitening",         status:"CONFIRMED", dayOffset: 0 },
-  { time:"04:00", period:"PM", name:"Marcous Aurelius", type:"Emergency Consultation",  status:"NEW",       dayOffset: 0 },
-  { time:"09:00", period:"AM", name:"Marie Dupont",     type:"Implant Checkup",         status:"CONFIRMED", dayOffset: 1 },
-  { time:"11:00", period:"AM", name:"Jean Pierre",      type:"Orthodontic Review",      status:"PENDING",   dayOffset: 1 },
-];
-
-const staff = [
-  { name:"Dr. Aris Thorne",  role:"Principal Dentist", seen:142, avg:"45 min", avatar:"AT" },
-  { name:"Dr. Julian Vane",  role:"Associate Dentist", seen:118, avg:"52 min", avatar:"JV" },
-  { name:"Sarah Jenkins",    role:"Lead Hygienist",    seen:204, avg:"30 min", avatar:"SJ" },
-];
-
-const pendingConfirmations = [
-  { name:"Lucy Van Pelt",      service:"Aligneurs",  date:"Oct 28", timeAgo:"2h ago" },
-  { name:"Franklin Armstrong", service:"Endodontie", date:"Oct 30", timeAgo:"4h ago" },
-  { name:"Franklin Armstrong", service:"Endodontie", date:"Oct 30", timeAgo:"4h ago" },
-];
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -86,16 +67,17 @@ interface ScheduleModalProps {
   cardInner: string;
   text1: string;
   text2: string;
+  todayAppointments: DisplayAppointment[];
   onClose: () => void;
 }
 
-function TodayScheduleModal({ isDark, card, cardBorder, cardInner, text1, text2, onClose }: ScheduleModalProps) {
+function TodayScheduleModal({ isDark, card, cardBorder, cardInner, text1, text2, todayAppointments, onClose }: ScheduleModalProps) {
   const today = new Date();
   const days  = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const months= ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const todayLabel = `${days[today.getDay()]}, ${months[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
 
-  const todayAppts = ALL_APPOINTMENTS.filter(a => a.dayOffset === 0);
+  const todayAppts = todayAppointments;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -186,9 +168,11 @@ interface AddPatientModalProps {
   addForm: { name:string; email:string; phone:string; specialty:string; date:string; time:string; notes:string };
   setAddForm: React.Dispatch<React.SetStateAction<{ name:string; email:string; phone:string; specialty:string; date:string; time:string; notes:string }>>;
   onClose: () => void;
+  onBook: () => void;
+  booking: boolean;
 }
 
-function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, inputBg, inputBorder, addForm, setAddForm, onClose }: AddPatientModalProps) {
+function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, inputBg, inputBorder, addForm, setAddForm, onClose, onBook, booking }: AddPatientModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -307,10 +291,13 @@ function AddPatientModal({ isDark, card, cardBorder, text1, text2, pageBg, input
               Discard Changes
             </button>
             <button
+              type="button"
+              onClick={onBook}
+              disabled={booking}
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: isDark ? "#591727" : "#3D0A1F" }}
+              style={{ backgroundColor: isDark ? "#591727" : "#3D0A1F", opacity: booking ? 0.7 : 1 }}
             >
-              Book Appointment
+              {booking ? "Booking..." : "Book Appointment"}
             </button>
           </div>
         </div>
@@ -325,11 +312,179 @@ export default function DashboardPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+    const router = useRouter();
+
+  useEffect(() => {
+    const validateAdmin = async () => {
+      const token = getToken();
+      const admin = getAdmin();
+
+      // Not logged in
+      if (!token || !admin) {
+        router.push("/login");
+        return;
+      }
+
+      // Not admin
+      if (admin.role !== "admin") {
+        router.push("/unauthorized");
+        return;
+      }
+
+      try {
+        const response = await fetch(apiUrl("/api/auth/dashboard"), {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Invalid or expired token
+        if (!response.ok) {
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Authentication error:", error);
+        router.push("/login");
+      }
+    };
+
+    validateAdmin();
+  }, [router]);
+
+  const [dashboard, setDashboard] = useState<DashboardOverview>(DEFAULT_DASHBOARD_OVERVIEW);
   const [showAddPatient,   setShowAddPatient]   = useState(false);
   const [showTodaySchedule, setShowTodaySchedule] = useState(false);
+  const [booking, setBooking] = useState(false);
   const [addForm, setAddForm] = useState({
     name:"", email:"", phone:"", specialty:"", date:"", time:"", notes:"",
   });
+
+  const fetchDashboardOverview = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(apiUrl("/api/statistics/overview"), {
+        headers: authHeaders(),
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        if (json.data) {
+          setDashboard({
+            statCards: json.data.statCards ?? DEFAULT_DASHBOARD_OVERVIEW.statCards,
+            occupancyData: json.data.occupancyData ?? DEFAULT_DASHBOARD_OVERVIEW.occupancyData,
+            occupancyPeak: json.data.occupancyPeak ?? DEFAULT_DASHBOARD_OVERVIEW.occupancyPeak,
+            services: json.data.services?.length ? json.data.services : DEFAULT_DASHBOARD_OVERVIEW.services,
+            topPerformer: json.data.topPerformer ?? DEFAULT_DASHBOARD_OVERVIEW.topPerformer,
+            todayAppointments: json.data.todayAppointments ?? [],
+            staff: json.data.staff?.length ? json.data.staff : DEFAULT_DASHBOARD_OVERVIEW.staff,
+            pendingConfirmations: json.data.pendingConfirmations ?? [],
+            nextPatient: json.data.nextPatient ?? null,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard overview:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!cancelled) await fetchDashboardOverview();
+    };
+
+    load();
+    const intervalId = window.setInterval(load, 5000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchDashboardOverview]);
+
+  const handleConfirmAppointment = async (id: string) => {
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${id}`), {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ status: "CONFIRMED" }),
+      });
+      if (response.ok) await fetchDashboardOverview();
+    } catch (error) {
+      console.error("Failed to confirm appointment:", error);
+    }
+  };
+
+  const handleBookAppointment = async () => {
+    if (!addForm.name || !addForm.email || !addForm.phone || !addForm.specialty || !addForm.date || !addForm.time) {
+      return;
+    }
+
+    setBooking(true);
+    try {
+      const response = await fetch(apiUrl("/api/statistics/appointments"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientName: addForm.name,
+          email: addForm.email,
+          phone: addForm.phone,
+          specialty: addForm.specialty,
+          appointmentDate: addForm.date,
+          appointmentTime: addForm.time,
+          notes: addForm.notes,
+          isNewPatient: true,
+        }),
+      });
+
+      if (response.ok) {
+        setShowAddPatient(false);
+        setAddForm({ name:"", email:"", phone:"", specialty:"", date:"", time:"", notes:"" });
+        await fetchDashboardOverview();
+      }
+    } catch (error) {
+      console.error("Failed to book appointment:", error);
+    } finally {
+      setBooking(false);
+    }
+  };
+
+  const {
+    statCards,
+    occupancyData,
+    occupancyPeak,
+    services,
+    topPerformer,
+    todayAppointments,
+    staff,
+    pendingConfirmations,
+    nextPatient,
+  } = dashboard;
+  const todayGroups = chunkIntoGroups(todayAppointments, 3);
+  const staffGroups = chunkIntoGroups(staff, 3);
+  const todayUsesCarousel = todayGroups.length > 1;
+  const staffUsesCarousel = staffGroups.length > 1;
+  const todayCarousel = useAutoCarousel(
+    todayUsesCarousel ? todayGroups.length : CAROUSEL_DOTS,
+    4000,
+    todayAppointments.length > 0
+  );
+  const staffCarousel = useAutoCarousel(
+    staffUsesCarousel ? staffGroups.length : CAROUSEL_DOTS,
+    4000,
+    staff.length > 0
+  );
+
+  const patientOverview = nextPatient ?? DEFAULT_NEXT_PATIENT;
 
   // Color tokens
   const card       = isDark ? "#c9a898" : "#f0f0f0";
@@ -343,9 +498,6 @@ export default function DashboardPage() {
   const inputBg    = isDark ? "#c1a694" : "#ffffff";
   const inputBorder = isDark ? "#753141" : "#753141";
 
-  // Today's appointments (dayOffset === 0)
-  const todayAppts = useMemo(() => ALL_APPOINTMENTS.filter(a => a.dayOffset === 0), []);
-
   return (
     <div className="min-h-full ml-0 lg:ml-10 transition-colors duration-300 px-3 sm:px-4 lg:px-0" style={{ marginTop:"40px" }}>
 
@@ -354,6 +506,7 @@ export default function DashboardPage() {
         <TodayScheduleModal
           isDark={isDark} card={card} cardBorder={cardBorder}
           cardInner={cardInner} text1={text1} text2={text2}
+          todayAppointments={todayAppointments}
           onClose={() => setShowTodaySchedule(false)}
         />
       )}
@@ -363,6 +516,8 @@ export default function DashboardPage() {
           text1={text1} text2={text2} pageBg={pageBg}
           inputBg={inputBg} inputBorder={inputBorder}
           addForm={addForm} setAddForm={setAddForm}
+          onBook={handleBookAppointment}
+          booking={booking}
           onClose={() => { setShowAddPatient(false); setAddForm({ name:"", email:"", phone:"", specialty:"", date:"", time:"", notes:"" }); }}
         />
       )}
@@ -437,7 +592,7 @@ export default function DashboardPage() {
         <div className={`rounded-2xl p-4 sm:p-5 border ${cardBorder} transition-colors duration-300 overflow-x-auto`} style={{ backgroundColor: card }}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="text-lg font-semibold" style={{ color: text1 }}>Clinic Occupancy</h2>
-            <span style={{ color: text2 }}>Peak: Tue 10:00 am</span>
+            <span style={{ color: text2 }}>{occupancyPeak}</span>
           </div>
           {/* Allow horizontal scroll on very small screens */}
           <div className="min-w-[320px]">
@@ -474,7 +629,7 @@ export default function DashboardPage() {
           </div>
           <div className="mt-5 flex items-center justify-between">
             <span style={{ color: text2 }}>Top Performer</span>
-            <span className="font-semibold px-3 py-1 rounded-lg" style={{ backgroundColor: cardInner, color: text1 }}>Aligneurs</span>
+            <span className="font-semibold px-3 py-1 rounded-lg" style={{ backgroundColor: cardInner, color: text1 }}>{topPerformer}</span>
           </div>
         </div>
       </div>
@@ -495,28 +650,80 @@ export default function DashboardPage() {
                 <button className="px-3 py-1.5 transition-colors" style={{ backgroundColor:"transparent", color: text2 }}>Calendar</button>
               </div>
             </div>
-            <div className="flex flex-col gap-3">
-              {todayAppts.map((a, i) => (
-                <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder} gap-2`} style={{ backgroundColor: cardInner }}>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="text-center min-w-[36px] shrink-0">
-                      <div className="text-sm font-bold leading-tight numeric-font" style={{ color: text1 }}>{a.time}</div>
-                      <div className="text-[10px]" style={{ color: text2 }}>{a.period}</div>
-                    </div>
-                    <div className="w-px h-8 shrink-0" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold truncate" style={{ color: text1 }}>{a.name}</div>
-                      <div className="text-[11px] truncate" style={{ color: text2 }}>{a.type}</div>
-                    </div>
+            <div
+              className="flex flex-col gap-3"
+              onMouseEnter={todayCarousel.onMouseEnter}
+              onMouseLeave={todayCarousel.onMouseLeave}
+            >
+              {todayUsesCarousel ? (
+                <div className="overflow-hidden w-full">
+                  <div style={getCarouselTrackStyle(todayCarousel.slide, todayGroups.length)}>
+                    {todayGroups.map((group, gi) => (
+                      <div key={gi} className="flex flex-col gap-3" style={getCarouselSlideStyle(todayGroups.length)}>
+                        {group.map((a, i) => (
+                          <div key={a.id ?? `${gi}-${i}`} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder} gap-2`} style={{ backgroundColor: cardInner }}>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="text-center min-w-[36px] shrink-0">
+                                <div className="text-sm font-bold leading-tight numeric-font" style={{ color: text1 }}>{a.time}</div>
+                                <div className="text-[10px]" style={{ color: text2 }}>{a.period}</div>
+                              </div>
+                              <div className="w-px h-8 shrink-0" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold truncate" style={{ color: text1 }}>{a.name}</div>
+                                <div className="text-[11px] truncate" style={{ color: text2 }}>{a.type}</div>
+                              </div>
+                            </div>
+                            <span className={`${statusStyles(a.status)} shrink-0`}>{a.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                  <span className={`${statusStyles(a.status)} shrink-0`}>{a.status}</span>
                 </div>
-              ))}
+              ) : (
+                todayAppointments.map((a, i) => (
+                  <div key={a.id ?? i} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder} gap-2`} style={{ backgroundColor: cardInner }}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="text-center min-w-[36px] shrink-0">
+                        <div className="text-sm font-bold leading-tight numeric-font" style={{ color: text1 }}>{a.time}</div>
+                        <div className="text-[10px]" style={{ color: text2 }}>{a.period}</div>
+                      </div>
+                      <div className="w-px h-8 shrink-0" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: text1 }}>{a.name}</div>
+                        <div className="text-[11px] truncate" style={{ color: text2 }}>{a.type}</div>
+                      </div>
+                    </div>
+                    <span className={`${statusStyles(a.status)} shrink-0`}>{a.status}</span>
+                  </div>
+                ))
+              )}
             </div>
             <div className="flex justify-center gap-1.5 mt-4">
-              <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? "#D4A574" : "#3D0A1F" }} />
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
+              {todayUsesCarousel ? (
+                todayGroups.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => todayCarousel.setSlide(idx)}
+                    className={`${todayCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                    style={{ backgroundColor: todayCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
+                    aria-label={`Show appointments group ${idx + 1}`}
+                  />
+                ))
+              ) : (
+                Array.from({ length: CAROUSEL_DOTS }, (_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => todayCarousel.setSlide(idx)}
+                    className={`${todayCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                    style={{ backgroundColor: todayCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
+                    aria-hidden={todayAppointments.length === 0}
+                    tabIndex={todayAppointments.length === 0 ? -1 : 0}
+                  />
+                ))
+              )}
             </div>
           </div>
 
@@ -532,40 +739,98 @@ export default function DashboardPage() {
               <span>Staff</span><span className="text-center">Patients Seen</span><span className="text-center">Avg. Procedure Time</span>
             </div>
 
-            <div className="flex flex-col gap-1">
-              {staff.map((s, i) => (
-                <div
-                  key={i}
-                  className={`flex flex-col sm:grid sm:grid-cols-[1fr_120px_160px] items-start sm:items-center px-3 py-3 rounded-xl border gap-2 sm:gap-0 ${cardBorder}`}
-                  style={{ backgroundColor: cardInner }}
-                >
-                  {/* Staff info */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{s.avatar}</div>
-                    <div>
-                      <div className="text-sm font-semibold" style={{ color: text1 }}>{s.name}</div>
-                      <div className="text-[11px]" style={{ color: text2 }}>{s.role}</div>
-                    </div>
-                  </div>
-
-                  {/* On mobile: show stats inline below name; on sm: in grid columns */}
-                  <div className="flex sm:contents gap-4 pl-11 sm:pl-0 text-sm">
-                    <div className="sm:text-center">
-                      <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Seen:</span>
-                      <span className="font-semibold numeric-font" style={{ color: "var(--font-cinzel)" }}>{s.seen}</span>
-                    </div>
-                    <div className="sm:text-center">
-                      <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Avg:</span>
-                      <span style={{ color: "var(--font-cinzel)" }}>{s.avg}</span>
-                    </div>
+            <div
+              className="flex flex-col gap-1"
+              onMouseEnter={staffCarousel.onMouseEnter}
+              onMouseLeave={staffCarousel.onMouseLeave}
+            >
+              {staffUsesCarousel ? (
+                <div className="overflow-hidden w-full">
+                  <div style={getCarouselTrackStyle(staffCarousel.slide, staffGroups.length)}>
+                    {staffGroups.map((group, gi) => (
+                      <div key={gi} className="flex flex-col gap-1" style={getCarouselSlideStyle(staffGroups.length)}>
+                        {group.map((s, i) => (
+                          <div
+                            key={`${s.name}-${gi}-${i}`}
+                            className={`flex flex-col sm:grid sm:grid-cols-[1fr_120px_160px] items-start sm:items-center px-3 py-3 rounded-xl border gap-2 sm:gap-0 ${cardBorder}`}
+                            style={{ backgroundColor: cardInner }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{s.avatar}</div>
+                              <div>
+                                <div className="text-sm font-semibold" style={{ color: text1 }}>{s.name}</div>
+                                <div className="text-[11px]" style={{ color: text2 }}>{s.role}</div>
+                              </div>
+                            </div>
+                            <div className="flex sm:contents gap-4 pl-11 sm:pl-0 text-sm">
+                              <div className="sm:text-center">
+                                <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Seen:</span>
+                                <span className="font-semibold numeric-font" style={{ color: "var(--font-cinzel)" }}>{s.seen}</span>
+                              </div>
+                              <div className="sm:text-center">
+                                <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Avg:</span>
+                                <span style={{ color: "var(--font-cinzel)" }}>{s.avg}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              ) : (
+                staff.map((s, i) => (
+                  <div
+                    key={i}
+                    className={`flex flex-col sm:grid sm:grid-cols-[1fr_120px_160px] items-start sm:items-center px-3 py-3 rounded-xl border gap-2 sm:gap-0 ${cardBorder}`}
+                    style={{ backgroundColor: cardInner }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{s.avatar}</div>
+                      <div>
+                        <div className="text-sm font-semibold" style={{ color: text1 }}>{s.name}</div>
+                        <div className="text-[11px]" style={{ color: text2 }}>{s.role}</div>
+                      </div>
+                    </div>
+                    <div className="flex sm:contents gap-4 pl-11 sm:pl-0 text-sm">
+                      <div className="sm:text-center">
+                        <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Seen:</span>
+                        <span className="font-semibold numeric-font" style={{ color: "var(--font-cinzel)" }}>{s.seen}</span>
+                      </div>
+                      <div className="sm:text-center">
+                        <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Avg:</span>
+                        <span style={{ color: "var(--font-cinzel)" }}>{s.avg}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             <div className="flex justify-center gap-1.5 mt-4">
-              <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? "#D4A574" : "#3D0A1F" }} />
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
+              {staffUsesCarousel ? (
+                staffGroups.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => staffCarousel.setSlide(idx)}
+                    className={`${staffCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                    style={{ backgroundColor: staffCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
+                    aria-label={`Show staff group ${idx + 1}`}
+                  />
+                ))
+              ) : (
+                Array.from({ length: CAROUSEL_DOTS }, (_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => staffCarousel.setSlide(idx)}
+                    className={`${staffCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                    style={{ backgroundColor: staffCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
+                    aria-hidden={staff.length === 0}
+                    tabIndex={staff.length === 0 ? -1 : 0}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -577,19 +842,14 @@ export default function DashboardPage() {
           <div className={`rounded-2xl p-4 sm:p-5 border ${cardBorder} transition-colors duration-300`} style={{ backgroundColor: card }}>
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: text2 }}>Patient Overview</p>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>S</div>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{patientOverview.initials}</div>
               <div>
                 <div className="text-base font-semibold" style={{ color: text1 }}>Next Patient</div>
-                <div className="text-[11px]" style={{ color: text2 }}>Arriving in 15 mins</div>
+                <div className="text-[11px]" style={{ color: text2 }}>{patientOverview.subtitle}</div>
               </div>
             </div>
             <div className="flex flex-col gap-2 mb-4">
-              {[
-                { label:"Patient Name:", value:"Sarah Jenkins",  isTag:false },
-                { label:"Patient ID:",   value:"#PX-4920",       isTag:false },
-                { label:"Last Visit:",   value:"Aug 12, 2023",   isTag:false },
-                { label:"Medical Alerts:", value:"⚠ Allergies", isTag:true  },
-              ].map(row => (
+              {patientOverview.rows.map(row => (
                 <div key={row.label} className="flex items-center justify-between gap-2">
                   <span style={{ color: text2 }}>{row.label}</span>
                   {row.isTag
@@ -610,16 +870,24 @@ export default function DashboardPage() {
               <span className="w-5 h-5 rounded-full bg-[#8B1A2E] text-white text-[10px] font-bold flex items-center justify-center shrink-0">{pendingConfirmations.length}</span>
             </div>
             <div className="flex flex-col gap-3">
-              {pendingConfirmations.map((p, i) => (
-                <div key={i} className={`rounded-xl p-3 border ${cardBorder}`} style={{ backgroundColor: cardInner }}>
+              {pendingConfirmations.length === 0 ? (
+                <p className="text-center py-6 italic text-sm" style={{ color: text2 }}>No pending confirmations.</p>
+              ) : pendingConfirmations.map((p) => (
+                <div key={p.id} className={`rounded-xl p-3 border ${cardBorder}`} style={{ backgroundColor: cardInner }}>
                   <div className="flex items-center justify-between mb-0.5 gap-2">
                     <span className="text-sm font-semibold truncate" style={{ color: text1 }}>{p.name}</span>
                     <span className="text-[10px] shrink-0" style={{ color: text2 }}>{p.timeAgo}</span>
                   </div>
                   <p className="text-[11px] mb-2.5" style={{ color: text2 }}>{p.service} · {p.date}</p>
                   <div className="flex gap-2">
-                    <button className="flex-1 py-1.5 rounded-lg bg-[#3D0A1F] text-[#F5ECD7] font-semibold hover:bg-[#5C1A30] transition-colors text-sm">Call</button>
-                    <button className={`flex-1 py-1.5 rounded-lg font-semibold border transition-colors text-sm ${isDark ? "border-[#711C31] text-[#711C31] hover:bg-[#D4A574] hover:text-[#3D0A1F]" : "border-[#3D0A1F] text-[#3D0A1F] hover:bg-[#3D0A1F] hover:text-[#F5ECD7]"}`}>Confirm</button>
+                    <button type="button" className="flex-1 py-1.5 rounded-lg bg-[#3D0A1F] text-[#F5ECD7] font-semibold hover:bg-[#5C1A30] transition-colors text-sm">Call</button>
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmAppointment(p.id)}
+                      className={`flex-1 py-1.5 rounded-lg font-semibold border transition-colors text-sm ${isDark ? "border-[#711C31] text-[#711C31] hover:bg-[#D4A574] hover:text-[#3D0A1F]" : "border-[#3D0A1F] text-[#3D0A1F] hover:bg-[#3D0A1F] hover:text-[#F5ECD7]"}`}
+                    >
+                      Confirm
+                    </button>
                   </div>
                 </div>
               ))}

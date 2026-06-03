@@ -209,39 +209,41 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Desktop Contact button */}
-          <Link
-            href="/pages/contact"
-            className="header-desktop-contact"
-            style={{
-              background: isHomePage ? '#FFFFFF' : '#551625',
-              color: isHomePage ? '#3d0a1e' : '#FFFFFF',
-              borderRadius: '30px',
-              padding: isHomePage ? '6px 30px' : '6px 50px',
-              marginRight: isHomePage ? '5px' : '30px',
-              fontFamily: "var(--font-seasons-reg)",
-              fontSize: '14.5px',
-              fontWeight: 500,
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-              border: '1px solid transparent',
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget;
-              el.style.background = isHomePage ? "#551625" : "#FFFFFF";
-              el.style.color = isHomePage ? "#FFFFFF" : "#551625";
-              el.style.border = isHomePage ? "1px solid #FFFFFF" : "1px solid #551625";
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget;
-              el.style.background = isHomePage ? "#FFFFFF" : "#551625";
-              el.style.color = isHomePage ? "#551625" : "#FFFFFF";
-              el.style.border = '1px solid transparent';
-            }}
-          >
-            Contact
-          </Link>
+          {/* Desktop Contact + Account buttons */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Link
+              href="/pages/contact"
+              className="header-desktop-contact"
+              style={{
+                background: isHomePage ? '#FFFFFF' : '#551625',
+                color: isHomePage ? '#3d0a1e' : '#FFFFFF',
+                borderRadius: '30px',
+                padding: isHomePage ? '6px 30px' : '6px 50px',
+                fontFamily: "var(--font-seasons-reg)",
+                fontSize: '14.5px',
+                fontWeight: 500,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                border: '1px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.style.background = isHomePage ? "#551625" : "#FFFFFF";
+                el.style.color = isHomePage ? "#FFFFFF" : "#551625";
+                el.style.border = isHomePage ? "1px solid #FFFFFF" : "1px solid #551625";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                el.style.background = isHomePage ? "#FFFFFF" : "#551625";
+                el.style.color = isHomePage ? "#551625" : "#FFFFFF";
+                el.style.border = '1px solid transparent';
+              }}
+            >
+              Contact
+            </Link>
 
+          </div>
+         
           {/* Hamburger — mobile only */}
           <button
             className="header-hamburger"
@@ -502,6 +504,7 @@ export default function Header() {
           }
         }
       `}</style>
+
     </>
   );
 }

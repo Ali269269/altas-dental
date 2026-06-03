@@ -1,8 +1,10 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
+import { LogOutIcon } from "lucide-react";
+import { logout } from "@/utils/auth";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -38,6 +40,12 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const router = useRouter();
+
+const handleLogout = async () => {
+  await logout();
+  router.push("/login");
+};
 
   const sidebarBg    = isDark ? "bg-[#FFFFFF] text-[#711C31]" : "bg-[#711C31] text-[#FFFFFF]";
   const dividerColor = isDark ? "bg-[#5C1A30]" : "bg-[#D4B896]";
@@ -116,18 +124,40 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
       <span style={{ fontFamily: "var(--font-body, 'Lato', sans-serif)" }}>Settings</span>
     </Link>
   );
-
+const logoutButton = (
+  <button
+    onClick={handleLogout}
+    className={`
+      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+      transition-all duration-200
+      ${
+        isDark
+          ? "text-[#711C31] hover:bg-[#D3D3D3D3]"
+          : "text-[#F5ECD7] hover:bg-[#3D1023]"
+      }
+    `}
+  >
+    <LogOutIcon size={17} className="shrink-0" />
+    <span>Logout</span>
+  </button>
+);
   return (
     <>
       {/* ── Desktop: fixed sidebar ── */}
       <div className="hidden lg:block fixed m-2 mt-3 left-0 top-0 z-40 h-[calc(100vh-20px)] w-[260px]">
         <aside className={`flex flex-col h-full w-[260px] rounded-2xl transition-colors duration-300 ${sidebarBg}`}>
           {logoEl}
-          <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto">
-            {navLinks}
-          </nav>
+          <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+  {navLinks}
+</nav>
           <div className={`mx-4 my-3 h-px ${dividerColor}`} />
-          <div className="px-3 pb-6">{settingsLink}</div>
+         <div className="px-3 pb-2">
+  {settingsLink}
+</div>
+
+<div className="px-3 pb-6">
+  {logoutButton}
+</div>
         </aside>
       </div>
 
@@ -160,13 +190,19 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
 
             {logoEl}
 
-            <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {navLinks}
-            </nav>
+           <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+  {navLinks}
+</nav>
 
             <div className={`mx-4 my-3 h-px ${dividerColor}`} />
 
-            <div className="px-3 pb-6">{settingsLink}</div>
+            <div className="px-3 pb-2">
+  {settingsLink}
+</div>
+
+<div className="px-3 pb-6">
+  {logoutButton}
+</div>
           </aside>
         </div>
       )}
