@@ -132,9 +132,9 @@ export default function Footer() {
   const [btnHovered, setBtnHovered] = useState(false);
   const navItems = [
     { label: "Accueil", href: "/" },
-    { label: "Notre centre", href: "/dashboard" },
-    { label: "Nos spécialités", href: "/dashboard" },
-    { label: "Notre équipe", href: "/notre-equipe" },
+    { label: "Notre centre", href: "/pages/notre-centre" },
+    { label: "Nos spécialités", href: "/pages/specialites/Dentisterie_Esthetique" },
+    { label: "Notre équipe", href: "/pages/notre-equipe" },
     { label: "Blogs", href: "/pages/Blogs" },
   ];
 
