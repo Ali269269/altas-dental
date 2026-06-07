@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { useAdminProfile } from "@/context/AdminProfileContext";
+import ProfileDetailsModal from "@/components/admin/ProfileDetailsModal";
 import { Search, Bell, Sun, Moon, X, Menu } from "lucide-react";
 import Image from "next/image";
 import { getToken } from "@/utils/auth";
@@ -11,6 +13,7 @@ interface NotificationItem {
   id: string;
   title: string;
   message: string;
+  type: string;
   isRead: boolean;
   timeAgo: string;
   details: {
@@ -20,7 +23,47 @@ interface NotificationItem {
     appointmentDate: string | null;
     appointmentTime: string;
     phone: string;
+    email: string;
   };
+}
+
+const INFO_NOTIFICATION_TYPES = new Set([
+  "NEWSLETTER_SUBSCRIPTION",
+  "CONTACT_FORM_SUBMISSION",
+]);
+
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
+
+function isAppointmentNotification(notification: NotificationItem) {
+  return Boolean(
+    notification.details.appointmentId &&
+      (notification.type === "APPOINTMENT_BOOKED" ||
+        notification.type === "APPOINTMENT_UPDATED")
+  );
+}
+
+function notificationDisplayName(notification: NotificationItem) {
+  return (
+    notification.details.patientName ||
+    notification.details.email ||
+    notification.title
+  );
+}
+
+function notificationSubtitle(notification: NotificationItem) {
+  if (notification.type === "NEWSLETTER_SUBSCRIPTION") {
+    return notification.message || "Newsletter subscription";
+  }
+  if (notification.type === "CONTACT_FORM_SUBMISSION") {
+    return notification.message || "Contact form submission";
+  }
+  return notification.details.service || notification.message;
 }
 
 interface HeaderAdminProps {
@@ -38,12 +81,15 @@ export default function HeaderAdmin({
 }: HeaderAdminProps) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
+  const { profile } = useAdminProfile();
 
   const [notifOpen, setNotifOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
@@ -70,83 +116,139 @@ export default function HeaderAdmin({
     }
   }, []);
 
-  const markAllNotificationsRead = useCallback(async () => {
-    const token = getToken();
-    if (!token || unreadCount === 0) return;
-
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
-
-    try {
-      await fetch(apiUrl("/api/statistics/notifications/read-all"), {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-    } catch (error) {
-      console.error("Failed to mark all notifications as read:", error);
-      fetchNotifications();
-    }
-  }, [fetchNotifications, unreadCount]);
+  const removeNotification = useCallback((id: string) => {
+    setNotifications((prev) => {
+      const target = prev.find((n) => n.id === id);
+      if (target && !target.isRead) {
+        setUnreadCount((count) => Math.max(0, count - 1));
+      }
+      return prev.filter((n) => n.id !== id);
+    });
+  }, []);
 
   const markOneAsRead = useCallback(
     async (id: string) => {
       const token = getToken();
       if (!token) return;
 
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      removeNotification(id);
 
       try {
         await fetch(apiUrl(`/api/statistics/notifications/${id}/read`), {
           method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: authHeaders(),
         });
       } catch (error) {
         console.error("Failed to mark notification as read:", error);
         fetchNotifications();
       }
     },
-    [fetchNotifications]
+    [fetchNotifications, removeNotification]
   );
 
   const confirmFromNotification = useCallback(
     async (notification: NotificationItem) => {
       const appointmentId = notification.details.appointmentId;
       if (!appointmentId) {
-        markOneAsRead(notification.id);
+        await markOneAsRead(notification.id);
         return;
       }
 
       const token = getToken();
       if (!token) return;
 
+      setActionLoadingId(notification.id);
       try {
         const response = await fetch(apiUrl(`/api/statistics/appointments/${appointmentId}`), {
           method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: authHeaders(),
           body: JSON.stringify({ status: "CONFIRMED" }),
         });
 
         if (response.ok) {
-          await markOneAsRead(notification.id);
+          removeNotification(notification.id);
+        } else {
+          const err = await response.json().catch(() => ({}));
+          window.alert(err.message || "Failed to confirm appointment.");
         }
       } catch (error) {
         console.error("Failed to confirm appointment notification:", error);
+        window.alert("Failed to confirm appointment.");
+      } finally {
+        setActionLoadingId(null);
       }
     },
-    [markOneAsRead]
+    [markOneAsRead, removeNotification]
   );
+
+  const cancelFromNotification = useCallback(
+    async (notification: NotificationItem) => {
+      const appointmentId = notification.details.appointmentId;
+      if (!appointmentId) return;
+
+      const reason = window.prompt("Please provide a cancellation reason:");
+      if (!reason?.trim()) {
+        if (reason !== null) window.alert("Please provide a cancellation reason.");
+        return;
+      }
+
+      const token = getToken();
+      if (!token) return;
+
+      setActionLoadingId(notification.id);
+      try {
+        const response = await fetch(apiUrl(`/api/statistics/appointments/${appointmentId}`), {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            status: "CANCELLED",
+            cancellationReason: reason.trim(),
+          }),
+        });
+
+        if (response.ok) {
+          removeNotification(notification.id);
+        } else {
+          const err = await response.json().catch(() => ({}));
+          window.alert(err.message || "Failed to cancel appointment.");
+        }
+      } catch (error) {
+        console.error("Failed to cancel appointment notification:", error);
+        window.alert("Failed to cancel appointment.");
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+    [removeNotification]
+  );
+
+  const dismissInfoNotificationsOnClose = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    setNotifications((prev) => {
+      const toDismiss = prev.filter(
+        (n) => !n.isRead && INFO_NOTIFICATION_TYPES.has(n.type)
+      );
+      if (toDismiss.length === 0) return prev;
+
+      setUnreadCount((count) => Math.max(0, count - toDismiss.length));
+
+      Promise.all(
+        toDismiss.map((n) =>
+          fetch(apiUrl(`/api/statistics/notifications/${n.id}/read`), {
+            method: "PUT",
+            headers: authHeaders(),
+          })
+        )
+      ).catch((error) => {
+        console.error("Failed to dismiss info notifications:", error);
+        fetchNotifications();
+      });
+
+      return prev.filter((n) => !toDismiss.some((item) => item.id === n.id));
+    });
+  }, [fetchNotifications]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -184,10 +286,12 @@ export default function HeaderAdmin({
   }, [fetchNotifications]);
 
   useEffect(() => {
-    if (notifOpen) {
-      markAllNotificationsRead();
-    }
-  }, [notifOpen, markAllNotificationsRead]);
+    if (!notifOpen) return;
+
+    return () => {
+      dismissInfoNotificationsOnClose();
+    };
+  }, [notifOpen, dismissInfoNotificationsOnClose]);
 
   const initials = userName
     .split(" ")
@@ -323,73 +427,97 @@ export default function HeaderAdmin({
                   className={`text-base font-bold ${isDark ? "text-[#F5ECD7]" : "text-[#591727]"}`}
                   style={{ fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" }}
                 >
-                  Pending Confirmations
+                  Notifications
                 </span>
                 <span className="w-5 h-5 rounded-full bg-[#8B1A2E] text-white text-[10px] font-bold flex items-center justify-center">
                   {notifications.length}
                 </span>
               </div>
 
-              <div className="px-4 flex flex-col gap-3 pb-3">
+              <div className="px-4 flex flex-col gap-3 pb-3 max-h-[360px] overflow-y-auto">
                 {notifications.length === 0 && (
-                  <div className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#EBD9B8]"}`}>
+                  <div className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#D3D3D3]"}`}>
                     <p className={`text-sm ${isDark ? "text-[#F5ECD7]" : "text-[#591727]"}`}>
                       No new notifications.
                     </p>
                   </div>
                 )}
 
-                {notifications.map((n) => (
+                {notifications.map((n) => {
+                  const showActions = isAppointmentNotification(n);
+                  const isLoading = actionLoadingId === n.id;
+                  const isContact = n.type === "CONTACT_FORM_SUBMISSION";
+
+                  return (
                   <div
                     key={n.id}
-                    className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#EBD9B8]"} ${!n.isRead ? "ring-1 ring-[#8B1A2E]/60" : ""}`}
+                    className={`rounded-xl p-3 ${isDark ? "bg-[#3D0A1F]" : "bg-[#D3D3D3]"} ${!n.isRead ? "ring-1 ring-[#8B1A2E]/60" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
                       <span
                         className={`text-sm font-semibold ${isDark ? "text-[#F5ECD7]" : "text-[#591727]"}`}
                         style={{ fontFamily: "var(--font-body, 'Lato', sans-serif)" }}
                       >
-                        {n.details.patientName || n.title}
+                        {notificationDisplayName(n)}
                       </span>
-                      <span className={`text-xs ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
+                      <span className={`text-xs shrink-0 ml-2 ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
                         {n.timeAgo}
                       </span>
                     </div>
-                    <p className={`text-xs mb-2.5 ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
-                      {n.details.service || n.message}
-                    </p>
-                    <div className="flex gap-2">
-                      {n.details.phone ? (
-                        <a
-                          href={`tel:${n.details.phone}`}
-                          className="flex-1 py-1.5 rounded-lg bg-[#591727] text-[#F5ECD7] text-xs font-semibold hover:bg-[#5C1A30] transition-colors text-center"
-                          onClick={() => markOneAsRead(n.id)}
+                    {isContact ? (
+                      <div className="flex flex-col gap-1 mb-2.5">
+                        <p className={`text-xs font-semibold ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
+                          Contact form submission
+                        </p>
+                        {n.details.email && (
+                          <p className={`text-xs ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}>
+                            {n.details.email}
+                          </p>
+                        )}
+                        <p
+                          className={`text-xs whitespace-pre-wrap break-words line-clamp-4 ${isDark ? "text-[#F5ECD7]" : "text-[#591727]"}`}
+                          title={n.message}
                         >
-                          Call
-                        </a>
-                      ) : (
-                        <button
-                          onClick={() => markOneAsRead(n.id)}
-                          className="flex-1 py-1.5 rounded-lg bg-[#591727] text-[#F5ECD7] text-xs font-semibold hover:bg-[#5C1A30] transition-colors"
-                        >
-                          Call
-                        </button>
-                      )}
-                      <button
-                        onClick={() => confirmFromNotification(n)}
-                        className={`
-                          flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors
-                          ${isDark
-                            ? "border-[#5C1A30] text-[#F5ECD7] hover:bg-[#5C1A30]"
-                            : "border-[#D4B896] text-[#3D0A1F] hover:bg-[#D4B896]"
-                          }
-                        `}
+                          {n.message || "No message provided."}
+                        </p>
+                      </div>
+                    ) : (
+                      <p
+                        className={`text-xs mb-2.5 line-clamp-3 ${isDark ? "text-[#A07850]" : "text-[#7A6040]"}`}
+                        title={notificationSubtitle(n)}
                       >
-                        Confirm
-                      </button>
-                    </div>
+                        {notificationSubtitle(n)}
+                      </p>
+                    )}
+                    {showActions && (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => cancelFromNotification(n)}
+                          disabled={isLoading}
+                          className="flex-1 py-1.5 rounded-lg bg-[#591727] text-[#F5ECD7] text-xs font-semibold hover:bg-[#5C1A30] transition-colors disabled:opacity-60"
+                        >
+                          {isLoading ? "..." : "Cancel"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => confirmFromNotification(n)}
+                          disabled={isLoading}
+                          className={`
+                            flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-60
+                            ${isDark
+                              ? "border-[#5C1A30] text-[#F5ECD7] hover:bg-[#5C1A30]"
+                              : "border-[#591727] text-[#3D0A1F] hover:bg-[#CFCFCF]"
+                            }
+                          `}
+                        >
+                          {isLoading ? "..." : "Confirm"}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div
@@ -407,21 +535,40 @@ export default function HeaderAdmin({
           )}
         </div>
 
-        <div className="w-9 h-9 rounded-lg overflow-hidden bg-[#D3D3D3] border border-[#753141] shrink-0">
+        <button
+          type="button"
+          onClick={() => setShowProfileModal(true)}
+          className="w-10 h-10 rounded-lg overflow-hidden bg-[#D3D3D3] border border-[#753141] shrink-0 cursor-pointer transition-opacity hover:opacity-90"
+          title="View profile details"
+          aria-label="View profile details"
+        >
           {userImage ? (
             <Image
-              src="/images/docterpc.png"
+              src={userImage}
               alt={userName}
-              width={39}
-              height={39}
-              className="object-cover w-full h-full scale-125"
+              width={40}
+              height={40}
+              unoptimized
+              className="object-cover w-full h-full object-center"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#7A3048] text-[#F5ECD7] text-xs font-bold">
               {initials}
             </div>
           )}
-        </div>
+        </button>
+
+        {showProfileModal && (
+          <ProfileDetailsModal
+            fullName={profile?.fullName || userName}
+            professionalTitle={profile?.professionalTitle || ""}
+            email={profile?.email || ""}
+            phone={profile?.phone || ""}
+            photoUrl={profile?.profilePhoto || userImage || ""}
+            onClose={() => setShowProfileModal(false)}
+            isDark={isDark}
+          />
+        )}
       </div>
     </header>
   );

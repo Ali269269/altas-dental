@@ -2,16 +2,37 @@
 
 import Image from "next/image";
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import {
+  fetchPublicSpecialities,
+  specialityPagePath,
+  type PublicSpecialityListItem,
+} from '@/utils/specialitiesApi';
 
 export default function Header() {
   const [specialitesOpen, setSpecialitesOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSpecialitesOpen, setMobileSpecialitesOpen] = useState(false);
+  const [dynamicSpecialities, setDynamicSpecialities] = useState<PublicSpecialityListItem[]>([]);
 
   const pathname = usePathname();
   const isHomePage = pathname === '/';
+
+  useEffect(() => {
+    fetchPublicSpecialities()
+      .then(setDynamicSpecialities)
+      .catch(() => setDynamicSpecialities([]));
+  }, []);
+
+  const specialiteNavItems = useMemo(
+    () =>
+      dynamicSpecialities.map((s) => ({
+        name: s.title,
+        path: specialityPagePath(s.slug),
+      })),
+    [dynamicSpecialities]
+  );
 
   return (
     <>
@@ -174,12 +195,7 @@ export default function Header() {
                     paddingTop: '15px',
                   }}
                 >
-                  {[
-                    { name: 'Dentisterie Esthétique', path: '/pages/specialites/Dentisterie_Esthetique' },
-                    { name: 'Orthodontie', path: '/specialites/orthodontie' },
-                    { name: 'Esthétique', path: '/specialites/esthetique' },
-                    { name: 'Chirurgie', path: '/specialites/chirurgie' }
-                  ].map((s) => (
+                  {specialiteNavItems.map((s) => (
                     <Link
                       key={s.name}
                       href={s.path}
@@ -346,12 +362,7 @@ export default function Header() {
             </button>
             {mobileSpecialitesOpen && (
               <div style={{ paddingLeft: 16, paddingBottom: 8 }}>
-                {[
-                  { name: 'Dentisterie Esthétique', path: '/pages/specialites/Dentisterie_Esthetique' },
-                  { name: 'Orthodontie', path: '/specialites/orthodontie' },
-                  { name: 'Esthétique', path: '/specialites/esthetique' },
-                  { name: 'Chirurgie', path: '/specialites/chirurgie' },
-                ].map((s) => (
+                {specialiteNavItems.map((s) => (
                   <Link
                     key={s.name}
                     href={s.path}

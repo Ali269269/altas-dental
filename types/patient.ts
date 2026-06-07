@@ -8,6 +8,31 @@ export type PatientStatus =
 
 export type DetailTab = "overview" | "history" | "notes";
 
+export type ClinicalScanRef = {
+  storedName: string;
+  originalName: string;
+  url: string;
+  mimeType?: string;
+  size?: number;
+};
+
+export type ClinicalHistoryEntry = {
+  appointmentId?: string;
+  specialty?: string;
+  date: string;
+  time: string;
+  complaint: string;
+  clinicalObs: string;
+  primaryDiagnosis?: string;
+  diagnostics: { label: string; tag?: boolean }[];
+  treatment: string[];
+  prescriptions?: string;
+  followUp?: string;
+  postOpInstructions?: string[];
+  additionalNotes?: string;
+  scans?: ClinicalScanRef[];
+};
+
 export interface Patient {
   id: string;
   name: string;
@@ -28,16 +53,15 @@ export interface Patient {
   upcomingStatus: PatientStatus;
   clinicalNote: string;
   clinicalNoteDate: string;
-  documents: { name: string; added: string; size: string; icon: "img" | "doc" }[];
-  postOpInstructions: string[];
-  historyEntries: {
-    date: string;
-    time: string;
-    complaint: string;
-    clinicalObs: string;
-    diagnostics: { label: string; tag?: boolean }[];
-    treatment: string[];
+  documents: {
+    name: string;
+    added: string;
+    size: string;
+    icon: "img" | "doc";
+    url?: string;
   }[];
+  postOpInstructions: string[];
+  historyEntries: ClinicalHistoryEntry[];
   notes: {
     doctor: string;
     doctorInitials: string;

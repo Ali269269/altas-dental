@@ -1,8 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaInstagram, FaYoutube, FaTiktok, FaMapMarkerAlt } from "react-icons/fa";
+import { subscribeNewsletterApi } from "@/utils/subscribersApi";
+import {
+  DEFAULT_PUBLIC_CLINIC,
+  fetchPublicClinicInfo,
+  type PublicClinicInfo,
+} from "@/utils/clinicPublicApi";
+import {
+  fetchPublicSpecialities,
+  specialityPagePath,
+} from "@/utils/specialitiesApi";
 
 const socialLinkStyle: React.CSSProperties = {
   width: "36px",
@@ -130,10 +140,70 @@ function ContactLink({
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [btnHovered, setBtnHovered] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [clinic, setClinic] = useState<PublicClinicInfo>(DEFAULT_PUBLIC_CLINIC);
+  const [subscribeFeedback, setSubscribeFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [specialitiesHref, setSpecialitiesHref] = useState("/");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadClinic = async () => {
+      const data = await fetchPublicClinicInfo();
+      if (!cancelled) setClinic(data);
+    };
+
+    loadClinic();
+    const intervalId = window.setInterval(loadClinic, 30000);
+    const onFocus = () => loadClinic();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchPublicSpecialities()
+      .then((items) => {
+        if (items.length > 0) {
+          setSpecialitiesHref(specialityPagePath(items[0].slug));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleNewsletterSubscribe = async () => {
+    const value = email.trim();
+    if (!value || subscribing) return;
+
+    setSubscribing(true);
+    setSubscribeFeedback(null);
+
+    try {
+      const result = await subscribeNewsletterApi(value);
+      setSubscribeFeedback({ type: "success", message: result.message });
+      setEmail("");
+      window.setTimeout(() => setSubscribeFeedback(null), 4000);
+    } catch (err) {
+      setSubscribeFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to subscribe. Please try again.",
+      });
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   const navItems = [
     { label: "Accueil", href: "/" },
     { label: "Notre centre", href: "/pages/notre-centre" },
-    { label: "Nos spécialités", href: "/pages/specialites/Dentisterie_Esthetique" },
+    { label: "Nos spécialités", href: specialitiesHref },
     { label: "Notre équipe", href: "/pages/notre-equipe" },
     { label: "Blogs", href: "/pages/Blogs" },
   ];
@@ -562,7 +632,14 @@ export default function Footer() {
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleNewsletterSubscribe();
+                    }
+                  }}
                   placeholder="Votre email"
+                  disabled={subscribing}
                   style={{
                     flex: 1,
                     background: "transparent",
@@ -574,6 +651,9 @@ export default function Footer() {
                 />
 
                 <button
+                  type="button"
+                  onClick={handleNewsletterSubscribe}
+                  disabled={subscribing}
                   onMouseEnter={() => setBtnHovered(true)}
                   onMouseLeave={() => setBtnHovered(false)}
                   style={{
@@ -582,14 +662,28 @@ export default function Footer() {
                     borderRadius: "50%",
                     background: btnHovered ? "#711C31" : "",
                     border: "none",
-                    cursor: "pointer",
+                    cursor: subscribing ? "wait" : "pointer",
                     color: "#FFFFFF",
                     flexShrink: 0,
+                    opacity: subscribing ? 0.7 : 1,
                   }}
                 >
                   →
                 </button>
               </div>
+              {subscribeFeedback ? (
+                <p
+                  role="alert"
+                  style={{
+                    margin: "8px 2px 0",
+                    fontSize: "11px",
+                    lineHeight: 1.4,
+                    color: subscribeFeedback.type === "success" ? "#f0e6d3" : "#ffc9c9",
+                  }}
+                >
+                  {subscribeFeedback.message}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -613,9 +707,11 @@ export default function Footer() {
                 Timings
               </h4>
 
-              <p style={{ color: "#f0e6d3" }}>Monday- Friday:  8am–6 pm</p>
-              <p style={{ color: "#f0e6d3" }}>SATURDAY:  8am–6 pm</p>
-              <p style={{ color: "#f0e6d3" }}>SUNDAY: Off</p>
+              {clinic.businessHours.map((entry) => (
+                <p key={entry.label} style={{ color: "#f0e6d3", marginBottom: "6px" }}>
+                  {entry.label}: {entry.display}
+                </p>
+              ))}
             </div>
           </div>
 
@@ -626,15 +722,16 @@ export default function Footer() {
             </h4>
 
             <div style={{ marginBottom: "6px" }}>
-              <ContactLink icon="✉">contact@atlasdentalcenter.com</ContactLink>
+              <ContactLink href={`mailto:${clinic.clinicEmail}`} icon="✉">
+                {clinic.clinicEmail}
+              </ContactLink>
             </div>
             <div style={{ marginBottom: "6px" }}>
-              <ContactLink icon="☎">05 37 77 77 79 -
-                 06 68 20 10 10</ContactLink>
+              <ContactLink icon="☎">{clinic.primaryContact}</ContactLink>
             </div>
             <div>
               <ContactLink icon={<FaMapMarkerAlt size={16} color="#ffffff" />}>
-                Ang Av Atlas, 61 rue Oued Oum Errabi n. 5, 2ème étage, Agdal - RABAT
+                {clinic.address}
               </ContactLink>
             </div>
           </div>
@@ -647,7 +744,7 @@ export default function Footer() {
               className="footer-copyright"
               style={{ color: "#ffffff" }}
             >
-              © Atlas Dental Center 2026
+              © {clinic.clinicName} {new Date().getFullYear()}
             </span>
 
             <div className="footer-bottom-links flex gap-4">

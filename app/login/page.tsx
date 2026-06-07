@@ -2,25 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { setAuth, getToken, getAdmin, clearAuth } from '@/utils/auth';
+import { setAuth, endDashboardSession } from '@/utils/auth';
+import { apiUrl } from '@/utils/api';
+import { fetchLoginRoles, requestPasswordReset } from '@/utils/adminManagementApi';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [roleSlug, setRoleSlug] = useState('');
+  const [roles, setRoles] = useState<{ name: string; slug: string }[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetNote, setResetNote] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
-    const admin = getAdmin();
+    endDashboardSession();
+  }, []);
 
-    if (token && admin && admin.role === 'admin') {
-      router.replace('/dashboard');
-    }
-  }, [router]);
+  useEffect(() => {
+    fetchLoginRoles()
+      .then((items) => setRoles(items))
+      .catch(() => setRoles([]));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,38 +36,54 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(apiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, roleSlug }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (data && data.message) {
-          setError(data.message);
-        } else {
-          setError('Login failed');
-        }
+        setError(data?.message || 'Login failed');
         return;
       }
 
-      if (!data.admin || data.admin.role !== 'admin') {
-        clearAuth();
+      if (!data.admin || !data.admin.roleSlug) {
+        endDashboardSession();
         router.replace('/unauthorized');
         return;
       }
 
       setAuth(data.token, data.admin);
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordResetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetMessage('');
+    setResetLoading(true);
+
+    try {
+      const message = await requestPasswordReset({
+        email: email.trim(),
+        note: resetNote.trim(),
+      });
+      setResetMessage(message);
+      setShowResetForm(false);
+      setResetNote('');
+    } catch (err) {
+      setResetMessage(err instanceof Error ? err.message : 'Failed to submit request');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -79,14 +103,14 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="admin@altasdental.com"
+            placeholder="drghita101@gmail.com"
             style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '14px', fontFamily: 'var(--font-seasons-reg)' }}
           />
 
           <label style={{ display: 'block', marginBottom: '8px', color: '#591727', fontFamily: 'var(--font-seasons-reg)', fontSize: '14px' }}>
             Password
           </label>
-          <div style={{ position: 'relative', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', marginBottom: '18px' }}>
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -101,29 +125,38 @@ export default function LoginPage() {
               style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', color: '#711C31' }}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? (
-  // Eye icon (password is visible)
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#711C31" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-) : (
-  // Eye-off icon (password hidden)
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#711C31" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-)}
-            
+              {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
 
-
+          <label style={{ display: 'block', marginBottom: '8px', color: '#591727', fontFamily: 'var(--font-seasons-reg)', fontSize: '14px' }}>
+            Role
+          </label>
+          <select
+            value={roleSlug}
+            onChange={(e) => setRoleSlug(e.target.value)}
+            required
+            style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '14px', fontFamily: 'var(--font-seasons-reg)', backgroundColor: '#fff', color: '#591727' }}
+          >
+            <option value="" disabled>
+              Select your assigned role
+            </option>
+            {roles.map((role) => (
+              <option key={role.slug} value={role.slug}>
+                {role.name}
+              </option>
+            ))}
+          </select>
 
           {error && (
             <div style={{ marginBottom: '16px', color: '#c33', background: '#fee', padding: '12px 14px', borderRadius: '10px' }}>
               {error}
+            </div>
+          )}
+
+          {resetMessage && (
+            <div style={{ marginBottom: '16px', color: '#2f6b2f', background: '#eef8ee', padding: '12px 14px', borderRadius: '10px' }}>
+              {resetMessage}
             </div>
           )}
 
@@ -136,7 +169,36 @@ export default function LoginPage() {
           </button>
         </form>
 
-        
+        <div style={{ marginTop: '18px', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setShowResetForm((prev) => !prev)}
+            style={{ background: 'none', border: 'none', color: '#591727', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Forgot password? Request reset from Super Admin
+          </button>
+        </div>
+
+        {showResetForm && (
+          <form onSubmit={handlePasswordResetRequest} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #ddd' }}>
+            <label style={{ display: 'block', marginBottom: '8px', color: '#591727', fontSize: '13px' }}>
+              Optional note for Super Admin
+            </label>
+            <textarea
+              value={resetNote}
+              onChange={(e) => setResetNote(e.target.value)}
+              rows={3}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #ddd', marginBottom: '12px', fontSize: '13px', resize: 'vertical' }}
+            />
+            <button
+              type="submit"
+              disabled={resetLoading || !email.trim()}
+              style={{ width: '100%', backgroundColor: '#591727', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', cursor: resetLoading ? 'not-allowed' : 'pointer' }}
+            >
+              {resetLoading ? 'Submitting...' : 'Submit password reset request'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

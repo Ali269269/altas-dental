@@ -3,7 +3,22 @@
 import Image from 'next/image';
 import { useState, useEffect } from "react";
 import Link from "next/link";
-const cards = [
+import { blogImageUrl, fetchPublicBlogs } from "@/utils/blogsApi";
+import {
+  fetchPublicSpecialities,
+  specialityImageUrl,
+  specialityPagePath,
+} from "@/utils/specialitiesApi";
+
+type CarouselCard = {
+  tag: string;
+  title: string;
+  sub: string;
+  image: string;
+  href?: string;
+};
+
+const cards: CarouselCard[] = [
   { tag: "Pédodontie", title: "Teeth Whitening", sub: "Professional-grade whitening treatments that restore your smile's natural brilliance in just one session.", image: '/images/card10.png' },
   { tag: "Restorative", title: "Dental Implants", sub: "Permanent, natural-looking replacements for missing teeth that feel and function just like your own.", image: '/images/cardbg1.jpg' },
   { tag: "Orthodontics", title: "Invisible Aligners", sub: "Discreet, comfortable alignment systems tailored to your smile goals without traditional braces.", image: '/images/cardbg2.png' },
@@ -22,15 +37,6 @@ const reviews = [
   { name: "youssef sehbani.", text: "Très beau cabinet accueillant. Médecin a l’écoute , travail minutieux et résultat satisfaisant . Très bonne expérience sachant que j’ai la phobie.", bg: "#e8dcc8", stars: 5 },
   { name: "REDA EL.", text: "I was very satisfied with my experience at this dental practice in Rabat. The dentist was very professional, attentive, and reassuring. The practice is modern, clean, and well-organized. I highly recommend it.", bg: "#b09070", stars: 5 },
   { name: "Oumaima Ainouz.", text: "Docteur Ghita est très compétente et douce. Elle explique chaque étape avant d’agir, ce qui rend l’expérience rassurante. Le cabinet est moderne, équipé d’un matériel de pointe. Une excellente expérience, je recommande!", bg: "#8a4a5a", stars: 5 },
-];
-
-const blogPosts = [
-  { image: '/images/blog1.jpg', date: 'May 19, 2023', title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne", slug: "evolution-experience-patient" },
-  { image: '/images/blog2.jpg', date: 'May 19, 2023', title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins", slug: "frontiere-dentaire-numerique" },
-  { image: '/images/blog3.jpg', date: 'May 19, 2023', title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne", slug: "rehabilitation-totale-sourire" },
-  { image: '/images/blog1.jpg', date: 'May 19, 2023', title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins", slug: "frontiere-dentaire-2" },
-  { image: '/images/blog2.jpg', date: 'May 19, 2023', title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne", slug: "frontiere-dentaire-3" },
-  { image: '/images/blog3.jpg', date: 'May 19, 2023', title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins", slug: "evolution-experience-2" },
 ];
 
 const TOTAL_PAGES = 4;
@@ -101,6 +107,9 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
       
         flexShrink: 0,
         width: '380px',
+        height: '370px',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
         borderRadius: '24px',
         background: hovered ? '#5c0d2a' : '#f0f0f0',
         padding: '14px 14px 24px',
@@ -124,7 +133,7 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
           position: 'relative',
         }}
       >
-        <Image src={post.image} alt={post.title} fill style={{ objectFit: 'cover' }} />
+        <Image src={blogImageUrl(post.image) || "/images/blog1.jpg"} alt={post.title} fill style={{ objectFit: 'cover' }} unoptimized />
       </div>
 
       {/* Date */}
@@ -143,37 +152,46 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
         {post.date}
       </p>
 
-      {/* Title + Arrow */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', paddingLeft: '6px', paddingRight: '6px' }}>
-        <h3
-          style={{
-            color: hovered ? '#f0e6d3' : '#3d0818',
-            fontSize: '15px',
-            fontWeight: 400,
-            lineHeight: 1.6,
-            fontFamily: "var(--font-seasons-reg)",
-            flex: 1,
-            transition: 'color 0.4s',
-          }}
-        >
-          {post.title}
-        </h3>
-        <div
-          style={{
-            flexShrink: 0,
-            width: '49px',
-            height: '49px',
-            borderRadius: '50%',
-            background: hovered ? '#F0F0F0' : '#5c0d2a',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: hovered ? '#711c31':'#FFFFFF',
-            fontSize:'25px',
-            marginBottom: '2px',
-          }}
-        >
-          ↗
+      {/* Title + Arrow — fixed slot so arrow stays in the same place on every card */}
+      <div className="blog-card-footer" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: 0 }}>
+        <div className="blog-card-footer-row" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', paddingLeft: '6px', paddingRight: '6px', minHeight: '72px' }}>
+          <h3
+            style={{
+              color: hovered ? '#f0e6d3' : '#3d0818',
+              fontSize: '15px',
+              fontWeight: 400,
+              lineHeight: 1.6,
+              fontFamily: "var(--font-seasons-reg)",
+              flex: 1,
+              margin: 0,
+              minHeight: '72px',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical' as const,
+              overflow: 'hidden',
+              transition: 'color 0.4s',
+            }}
+          >
+            {post.title}
+          </h3>
+          <div
+            style={{
+              flexShrink: 0,
+              width: '49px',
+              height: '49px',
+              borderRadius: '50%',
+              background: hovered ? '#F0F0F0' : '#5c0d2a',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: hovered ? '#711c31':'#FFFFFF',
+              fontSize:'25px',
+              marginBottom: '2px',
+              alignSelf: 'flex-end',
+            }}
+          >
+            ↗
+          </div>
         </div>
       </div>
     </div>
@@ -353,8 +371,12 @@ function FaqSection() {
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function Home() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [carouselCards, setCarouselCards] = useState<CarouselCard[]>(cards);
   const [page, setPage] = useState(0);
   const [isBlogPaused, setIsBlogPaused] = useState(false);
+  const [blogPosts, setBlogPosts] = useState<
+    { image: string; date: string; title: string; slug: string }[]
+  >([]);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isVideoHovered, setIsVideoHovered] = useState(false);
   const [isMobileStats, setIsMobileStats] = useState(false);
@@ -371,6 +393,45 @@ export default function Home() {
     mediaQuery.addListener(listener);
     return () => mediaQuery.removeListener(listener);
   }, []);
+
+  useEffect(() => {
+    fetchPublicBlogs({ page: 1, limit: 8, sort: "recent" })
+      .then((data) => {
+        setBlogPosts(
+          data.blogs.map((blog) => ({
+            image: blog.image,
+            date: blog.date,
+            title: blog.title,
+            slug: blog.slug,
+          }))
+        );
+      })
+      .catch(() => setBlogPosts([]));
+  }, []);
+
+  useEffect(() => {
+    fetchPublicSpecialities()
+      .then((specs) => {
+        const dynamic: CarouselCard[] = specs.map((s) => ({
+          tag: s.title.split(" ")[0] || "Spécialité",
+          title: s.title,
+          sub:
+            s.description?.slice(0, 140) ||
+            "Découvrez nos soins spécialisés à Atlas Dental Center.",
+          image: specialityImageUrl(s.heroImageUrl) || "/images/card10.png",
+          href: specialityPagePath(s.slug),
+        }));
+        setCarouselCards([...cards, ...dynamic]);
+      })
+      .catch(() => setCarouselCards(cards));
+  }, []);
+
+  // Blog slider sizing + seamless animation math.
+  // BlogCard width is fixed at 380px and the slider gap is 24px.
+  const blogCardWidth = 380;
+  const blogCardGap = 24;
+  const blogShiftPx =
+    blogPosts.length > 0 ? blogPosts.length * (blogCardWidth + blogCardGap) : 0;
 
   const statsData = [
     { value: '3000+', label: 'Patients', icon: '/images/icon1.png' },
@@ -460,7 +521,7 @@ export default function Home() {
         }
         @keyframes blog-scroll {
           0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          100% { transform: translateX(calc(-1 * var(--blog-shift, 0px))); }
         }
         @keyframes reviews-scroll {
           0%,   24% { transform: translateX(0%);   }
@@ -897,10 +958,15 @@ export default function Home() {
   font-size: 11px !important;
   line-height: 1.35 !important;
   flex: 1 !important;
+  min-height: 45px !important;
   overflow: hidden !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 3 !important;
   -webkit-box-orient: vertical !important;
+}
+
+.blog-track .blog-card-footer-row {
+  min-height: 45px !important;
 }
 
 .blog-track .blog-card-wrapper > div:last-child {
@@ -1288,8 +1354,8 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
                 animationPlayState: openIndex !== null ? 'paused' : 'running',
               }}
             >
-              {[...cards, ...cards].map((card, i) => {
-                const realIndex = i % cards.length;
+              {[...carouselCards, ...carouselCards].map((card, i) => {
+                const realIndex = i % carouselCards.length;
                 const isOpen = openIndex === realIndex;
                 return (
                   <div
@@ -1306,7 +1372,11 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
                       <div style={{ fontSize: '12px', color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.7, overflow: 'hidden', maxHeight: isOpen ? '100px' : '0px', opacity: isOpen ? 1 : 0, transition: 'max-height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s', fontFamily: "var(--font-seasons-reg)" }}>{card.sub}</div>
                     </div>
                     <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
-                      <button style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#711C31', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-seasons-reg)", padding: 0, transition: 'color 0.2s' }}>Read More</button>
+                      {card.href ? (
+                        <Link href={card.href} style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#711C31', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-seasons-reg)", padding: 0, transition: 'color 0.2s', textDecoration: 'none' }}>Read More</Link>
+                      ) : (
+                        <button style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#711C31', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-seasons-reg)", padding: 0, transition: 'color 0.2s' }}>Read More</button>
+                      )}
                       <div style={{ position: 'absolute', right: isOpen ? 'auto' : '0px', left: isOpen ? '90px' : 'auto', width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #b8955a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px', color: isOpen ? '#711C31' : '#FFFFFF', background: isOpen ? '#F0F0F0' : '#711C31', transform: isOpen ? 'rotate(0deg)' : 'rotate(320deg)', transition: 'transform 0.4s ease, background 0.3s, color 0.3s' }}>→</div>
                     </div>
                   </div>
@@ -1509,8 +1579,9 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
             animation: 'blog-scroll 30s linear infinite',
             animationPlayState: isBlogPaused ? 'paused' : 'running',
             paddingLeft: '60px',
+            ['--blog-shift' as any]: `${blogShiftPx}px`,
           }}>
-            {[...blogPosts, ...blogPosts].map((post, i) => (
+            {(blogPosts.length > 0 ? [...blogPosts, ...blogPosts] : []).map((post, i) => (
               <BlogCard
                 key={i}
                 post={post}

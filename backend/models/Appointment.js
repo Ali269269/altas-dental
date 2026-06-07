@@ -56,6 +56,7 @@ const appointmentSchema = new mongoose.Schema(
     checkup: {
       complaint: { type: String, default: '' },
       clinicalObs: { type: String, default: '' },
+      primaryDiagnosis: { type: String, default: '' },
       diagnostics: [
         {
           label: { type: String, required: true },
@@ -63,6 +64,20 @@ const appointmentSchema = new mongoose.Schema(
         },
       ],
       treatment: [{ type: String }],
+      prescriptions: { type: String, default: '' },
+      followUp: { type: String, default: '' },
+      postOpInstructions: [{ type: String }],
+      additionalNotes: { type: String, default: '' },
+      scanNames: [{ type: String }],
+      scans: [
+        {
+          storedName: { type: String, required: true },
+          originalName: { type: String, default: '' },
+          mimeType: { type: String, default: '' },
+          size: { type: Number, default: 0 },
+          uploadedAt: { type: Date, default: Date.now },
+        },
+      ],
       completedAt: { type: Date },
     },
     isNewPatient: {

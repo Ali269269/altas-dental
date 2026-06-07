@@ -12,6 +12,8 @@ export type DisplayAppointment = {
   name: string;
   type: string;
   status: string;
+  dateLabel?: string;
+  appointmentDate?: string;
 };
 
 export type ServiceStat = { name: string; pct: number };
@@ -22,6 +24,7 @@ export type StaffMember = {
   seen: number;
   avg: string;
   avatar: string;
+  progress?: number;
 };
 
 export type PendingConfirmation = {
@@ -41,7 +44,17 @@ export type PatientOverviewRow = {
 export type NextPatient = {
   initials: string;
   subtitle: string;
+  appointmentId?: string;
+  clinicalRecordAppointmentId?: string | null;
+  hasClinicalRecord?: boolean;
   rows: PatientOverviewRow[];
+};
+
+export type PatientStats = {
+  totalPatients: number;
+  newPatientsThisMonth: number;
+  newToday: number;
+  monthGrowthPct: number | null;
 };
 
 export type DashboardOverview = {
@@ -51,9 +64,11 @@ export type DashboardOverview = {
   services: ServiceStat[];
   topPerformer: string;
   todayAppointments: DisplayAppointment[];
+  upcomingAppointments: DisplayAppointment[];
   staff: StaffMember[];
   pendingConfirmations: PendingConfirmation[];
   nextPatient: NextPatient | null;
+  patientStats: PatientStats | null;
 };
 
 export const DEFAULT_STAT_CARDS: StatCard[] = [
@@ -73,15 +88,9 @@ export const DEFAULT_SERVICES: ServiceStat[] = [
   { name: "Réhabilitation totale du sourire", pct: 0 },
 ];
 
-export const DEFAULT_STAFF: StaffMember[] = [
-  { name: "Dr. Aris Thorne", role: "Principal Dentist", seen: 0, avg: "45 min", avatar: "AT" },
-  { name: "Dr. Julian Vane", role: "Associate Dentist", seen: 0, avg: "52 min", avatar: "JV" },
-  { name: "Sarah Jenkins", role: "Lead Hygienist", seen: 0, avg: "30 min", avatar: "SJ" },
-];
-
 export const DEFAULT_NEXT_PATIENT: NextPatient = {
   initials: "—",
-  subtitle: "No upcoming patients today",
+  subtitle: "No upcoming patients scheduled",
   rows: [
     { label: "Patient Name:", value: "—", isTag: false },
     { label: "Patient ID:", value: "—", isTag: false },
@@ -97,7 +106,9 @@ export const DEFAULT_DASHBOARD_OVERVIEW: DashboardOverview = {
   services: DEFAULT_SERVICES,
   topPerformer: "—",
   todayAppointments: [],
-  staff: DEFAULT_STAFF,
+  upcomingAppointments: [],
+  staff: [],
   pendingConfirmations: [],
   nextPatient: null,
+  patientStats: null,
 };

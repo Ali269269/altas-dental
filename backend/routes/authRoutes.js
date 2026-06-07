@@ -5,18 +5,26 @@ const {
   getProfile,
   logout,
   getDashboard,
+  getLoginRoles,
+  requestPasswordReset,
+  verifyAccess,
 } = require('../controllers/authController');
 const { protect, checkActiveAdmin } = require('../middleware/auth');
+const { attachPermissions, requireSuperAdmin } = require('../middleware/permissions');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-// Public routes
-router.post('/login', login);
-router.post('/signup', signup);
+router.get('/roles', getLoginRoles);
+router.post('/login', authLimiter, login);
+router.post('/password-reset-request', authLimiter, requestPasswordReset);
 
-// Protected routes
-router.get('/profile', protect, checkActiveAdmin, getProfile);
-router.get('/dashboard', protect, checkActiveAdmin, getDashboard);
+router.post('/signup', protect, checkActiveAdmin, attachPermissions, requireSuperAdmin, signup);
+
+router.get('/verify', protect, checkActiveAdmin, attachPermissions, verifyAccess);
+router.get('/profile', protect, checkActiveAdmin, attachPermissions, getProfile);
+router.get('/dashboard', protect, checkActiveAdmin, attachPermissions, getDashboard);
+router.post('/logout', protect, logout);
 router.get('/logout', protect, logout);
 
 module.exports = router;

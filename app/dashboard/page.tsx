@@ -11,7 +11,14 @@ import {
   DEFAULT_NEXT_PATIENT,
   type DashboardOverview,
   type DisplayAppointment,
+  type StaffMember,
 } from "@/utils/dashboardData";
+import type { AppointmentDetail } from "@/utils/appointmentsData";
+import type { ClinicalHistoryEntry } from "@/types/patient";
+import { AppointmentDetailModal } from "@/components/admin/dashboard/AppointmentDetailModal";
+import { UpcomingMonthCalendar } from "@/components/admin/dashboard/UpcomingMonthCalendar";
+import { AllStaffModal } from "@/components/admin/dashboard/AllStaffModal";
+import { ClinicalRecordDetailModal } from "@/components/admin/patient/ClinicalRecordDetailModal";
 import {
   chunkIntoGroups,
   getCarouselSlideStyle,
@@ -35,11 +42,152 @@ function authHeaders(): HeadersInit {
 
 function statusStyles(status: string) {
   switch (status) {
-    case "CONFIRMED": return "text-[#3DAA7A] border border-[#3DAA7A] bg-[#D1FAE5] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case "PENDING":   return "text-[#686868] border border-[#D3D3D3] bg-[#F0F0F0] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    case "NEW":       return "text-[#C94A3A] border border-[#C94A3A] bg-[#bfafaa] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
-    default:          return "";
+    case "CONFIRMED":
+      return "text-[#711c31] border border-[#C94A3A] text-[10px] bg-[#d3d3d3] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "PENDING":
+      return "text-[#753141] border border-[#D3D3D3] text-[10px] bg-[#d3d3d3] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "CANCELLED":
+      return "text-[#C94A3A] border border-[#C94A3A] text-[10px] bg-[#bfafaa] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "SEEN":
+      return "text-[#ffffff] border border-[#591727] text-[10px] bg-[#591727] font-bold px-2 py-0.5 rounded tracking-wide";
+    case "NEW":
+      return "text-[#C94A3A] border border-[#C94A3A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
+    default:
+      return "";
   }
+}
+
+function MaroonTimeDot({ active }: { active: boolean }) {
+  return (
+    <span className="relative flex h-2 w-2 shrink-0">
+      {active && (
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50 bg-[#711C31]" />
+      )}
+      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#711C31]" />
+    </span>
+  );
+}
+
+function UpcomingAppointmentCard({
+  appointment,
+  cardBorder,
+  cardInner,
+  text1,
+  text2,
+  isDark,
+  onSelect,
+}: {
+  appointment: DisplayAppointment;
+  cardBorder: string;
+  cardInner: string;
+  text1: string;
+  text2: string;
+  isDark: boolean;
+  onSelect?: (id: string) => void;
+}) {
+  const isActive = appointment.status === "CONFIRMED" || appointment.status === "NEW";
+  const clickable = Boolean(appointment.id && onSelect);
+
+  return (
+    <div
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={() => appointment.id && onSelect?.(appointment.id)}
+      onKeyDown={(e) => {
+        if (appointment.id && onSelect && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onSelect(appointment.id);
+        }
+      }}
+      className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder} gap-2 transition-all duration-300 ${
+        clickable ? "cursor-pointer hover:opacity-90" : ""
+      }`}
+      style={{ backgroundColor: cardInner }}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <MaroonTimeDot active={isActive} />
+          <div className="text-center min-w-[36px]">
+            <div className="text-sm font-bold leading-tight numeric-font" style={{ color: "#711C31" }}>
+              {appointment.time}
+            </div>
+            <div className="text-[10px]" style={{ color: text2 }}>
+              {appointment.period}
+            </div>
+          </div>
+        </div>
+        <div className="w-px h-8 shrink-0" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
+        <div className="min-w-0">
+          <div className="text-sm font-semibold truncate" style={{ color: text1 }}>
+            {appointment.name}
+          </div>
+          <div className="text-[11px] truncate" style={{ color: text2 }}>
+            {appointment.dateLabel ? `${appointment.dateLabel} · ` : ""}
+            {appointment.type}
+          </div>
+        </div>
+      </div>
+      <span className={`${statusStyles(appointment.status)} shrink-0`}>{appointment.status}</span>
+    </div>
+  );
+}
+
+function StaffProductivityRow({
+  member,
+  cardBorder,
+  cardInner,
+  text1,
+  text2,
+  isDark,
+}: {
+  member: StaffMember;
+  cardBorder: string;
+  cardInner: string;
+  text1: string;
+  text2: string;
+  isDark: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col sm:grid sm:grid-cols-[1fr_120px_160px] items-start sm:items-center px-3 py-3 rounded-xl border gap-2 sm:gap-0 ${cardBorder}`}
+      style={{ backgroundColor: cardInner }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0"
+          style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color: "#F5ECD7" }}
+        >
+          {member.avatar}
+        </div>
+        <div>
+          <div className="text-sm font-semibold" style={{ color: text1 }}>
+            {member.name}
+          </div>
+          <div className="text-[11px]" style={{ color: text2 }}>
+            {member.role}
+          </div>
+        </div>
+      </div>
+      <div className="flex sm:contents gap-4 pl-11 sm:pl-0 text-sm">
+        <div className="sm:text-center">
+          <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>
+            Seen:
+          </span>
+          <span className="font-semibold numeric-font transition-all duration-500" style={{ color: "var(--font-cinzel)" }}>
+            {member.seen}
+          </span>
+        </div>
+        <div className="sm:text-center">
+          <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>
+            Avg:
+          </span>
+          <span className="transition-all duration-500" style={{ color: "var(--font-cinzel)" }}>
+            {member.avg}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function OccupancyCell({ level, isDark }: { level: number; isDark: boolean }) {
@@ -326,7 +474,7 @@ export default function DashboardPage() {
       }
 
       // Not admin
-      if (admin.role !== "admin") {
+      if (!admin?.roleSlug && !admin?.isSuperAdmin) {
         router.push("/unauthorized");
         return;
       }
@@ -358,6 +506,14 @@ export default function DashboardPage() {
   const [showAddPatient,   setShowAddPatient]   = useState(false);
   const [showTodaySchedule, setShowTodaySchedule] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [upcomingView, setUpcomingView] = useState<"list" | "calendar">("list");
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDetail | null>(null);
+  const [appointmentDetailLoading, setAppointmentDetailLoading] = useState(false);
+  const [clinicalRecord, setClinicalRecord] = useState<ClinicalHistoryEntry | null>(null);
+  const [clinicalNote, setClinicalNote] = useState<string | null>(null);
+  const [clinicalLoading, setClinicalLoading] = useState(false);
+  const [showAllStaff, setShowAllStaff] = useState(false);
   const [addForm, setAddForm] = useState({
     name:"", email:"", phone:"", specialty:"", date:"", time:"", notes:"",
   });
@@ -381,9 +537,11 @@ export default function DashboardPage() {
             services: json.data.services?.length ? json.data.services : DEFAULT_DASHBOARD_OVERVIEW.services,
             topPerformer: json.data.topPerformer ?? DEFAULT_DASHBOARD_OVERVIEW.topPerformer,
             todayAppointments: json.data.todayAppointments ?? [],
-            staff: json.data.staff?.length ? json.data.staff : DEFAULT_DASHBOARD_OVERVIEW.staff,
+            upcomingAppointments: json.data.upcomingAppointments ?? [],
+            staff: json.data.staff ?? [],
             pendingConfirmations: json.data.pendingConfirmations ?? [],
             nextPatient: json.data.nextPatient ?? null,
+            patientStats: json.data.patientStats ?? null,
           });
         }
       }
@@ -421,6 +579,91 @@ export default function DashboardPage() {
       if (response.ok) await fetchDashboardOverview();
     } catch (error) {
       console.error("Failed to confirm appointment:", error);
+    }
+  };
+
+  const handleCancelAppointment = async (id: string) => {
+    const reason = window.prompt("Please provide a cancellation reason:");
+    if (!reason?.trim()) {
+      if (reason !== null) window.alert("Please provide a cancellation reason.");
+      return;
+    }
+
+    setCancellingId(id);
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${id}`), {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          status: "CANCELLED",
+          cancellationReason: reason.trim(),
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        window.alert(err.message || "Failed to cancel appointment.");
+        return;
+      }
+      await fetchDashboardOverview();
+    } catch (error) {
+      console.error("Failed to cancel appointment:", error);
+      window.alert("Failed to cancel appointment.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const openAppointmentDetail = useCallback(async (id: string) => {
+    setSelectedAppointment(null);
+    setAppointmentDetailLoading(true);
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${id}`), {
+        headers: authHeaders(),
+      });
+      if (response.ok) {
+        const json = await response.json();
+        if (json.data) setSelectedAppointment(json.data as AppointmentDetail);
+      }
+    } catch (error) {
+      console.error("Failed to load appointment:", error);
+    } finally {
+      setAppointmentDetailLoading(false);
+    }
+  }, []);
+
+  const handleOpenClinicalFile = async () => {
+    setClinicalNote(null);
+    const recordId = dashboard.nextPatient?.clinicalRecordAppointmentId;
+    if (!dashboard.nextPatient?.hasClinicalRecord || !recordId) {
+      setClinicalNote("This patient is new — no clinical notes file yet.");
+      return;
+    }
+
+    setClinicalLoading(true);
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${recordId}`), {
+        headers: authHeaders(),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json.data) {
+        setClinicalNote("This patient is new — no clinical notes file yet.");
+        return;
+      }
+
+      const history = json.data.patientProfile?.historyEntries as ClinicalHistoryEntry[] | undefined;
+      const record =
+        history?.find((entry) => entry.appointmentId === recordId) ?? history?.[0] ?? null;
+
+      if (record) {
+        setClinicalRecord(record);
+      } else {
+        setClinicalNote("This patient is new — no clinical notes file yet.");
+      }
+    } catch (error) {
+      console.error("Failed to load clinical record:", error);
+      setClinicalNote("This patient is new — no clinical notes file yet.");
+    } finally {
+      setClinicalLoading(false);
     }
   };
 
@@ -465,18 +708,20 @@ export default function DashboardPage() {
     services,
     topPerformer,
     todayAppointments,
+    upcomingAppointments,
     staff,
     pendingConfirmations,
     nextPatient,
+    patientStats,
   } = dashboard;
-  const todayGroups = chunkIntoGroups(todayAppointments, 3);
+  const upcomingGroups = chunkIntoGroups(upcomingAppointments, 3);
   const staffGroups = chunkIntoGroups(staff, 3);
-  const todayUsesCarousel = todayGroups.length > 1;
+  const upcomingUsesCarousel = upcomingGroups.length > 1;
   const staffUsesCarousel = staffGroups.length > 1;
-  const todayCarousel = useAutoCarousel(
-    todayUsesCarousel ? todayGroups.length : CAROUSEL_DOTS,
+  const upcomingCarousel = useAutoCarousel(
+    upcomingUsesCarousel ? upcomingGroups.length : CAROUSEL_DOTS,
     4000,
-    todayAppointments.length > 0
+    upcomingAppointments.length > 0
   );
   const staffCarousel = useAutoCarousel(
     staffUsesCarousel ? staffGroups.length : CAROUSEL_DOTS,
@@ -485,6 +730,10 @@ export default function DashboardPage() {
   );
 
   const patientOverview = nextPatient ?? DEFAULT_NEXT_PATIENT;
+  const growthLabel =
+    patientStats?.monthGrowthPct == null
+      ? "—"
+      : `${patientStats.monthGrowthPct >= 0 ? "+" : ""}${patientStats.monthGrowthPct}%`;
 
   // Color tokens
   const card       = isDark ? "#c9a898" : "#f0f0f0";
@@ -519,6 +768,38 @@ export default function DashboardPage() {
           onBook={handleBookAppointment}
           booking={booking}
           onClose={() => { setShowAddPatient(false); setAddForm({ name:"", email:"", phone:"", specialty:"", date:"", time:"", notes:"" }); }}
+        />
+      )}
+      {(selectedAppointment || appointmentDetailLoading) && (
+        <AppointmentDetailModal
+          isDark={isDark}
+          card={card}
+          cardBorder={cardBorder}
+          text1={text1}
+          text2={text2}
+          pageBg={pageBg}
+          appointment={selectedAppointment}
+          loading={appointmentDetailLoading}
+          onClose={() => setSelectedAppointment(null)}
+        />
+      )}
+      {clinicalRecord && (
+        <ClinicalRecordDetailModal
+          record={clinicalRecord}
+          onClose={() => setClinicalRecord(null)}
+        />
+      )}
+      {showAllStaff && (
+        <AllStaffModal
+          isDark={isDark}
+          card={card}
+          cardBorder={cardBorder}
+          cardInner={cardInner}
+          text1={text1}
+          text2={text2}
+          pageBg={pageBg}
+          staff={staff}
+          onClose={() => setShowAllStaff(false)}
         />
       )}
 
@@ -646,92 +927,122 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="text-lg font-semibold" style={{ color: text1 }}>Upcoming Appointments</h2>
               <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: isDark ? "#5C2A3A" : "#D4B896" }}>
-                <button className="px-3 py-1.5 font-semibold transition-colors" style={{ backgroundColor: cardInner, color: text1 }}>List</button>
-                <button className="px-3 py-1.5 transition-colors" style={{ backgroundColor:"transparent", color: text2 }}>Calendar</button>
+                <button
+                  type="button"
+                  onClick={() => setUpcomingView("list")}
+                  className="px-3 py-1.5 font-semibold transition-colors"
+                  style={{
+                    backgroundColor: upcomingView === "list" ? cardInner : "transparent",
+                    color: upcomingView === "list" ? text1 : text2,
+                  }}
+                >
+                  List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpcomingView("calendar")}
+                  className="px-3 py-1.5 font-semibold transition-colors"
+                  style={{
+                    backgroundColor: upcomingView === "calendar" ? cardInner : "transparent",
+                    color: upcomingView === "calendar" ? text1 : text2,
+                  }}
+                >
+                  Calendar
+                </button>
               </div>
             </div>
+            {upcomingView === "calendar" ? (
+              <UpcomingMonthCalendar
+                cardInner={cardInner}
+                cardBorder={cardBorder}
+                cardBg={card}
+                text1={text1}
+                text2={text2}
+                isDark={isDark}
+                onSelectAppointment={openAppointmentDetail}
+              />
+            ) : (
             <div
               className="flex flex-col gap-3"
-              onMouseEnter={todayCarousel.onMouseEnter}
-              onMouseLeave={todayCarousel.onMouseLeave}
+              onMouseEnter={upcomingCarousel.onMouseEnter}
+              onMouseLeave={upcomingCarousel.onMouseLeave}
             >
-              {todayUsesCarousel ? (
+              {upcomingAppointments.length === 0 ? (
+                <p className="text-center py-8 italic text-sm" style={{ color: text2 }}>No upcoming appointments scheduled.</p>
+              ) : upcomingUsesCarousel ? (
                 <div className="overflow-hidden w-full">
-                  <div style={getCarouselTrackStyle(todayCarousel.slide, todayGroups.length)}>
-                    {todayGroups.map((group, gi) => (
-                      <div key={gi} className="flex flex-col gap-3" style={getCarouselSlideStyle(todayGroups.length)}>
+                  <div style={getCarouselTrackStyle(upcomingCarousel.slide, upcomingGroups.length)}>
+                    {upcomingGroups.map((group, gi) => (
+                      <div key={gi} className="flex flex-col gap-3" style={getCarouselSlideStyle(upcomingGroups.length)}>
                         {group.map((a, i) => (
-                          <div key={a.id ?? `${gi}-${i}`} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder} gap-2`} style={{ backgroundColor: cardInner }}>
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="text-center min-w-[36px] shrink-0">
-                                <div className="text-sm font-bold leading-tight numeric-font" style={{ color: text1 }}>{a.time}</div>
-                                <div className="text-[10px]" style={{ color: text2 }}>{a.period}</div>
-                              </div>
-                              <div className="w-px h-8 shrink-0" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
-                              <div className="min-w-0">
-                                <div className="text-sm font-semibold truncate" style={{ color: text1 }}>{a.name}</div>
-                                <div className="text-[11px] truncate" style={{ color: text2 }}>{a.type}</div>
-                              </div>
-                            </div>
-                            <span className={`${statusStyles(a.status)} shrink-0`}>{a.status}</span>
-                          </div>
+                          <UpcomingAppointmentCard
+                            key={a.id ?? `${gi}-${i}`}
+                            appointment={a}
+                            cardBorder={cardBorder}
+                            cardInner={cardInner}
+                            text1={text1}
+                            text2={text2}
+                            isDark={isDark}
+                            onSelect={openAppointmentDetail}
+                          />
                         ))}
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                todayAppointments.map((a, i) => (
-                  <div key={a.id ?? i} className={`flex items-center justify-between p-3 rounded-xl border ${cardBorder} gap-2`} style={{ backgroundColor: cardInner }}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="text-center min-w-[36px] shrink-0">
-                        <div className="text-sm font-bold leading-tight numeric-font" style={{ color: text1 }}>{a.time}</div>
-                        <div className="text-[10px]" style={{ color: text2 }}>{a.period}</div>
-                      </div>
-                      <div className="w-px h-8 shrink-0" style={{ backgroundColor: isDark ? "#5C2A3A" : "#D4B896" }} />
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: text1 }}>{a.name}</div>
-                        <div className="text-[11px] truncate" style={{ color: text2 }}>{a.type}</div>
-                      </div>
-                    </div>
-                    <span className={`${statusStyles(a.status)} shrink-0`}>{a.status}</span>
-                  </div>
+                upcomingAppointments.map((a, i) => (
+                  <UpcomingAppointmentCard
+                    key={a.id ?? i}
+                    appointment={a}
+                    cardBorder={cardBorder}
+                    cardInner={cardInner}
+                    text1={text1}
+                    text2={text2}
+                    isDark={isDark}
+                    onSelect={openAppointmentDetail}
+                  />
                 ))
               )}
             </div>
+            )}
+            {upcomingView === "list" && (
             <div className="flex justify-center gap-1.5 mt-4">
-              {todayUsesCarousel ? (
-                todayGroups.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => todayCarousel.setSlide(idx)}
-                    className={`${todayCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
-                    style={{ backgroundColor: todayCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
-                    aria-label={`Show appointments group ${idx + 1}`}
+              {upcomingGroups.length <= 1 ? (
+                upcomingAppointments.length > 0 ? (
+                  <div
+                    className="w-5 h-1.5 rounded-full"
+                    style={{ backgroundColor: isDark ? "#D4A574" : "#3D0A1F" }}
                   />
-                ))
+                ) : null
               ) : (
-                Array.from({ length: CAROUSEL_DOTS }, (_, idx) => (
+                upcomingGroups.map((_, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => todayCarousel.setSlide(idx)}
-                    className={`${todayCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
-                    style={{ backgroundColor: todayCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
-                    aria-hidden={todayAppointments.length === 0}
-                    tabIndex={todayAppointments.length === 0 ? -1 : 0}
+                    onClick={() => upcomingCarousel.setSlide(idx)}
+                    className={`${upcomingCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
+                    style={{ backgroundColor: upcomingCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
+                    aria-label={`Show upcoming appointments group ${idx + 1}`}
                   />
                 ))
               )}
             </div>
+            )}
           </div>
 
           {/* Doctor Productivity */}
           <div className={`rounded-2xl p-4 sm:p-5 border ${cardBorder} transition-colors duration-300`} style={{ backgroundColor: card }}>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="text-lg font-semibold" style={{ color: text1 }}>Doctor Productivity</h2>
-              <button className="font-semibold" style={{ color: isDark ? "#591727" : "#7A3048" }}>View All Staff</button>
+              <button
+                type="button"
+                onClick={() => setShowAllStaff(true)}
+                className="font-semibold hover:opacity-80 transition-opacity"
+                style={{ color: isDark ? "#591727" : "#7A3048" }}
+              >
+                View All Staff
+              </button>
             </div>
 
             {/* Header row — hidden on very small, shown on sm+ */}
@@ -744,35 +1055,23 @@ export default function DashboardPage() {
               onMouseEnter={staffCarousel.onMouseEnter}
               onMouseLeave={staffCarousel.onMouseLeave}
             >
-              {staffUsesCarousel ? (
+              {staff.length === 0 ? (
+                <p className="text-center py-8 italic text-sm" style={{ color: text2 }}>No productivity data available yet.</p>
+              ) : staffUsesCarousel ? (
                 <div className="overflow-hidden w-full">
                   <div style={getCarouselTrackStyle(staffCarousel.slide, staffGroups.length)}>
                     {staffGroups.map((group, gi) => (
                       <div key={gi} className="flex flex-col gap-1" style={getCarouselSlideStyle(staffGroups.length)}>
                         {group.map((s, i) => (
-                          <div
+                          <StaffProductivityRow
                             key={`${s.name}-${gi}-${i}`}
-                            className={`flex flex-col sm:grid sm:grid-cols-[1fr_120px_160px] items-start sm:items-center px-3 py-3 rounded-xl border gap-2 sm:gap-0 ${cardBorder}`}
-                            style={{ backgroundColor: cardInner }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{s.avatar}</div>
-                              <div>
-                                <div className="text-sm font-semibold" style={{ color: text1 }}>{s.name}</div>
-                                <div className="text-[11px]" style={{ color: text2 }}>{s.role}</div>
-                              </div>
-                            </div>
-                            <div className="flex sm:contents gap-4 pl-11 sm:pl-0 text-sm">
-                              <div className="sm:text-center">
-                                <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Seen:</span>
-                                <span className="font-semibold numeric-font" style={{ color: "var(--font-cinzel)" }}>{s.seen}</span>
-                              </div>
-                              <div className="sm:text-center">
-                                <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Avg:</span>
-                                <span style={{ color: "var(--font-cinzel)" }}>{s.avg}</span>
-                              </div>
-                            </div>
-                          </div>
+                            member={s}
+                            cardBorder={cardBorder}
+                            cardInner={cardInner}
+                            text1={text1}
+                            text2={text2}
+                            isDark={isDark}
+                          />
                         ))}
                       </div>
                     ))}
@@ -780,34 +1079,27 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 staff.map((s, i) => (
-                  <div
+                  <StaffProductivityRow
                     key={i}
-                    className={`flex flex-col sm:grid sm:grid-cols-[1fr_120px_160px] items-start sm:items-center px-3 py-3 rounded-xl border gap-2 sm:gap-0 ${cardBorder}`}
-                    style={{ backgroundColor: cardInner }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{s.avatar}</div>
-                      <div>
-                        <div className="text-sm font-semibold" style={{ color: text1 }}>{s.name}</div>
-                        <div className="text-[11px]" style={{ color: text2 }}>{s.role}</div>
-                      </div>
-                    </div>
-                    <div className="flex sm:contents gap-4 pl-11 sm:pl-0 text-sm">
-                      <div className="sm:text-center">
-                        <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Seen:</span>
-                        <span className="font-semibold numeric-font" style={{ color: "var(--font-cinzel)" }}>{s.seen}</span>
-                      </div>
-                      <div className="sm:text-center">
-                        <span className="sm:hidden text-[10px] font-semibold uppercase mr-1" style={{ color: text2 }}>Avg:</span>
-                        <span style={{ color: "var(--font-cinzel)" }}>{s.avg}</span>
-                      </div>
-                    </div>
-                  </div>
+                    member={s}
+                    cardBorder={cardBorder}
+                    cardInner={cardInner}
+                    text1={text1}
+                    text2={text2}
+                    isDark={isDark}
+                  />
                 ))
               )}
             </div>
             <div className="flex justify-center gap-1.5 mt-4">
-              {staffUsesCarousel ? (
+              {staffGroups.length <= 1 ? (
+                staff.length > 0 ? (
+                  <div
+                    className="w-5 h-1.5 rounded-full"
+                    style={{ backgroundColor: isDark ? "#D4A574" : "#3D0A1F" }}
+                  />
+                ) : null
+              ) : (
                 staffGroups.map((_, idx) => (
                   <button
                     key={idx}
@@ -816,18 +1108,6 @@ export default function DashboardPage() {
                     className={`${staffCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
                     style={{ backgroundColor: staffCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
                     aria-label={`Show staff group ${idx + 1}`}
-                  />
-                ))
-              ) : (
-                Array.from({ length: CAROUSEL_DOTS }, (_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => staffCarousel.setSlide(idx)}
-                    className={`${staffCarousel.slide === idx ? "w-5 h-1.5" : "w-1.5 h-1.5"} rounded-full transition-all duration-300`}
-                    style={{ backgroundColor: staffCarousel.slide === idx ? (isDark ? "#D4A574" : "#3D0A1F") : (isDark ? "#5C2A3A" : "#D4B896") }}
-                    aria-hidden={staff.length === 0}
-                    tabIndex={staff.length === 0 ? -1 : 0}
                   />
                 ))
               )}
@@ -841,11 +1121,27 @@ export default function DashboardPage() {
           {/* Patient Overview */}
           <div className={`rounded-2xl p-4 sm:p-5 border ${cardBorder} transition-colors duration-300`} style={{ backgroundColor: card }}>
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: text2 }}>Patient Overview</p>
+
+            {patientStats && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[
+                  { label: "Total", value: String(patientStats.totalPatients) },
+                  { label: "New (Month)", value: String(patientStats.newPatientsThisMonth) },
+                  { label: "Growth", value: growthLabel },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: cardInner }}>
+                    <div className="text-lg font-bold numeric-font transition-all duration-500" style={{ color: text1 }}>{stat.value}</div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: text2 }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: isDark ? "#6B2A40" : "#8B5060", color:"#F5ECD7" }}>{patientOverview.initials}</div>
               <div>
                 <div className="text-base font-semibold" style={{ color: text1 }}>Next Patient</div>
-                <div className="text-[11px]" style={{ color: text2 }}>{patientOverview.subtitle}</div>
+                <div className="text-[11px] transition-all duration-500" style={{ color: text2 }}>{patientOverview.subtitle}</div>
               </div>
             </div>
             <div className="flex flex-col gap-2 mb-4">
@@ -854,13 +1150,23 @@ export default function DashboardPage() {
                   <span style={{ color: text2 }}>{row.label}</span>
                   {row.isTag
                     ? <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#9e9e9e] text-[#591727]">{row.value}</span>
-                    : <span className="font-semibold text-right" style={{ color: text1 }}>{row.value}</span>}
+                    : <span className="font-semibold text-right transition-all duration-500" style={{ color: text1 }}>{row.value}</span>}
                 </div>
               ))}
             </div>
-            <button className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors ${isDark ? "border-[#711C31] text-[#711C31] hover:bg-[#D4A574] hover:text-[#3D0A1F]" : "border-[#3D0A1F] text-[#3D0A1F] hover:bg-[#3D0A1F] hover:text-[#F5ECD7]"}`}>
-              Open Clinical File ↗
+            <button
+              type="button"
+              onClick={() => void handleOpenClinicalFile()}
+              disabled={clinicalLoading || !nextPatient}
+              className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-60 ${isDark ? "border-[#711C31] text-[#711C31] hover:bg-[#D4A574] hover:text-[#3D0A1F]" : "border-[#3D0A1F] text-[#3D0A1F] hover:bg-[#3D0A1F] hover:text-[#F5ECD7]"}`}
+            >
+              {clinicalLoading ? "Opening..." : "Open Clinical File ↗"}
             </button>
+            {clinicalNote ? (
+              <p className="mt-2 text-[11px] text-center italic" style={{ color: text2 }}>
+                {clinicalNote}
+              </p>
+            ) : null}
           </div>
 
           {/* Pending Confirmations */}
@@ -880,7 +1186,14 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-[11px] mb-2.5" style={{ color: text2 }}>{p.service} · {p.date}</p>
                   <div className="flex gap-2">
-                    <button type="button" className="flex-1 py-1.5 rounded-lg bg-[#3D0A1F] text-[#F5ECD7] font-semibold hover:bg-[#5C1A30] transition-colors text-sm">Call</button>
+                    <button
+                      type="button"
+                      onClick={() => handleCancelAppointment(p.id)}
+                      disabled={cancellingId === p.id}
+                      className="flex-1 py-1.5 rounded-lg bg-[#8B1A2E] text-[#F5ECD7] font-semibold hover:bg-[#711C31] transition-colors text-sm disabled:opacity-60"
+                    >
+                      {cancellingId === p.id ? "Cancelling..." : "Cancel"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleConfirmAppointment(p.id)}

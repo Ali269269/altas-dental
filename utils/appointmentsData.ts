@@ -1,3 +1,5 @@
+import type { Patient } from "@/types/patient";
+
 export type AppointmentsStatCard = {
   label: string;
   value: string;
@@ -33,18 +35,43 @@ export type CalendarAppointmentRef = {
   appointmentDate: string;
 };
 
+export type AppointmentCheckupDetail = {
+  complaint?: string;
+  clinicalObs?: string;
+  primaryDiagnosis?: string;
+  diagnostics?: { label: string; tag?: boolean }[];
+  treatment?: string[];
+  prescriptions?: string;
+  followUp?: string;
+  postOpInstructions?: string[];
+  additionalNotes?: string;
+  scanNames?: string[];
+  scans?: {
+    storedName: string;
+    originalName: string;
+    url: string;
+    mimeType?: string;
+    size?: number;
+  }[];
+  completedAt?: string | null;
+};
+
 export type AppointmentDetail = {
   id: string;
   patientName: string;
   email: string;
   phone: string;
   specialty: string;
+  appointmentDate?: string;
   appointmentDateLabel: string;
   appointmentTime: string;
   notes: string;
   status: string;
   cancellationReason: string;
   isNewPatient: boolean;
+  createdAt?: string;
+  checkup?: AppointmentCheckupDetail | null;
+  patientProfile?: Patient;
 };
 
 export type AppointmentListItem = {

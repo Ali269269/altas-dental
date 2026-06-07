@@ -1,7 +1,7 @@
 export function patientStatusStyle(status: string) {
   switch (status) {
     case "ACTIVE":
-      return "text-[#3DAA7A] border border-[#3DAA7A] bg-[#D1FAE5] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
+      return"text-[#711c31] border border-[#C94A3A] text-[10px] bg-[#d3d3d3] font-bold px-2 py-0.5 rounded tracking-wide";
     case "PENDING":
       return "text-[#753141] border border-[#D3D3D3] bg-[#d3d3d3] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
     case "COMPLETED":

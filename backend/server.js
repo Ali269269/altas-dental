@@ -1,10 +1,16 @@
 const express = require("express");
+const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const helmet = require("helmet");
 require("express-async-errors");
 
 // Load env FIRST
 dotenv.config();
+
+const { validateSecurityConfig } = require("./config/security");
+validateSecurityConfig();
+
 const dns = require("dns");
 
 dns.setServers([
@@ -13,14 +19,40 @@ dns.setServers([
 ]);
 const connectDB = require("./config/database");
 const errorHandler = require("./utils/errorHandler");
+const { verifySmtpConnection } = require("./utils/emailService");
+const { seedSystemEmailTemplates } = require("./utils/seedSystemEmailTemplates");
+const { ensureRbacSeed } = require("./utils/ensureRbacSeed");
 const authRoutes = require("./routes/authRoutes");
 const statisticsRoutes = require("./routes/statisticsRoutes");
+const blogRoutes = require("./routes/blogRoutes");
+const subscribersRoutes = require("./routes/subscribersRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
+const specialityRoutes = require("./routes/specialityRoutes");
+const adminManagementRoutes = require("./routes/adminManagementRoutes");
 
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+
+// Security headers
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
+  })
+);
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (isProduction) {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "256kb" }));
+app.use(express.urlencoded({ extended: true, limit: "64kb" }));
 
 // CORS
 const allowedOrigins = (
@@ -32,7 +64,15 @@ const allowedOrigins = (
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
+        if (isProduction) {
+          callback(new Error("CORS blocked: origin header required"));
+          return;
+        }
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
       }
@@ -42,25 +82,50 @@ app.use(
   })
 );
 
+// Public static assets (non-PHI only). Clinical scans require signed download tokens.
+app.use(
+  "/uploads/blogs",
+  express.static(path.join(__dirname, "uploads", "blogs"), {
+    setHeaders(res) {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  })
+);
+
+app.use(
+  "/uploads/profiles",
+  express.static(path.join(__dirname, "uploads", "profiles"), {
+    setHeaders(res) {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  })
+);
+
+app.use(
+  "/uploads/specialities",
+  express.static(path.join(__dirname, "uploads", "specialities"), {
+    setHeaders(res) {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  })
+);
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/statistics", statisticsRoutes);
+app.use("/api/blogs", blogRoutes);
+app.use("/api/subscribers", subscribersRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/specialities", specialityRoutes);
+app.use("/api/admin-management", adminManagementRoutes);
 
 // Health check
-app.get("/api/health", (req, res) => {
-  const mongoose = require("mongoose");
-  res.status(200).json({
-    success: true,
-    message: "Backend is running",
-    database: {
-      readyState: mongoose.connection.readyState,
-      name: mongoose.connection.name || null,
-    },
-  });
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ success: true, ok: true });
 });
 
 // Root route
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.status(200).json({
     success: true,
     message: "Altas Dental Center Backend API",
@@ -68,7 +133,7 @@ app.get("/", (req, res) => {
 });
 
 // 404 handler
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({
     success: false,
     message: "Route not found",
@@ -83,6 +148,9 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
+    await ensureRbacSeed();
+    await seedSystemEmailTemplates();
+    await verifySmtpConnection();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

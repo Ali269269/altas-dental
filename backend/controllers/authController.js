@@ -1,13 +1,65 @@
 const Admin = require('../models/Admin');
-const { sendTokenResponse } = require('../utils/tokenUtils');
+const Role = require('../models/Role');
+const PasswordResetRequest = require('../models/PasswordResetRequest');
+const { sendTokenResponse, verifySession } = require('../utils/tokenUtils');
+const { writeAuditLog } = require('../utils/rbacHelpers');
 
-// @desc    Login admin
-// @route   POST /api/auth/login
-// @access  Public
-exports.login = async (req, res, next) => {
-  const { email, password } = req.body;
+exports.login = async (req, res) => {
+  const { email, password, roleSlug } = req.body;
 
-  // Validate email & password
+  if (!email || !password || !roleSlug) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide email, password, and role',
+    });
+  }
+
+  const admin = await Admin.findOne({ email: String(email).trim().toLowerCase() })
+    .select('+password')
+    .populate('roleId');
+
+  if (!admin) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+
+  if (!admin.isActive) {
+    return res.status(403).json({ success: false, message: 'Your account is disabled' });
+  }
+
+  const isMatch = await admin.matchPassword(password);
+  if (!isMatch) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+
+  const normalizedRoleSlug = String(roleSlug).trim().toLowerCase();
+  const assignedSlug = admin.isSuperAdmin
+    ? 'super-admin'
+    : admin.roleId?.slug || '';
+
+  if (!assignedSlug || assignedSlug !== normalizedRoleSlug) {
+    return res.status(401).json({
+      success: false,
+      message: 'Selected role does not match your assigned role',
+    });
+  }
+
+  admin.lastLogin = new Date();
+  await admin.save();
+
+  await writeAuditLog({
+    action: 'ADMIN_LOGIN',
+    actor: admin,
+    targetType: 'Admin',
+    targetId: admin._id,
+    summary: `${admin.email} logged in as ${admin.isSuperAdmin ? 'Super Admin' : admin.roleId?.name}`,
+  });
+
+  await sendTokenResponse(admin, 200, res);
+};
+
+exports.signup = async (req, res) => {
+  const { email, password, firstName, lastName, roleId, roleSlug } = req.body;
+
   if (!email || !password) {
     return res.status(400).json({
       success: false,
@@ -15,117 +67,145 @@ exports.login = async (req, res, next) => {
     });
   }
 
-  try {
-    // Check for admin
-    const admin = await Admin.findOne({ email }).select('+password');
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-      });
-    }
-
-    // Check if admin is active
-    if (!admin.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account is disabled',
-      });
-    }
-
-    // Check if password matches
-    const isMatch = await admin.matchPassword(password);
-
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-      });
-    }
-
-    // Update last login
-    admin.lastLogin = new Date();
-    await admin.save();
-
-    // Send token response
-    sendTokenResponse(admin, 200, res);
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  const existing = await Admin.findOne({ email: String(email).trim().toLowerCase() });
+  if (existing) {
+    return res.status(400).json({ success: false, message: 'Admin already exists with that email' });
   }
-};
 
-// @desc    Create admin (for manual creation via API)
-// @route   POST /api/auth/signup
-// @access  Public (should be protected in production)
-exports.signup = async (req, res, next) => {
-  const { email, password, firstName, lastName } = req.body;
+  let role = null;
+  if (roleId) role = await Role.findById(roleId);
+  else if (roleSlug) role = await Role.findOne({ slug: String(roleSlug).trim().toLowerCase() });
+  else role = await Role.findOne({ slug: 'manager' });
 
-  // Validate input
-  if (!email || !password) {
+  if (!role) {
+    return res.status(400).json({ success: false, message: 'Valid role is required' });
+  }
+
+  if (role.slug === 'super-admin') {
     return res.status(400).json({
       success: false,
-      message: 'Please provide an email and password',
+      message: 'Super Admin accounts are provisioned by system seed only',
     });
   }
 
-  try {
-    // Check if admin already exists
-    let admin = await Admin.findOne({ email });
+  const admin = await Admin.create({
+    email: String(email).trim().toLowerCase(),
+    password,
+    firstName: String(firstName || '').trim(),
+    lastName: String(lastName || '').trim(),
+    roleId: role._id,
+    isSuperAdmin: false,
+    isActive: true,
+  });
 
-    if (admin) {
-      return res.status(400).json({
-        success: false,
-        message: 'Admin already exists with that email',
-      });
-    }
+  await writeAuditLog({
+    action: 'ADMIN_MEMBER_CREATED',
+    actor: req.admin,
+    targetType: 'Admin',
+    targetId: admin._id,
+    summary: `Created admin member ${admin.email}`,
+    metadata: { role: role.slug },
+  });
 
-    // Create admin
-    admin = await Admin.create({
-      email,
-      password,
-      firstName,
-      lastName,
-      role: 'admin',
-      isActive: true,
-    });
-
-    // Send token response
-    sendTokenResponse(admin, 201, res);
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+  const populated = await Admin.findById(admin._id).populate('roleId');
+  await sendTokenResponse(populated, 201, res);
 };
 
-// @desc    Get current logged in admin
-// @route   GET /api/auth/profile
-// @access  Private
-exports.getProfile = async (req, res, next) => {
-  try {
-    const admin = await Admin.findById(req.admin.id);
+exports.getLoginRoles = async (_req, res) => {
+  const roles = await Role.find({ slug: { $ne: 'super-admin-hidden' } })
+    .sort({ name: 1 })
+    .select('name slug description accessLevel');
 
-    res.status(200).json({
+  res.json({
+    success: true,
+    roles: roles.map((role) => ({
+      name: role.name,
+      slug: role.slug,
+      description: role.description || '',
+      accessLevel: role.accessLevel,
+    })),
+  });
+};
+
+exports.requestPasswordReset = async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const note = String(req.body.note || '').trim();
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Email is required' });
+  }
+
+  const admin = await Admin.findOne({ email });
+  if (!admin) {
+    return res.status(200).json({
       success: true,
-      data: admin,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
+      message: 'If an account exists for this email, the Super Admin will review your request.',
     });
   }
+
+  const existingPending = await PasswordResetRequest.findOne({
+    admin: admin._id,
+    status: 'pending',
+  });
+
+  if (existingPending) {
+    return res.status(200).json({
+      success: true,
+      message: 'If an account exists for this email, the Super Admin will review your request.',
+    });
+  }
+
+  await PasswordResetRequest.create({
+    admin: admin._id,
+    email: admin.email,
+    note,
+    status: 'pending',
+  });
+
+  await writeAuditLog({
+    action: 'PASSWORD_RESET_REQUESTED',
+    actor: admin,
+    targetType: 'Admin',
+    targetId: admin._id,
+    summary: `Password reset requested by ${admin.email}`,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'If an account exists for this email, the Super Admin will review your request.',
+  });
 };
 
-// @desc    Logout admin
-// @route   GET /api/auth/logout
-// @access  Private
-exports.logout = async (req, res, next) => {
+exports.verifyAccess = async (req, res) => {
+  const session = await verifySession(req.admin._id);
+  if (!session) {
+    return res.status(401).json({ success: false, message: 'Session invalid' });
+  }
+
+  res.json({ success: true, admin: session });
+};
+
+exports.getProfile = async (_req, res) => {
+  const session = await verifySession(_req.admin._id);
+  if (!session) {
+    return res.status(401).json({ success: false, message: 'Session invalid' });
+  }
+
+  res.status(200).json({
+    success: true,
+    session,
+  });
+};
+
+exports.logout = async (req, res) => {
+  if (req.admin?._id) {
+    const admin = await Admin.findById(req.admin._id);
+    if (admin) {
+      admin.authVersion = Number(admin.authVersion || 0) + 1;
+      await admin.save();
+    }
+  }
+
   res.cookie('token', 'none', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
@@ -137,34 +217,17 @@ exports.logout = async (req, res, next) => {
   });
 };
 
-// @desc    Get dashboard data
-// @route   GET /api/auth/dashboard
-// @access  Private
-exports.getDashboard = async (req, res, next) => {
-  try {
-    const admin = await Admin.findById(req.admin.id);
+exports.getDashboard = async (req, res) => {
+  const admin = await Admin.findById(req.admin.id).populate('roleId');
+  const session = await verifySession(admin._id);
 
-    res.status(200).json({
-      success: true,
-      data: {
-        admin: {
-          id: admin._id,
-          email: admin.email,
-          firstName: admin.firstName,
-          lastName: admin.lastName,
-          lastLogin: admin.lastLogin,
-          createdAt: admin.createdAt,
-        },
-        dashboardStats: {
-          message: 'Welcome to your dashboard',
-          // Add more dashboard data as needed
-        },
+  res.status(200).json({
+    success: true,
+    data: {
+      admin: session,
+      dashboardStats: {
+        message: 'Welcome to your dashboard',
       },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+    },
+  });
 };

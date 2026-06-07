@@ -124,4 +124,57 @@ export function resolvePatientFromRow(
   };
 }
 
+import type { AppointmentDetail } from "@/utils/appointmentsData";
+
+/** Map full appointment API payload (with patientProfile) to Patient for detail view. */
+export function appointmentDetailToPatient(detail: AppointmentDetail): Patient {
+  if (detail.patientProfile) {
+    return {
+      ...detail.patientProfile,
+      status: normalizePatientStatus(detail.patientProfile.status),
+      upcomingStatus: normalizePatientStatus(
+        detail.patientProfile.upcomingStatus || detail.status
+      ),
+    };
+  }
+
+  const upcoming = parseNextAppointment(
+    `${detail.appointmentDateLabel}, ${detail.appointmentTime}`
+  );
+
+  return appointmentRowToPatient(
+    {
+      id: detail.id,
+      name: detail.patientName,
+      patientId: `#PV-${detail.id.slice(-4).toUpperCase()}`,
+      email: detail.email,
+      phone: detail.phone,
+      specialty: detail.specialty,
+      lastVisit: detail.appointmentDateLabel,
+      nextAppt: `${detail.appointmentDateLabel}, ${detail.appointmentTime}`,
+      status: detail.status,
+    },
+    {
+      ...upcoming,
+      upcomingService: detail.specialty,
+      upcomingStatus: normalizePatientStatus(detail.status),
+      clinicalNote: detail.notes || `No clinical notes recorded for ${detail.patientName}.`,
+      clinicalNoteDate: detail.appointmentDateLabel
+        ? `Recorded ${detail.appointmentDateLabel}`
+        : "No record date",
+      notes: detail.notes
+        ? [
+            {
+              doctor: "Atlas Dental Center",
+              doctorInitials: "AD",
+              date: detail.appointmentDateLabel,
+              status: detail.status,
+              content: detail.notes,
+            },
+          ]
+        : [],
+    }
+  );
+}
+
 export { initialsFromName };

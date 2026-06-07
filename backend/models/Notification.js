@@ -1,10 +1,22 @@
 const mongoose = require('mongoose');
+const { randomUUID } = require('crypto');
 
 const notificationSchema = new mongoose.Schema(
   {
+    uuid: {
+      type: String,
+      unique: true,
+      default: () => randomUUID(),
+    },
     type: {
       type: String,
-      enum: ['APPOINTMENT_BOOKED', 'APPOINTMENT_UPDATED', 'SYSTEM'],
+      enum: [
+        'APPOINTMENT_BOOKED',
+        'APPOINTMENT_UPDATED',
+        'NEWSLETTER_SUBSCRIPTION',
+        'CONTACT_FORM_SUBMISSION',
+        'SYSTEM',
+      ],
       default: 'SYSTEM',
     },
     title: {
@@ -51,6 +63,21 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: '',
+    },
+    email: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    subscriberId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'NewsletterSubscriber',
+      default: null,
+    },
+    contactId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ContactSubmission',
+      default: null,
     },
   },
   {

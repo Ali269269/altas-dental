@@ -5,30 +5,31 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { LogOutIcon } from "lucide-react";
 import { logout } from "@/utils/auth";
+import { usePermissions } from "@/context/PermissionsContext";
 import {
   LayoutDashboard,
   CalendarDays,
   Users,
-  FileText,
   Megaphone,
   BarChart2,
   BookOpen,
   UserCheck,
   Stethoscope,
   Settings,
+  Shield,
   X,
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard",      href: "/dashboard",                icon: LayoutDashboard },
-  { label: "Appointments",   href: "/dashboard/Appointments",   icon: CalendarDays },
-  { label: "Patients",       href: "/dashboard/Patients",       icon: Users },
-  { label: "Clinical Notes", href: "/dashboard/Clinical_Notes", icon: FileText },
-  { label: "Marketing",      href: "/dashboard/Marketing",      icon: Megaphone },
-  { label: "Analytics",      href: "/dashboard/Analytics",      icon: BarChart2 },
-  { label: "Blogs",          href: "/dashboard/Blogs",          icon: BookOpen },
-  { label: "Subscribers",    href: "/dashboard/Subcribers",     icon: UserCheck },
-  { label: "Specialities",   href: "/dashboard/Specialities",   icon: Stethoscope },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, module: "dashboard" },
+  { label: "Appointments", href: "/dashboard/Appointments", icon: CalendarDays, module: "appointments" },
+  { label: "Patients", href: "/dashboard/Patients", icon: Users, module: "patients" },
+  { label: "Admin Management", href: "/dashboard/Admin_Management", icon: Shield, module: "admin_management" },
+  { label: "Marketing", href: "/dashboard/Marketing", icon: Megaphone, module: "marketing" },
+  { label: "Analytics", href: "/dashboard/Analytics", icon: BarChart2, module: "analytics" },
+  { label: "Blogs", href: "/dashboard/Blogs", icon: BookOpen, module: "blogs" },
+  { label: "Subscribers", href: "/dashboard/Subcribers", icon: UserCheck, module: "subscribers" },
+  { label: "Specialities", href: "/dashboard/Specialities", icon: Stethoscope, module: "specialities" },
 ];
 
 interface SidebarProps {
@@ -41,10 +42,12 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
+  const { canViewModule } = usePermissions();
+  const visibleNavItems = navItems.filter((item) => canViewModule(item.module));
 
 const handleLogout = async () => {
   await logout();
-  router.push("/login");
+  router.replace("/login");
 };
 
   const sidebarBg    = isDark ? "bg-[#FFFFFF] text-[#711C31]" : "bg-[#711C31] text-[#FFFFFF]";
@@ -66,7 +69,9 @@ const handleLogout = async () => {
     </div>
   );
 
-  const navLinks = navItems.map(({ label, href, icon: Icon }) => {
+  const settingsVisible = canViewModule("settings");
+
+  const navLinks = visibleNavItems.map(({ label, href, icon: Icon }) => {
     const isActive =
       pathname === href ||
       (href !== "/dashboard" && pathname.startsWith(href + "/"));
@@ -103,7 +108,7 @@ const handleLogout = async () => {
     );
   });
 
-  const settingsLink = (
+  const settingsLink = settingsVisible ? (
     <Link
       href="/dashboard/Settings"
       onClick={onClose}
@@ -123,7 +128,7 @@ const handleLogout = async () => {
       <Settings size={17} className="shrink-0" />
       <span style={{ fontFamily: "var(--font-body, 'Lato', sans-serif)" }}>Settings</span>
     </Link>
-  );
+  ) : null;
 const logoutButton = (
   <button
     onClick={handleLogout}

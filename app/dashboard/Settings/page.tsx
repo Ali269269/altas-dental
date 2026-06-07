@@ -1,15 +1,84 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useAdminProfile } from "@/context/AdminProfileContext";
+import { usePermissions } from "@/context/PermissionsContext";
+import { getToken, getAdmin, setAuth } from "@/utils/auth";
+import type { AlertPreferences, BusinessHourEntry, SettingsOverview } from "@/utils/settingsData";
+import { DEFAULT_SETTINGS_OVERVIEW } from "@/utils/settingsData";
+import {
+  changeSettingsPassword,
+  fetchSettingsOverview,
+  removeSettingsProfilePhoto,
+  updateSettingsAlerts,
+  updateSettingsBusinessHours,
+  updateSettingsClinic,
+  updateSettingsProfile,
+  updateSettingsSecurity,
+  uploadSettingsProfilePhoto,
+} from "@/utils/settingsApi";
 
-// ── Toggle Switch ─────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange, color = "#3DAA7A" }: { checked: boolean; onChange: (v: boolean) => void; color?: string }) {
+function ModalPortal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(children, document.body);
+}
+
+function PasswordField({
+  label,
+  value,
+  onChange,
+  inputSt,
+  brandColor,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  inputSt: React.CSSProperties;
+  brandColor: string;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="mb-4">
+      <p className="text-[10px] font-bold tracking-widest uppercase mb-1.5" style={{ color: brandColor }}>
+        {label}
+      </p>
+      <div className="relative">
+        <input
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="••••••••"
+          className="w-full px-4 py-2.5 pr-11 rounded-xl text-sm border outline-none"
+          style={inputSt}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-black/5"
+          aria-label={visible ? "Hide password" : "Show password"}
+          style={{ color: brandColor }}
+        >
+          {visible ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange, color = "#3DAA7A", disabled = false }: { checked: boolean; onChange: (v: boolean) => void; color?: string; disabled?: boolean }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative inline-flex items-center rounded-full transition-colors duration-200 focus:outline-none"
+      className="relative inline-flex items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
       style={{
         width: 44, height: 24,
         backgroundColor: checked ? color : "rgba(255,255,255,0.25)",
@@ -27,13 +96,13 @@ function Toggle({ checked, onChange, color = "#3DAA7A" }: { checked: boolean; on
   );
 }
 
-// ── Toggle (light bg variant for Security card) ───────────────────────────────
-function ToggleBlue({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleBlue({ checked, onChange, disabled = false }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative inline-flex items-center rounded-full transition-colors duration-200 focus:outline-none"
+      className="relative inline-flex items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
       style={{
         width: 44, height: 24,
         backgroundColor: checked ? "#bf1515" : "#D1D5DB",
@@ -51,29 +120,29 @@ function ToggleBlue({ checked, onChange }: { checked: boolean; onChange: (v: boo
   );
 }
 
-// ── Business Hours Edit Modal ─────────────────────────────────────────────────
-interface HourEntry { label: string; start: string; end: string; closed: boolean }
-
 function HoursModal({
-  entry, onSave, onClose, isDark, brandColor, borderCol,
+  entry, onSave, onClose, isDark, brandColor, borderCol, saving,
 }: {
-  entry: HourEntry;
-  onSave: (e: HourEntry) => void;
+  entry: BusinessHourEntry;
+  onSave: (e: BusinessHourEntry) => void | Promise<void>;
   onClose: () => void;
   isDark: boolean;
   brandColor: string;
   borderCol: string;
+  saving?: boolean;
 }) {
-  const [start,  setStart]  = useState(entry.start);
-  const [end,    setEnd]    = useState(entry.end);
+  const [start, setStart] = useState(entry.start);
+  const [end, setEnd] = useState(entry.end);
   const [closed, setClosed] = useState(entry.closed);
   const inputSt = {
     backgroundColor: isDark ? "#d0baa3" : "#ffffff",
     borderColor: borderCol,
     color: brandColor,
   };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <ModalPortal>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative rounded-2xl p-6 w-80 max-w-[calc(100vw-2rem)] shadow-2xl"
         style={{ backgroundColor: isDark ? "#c9a898" : "#ffffff", border: `1px solid ${borderCol}` }}>
@@ -100,152 +169,330 @@ function HoursModal({
           </div>
         )}
         <div className="flex gap-3 justify-end">
-          <button onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm border font-semibold"
+          <button onClick={onClose} disabled={saving}
+            className="px-4 py-2 rounded-xl text-sm border font-semibold disabled:opacity-50"
             style={{ borderColor: borderCol, color: brandColor, backgroundColor: "transparent" }}>
             Cancel
           </button>
-          <button onClick={() => { onSave({ ...entry, start, end, closed }); onClose(); }}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+          <button
+            disabled={saving}
+            onClick={async () => {
+              await onSave({ ...entry, start, end, closed });
+            }}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
             style={{ backgroundColor: brandColor }}>
-            Save
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
-// ── Change Password Modal ─────────────────────────────────────────────────────
 function ChangePasswordModal({
-  onClose, isDark, brandColor, borderCol,
+  onClose, onSubmit, isDark, brandColor, borderCol,
 }: {
   onClose: () => void;
+  onSubmit: (payload: { currentPassword: string; newPassword: string; confirmPassword: string }) => Promise<void>;
   isDark: boolean;
   brandColor: string;
   borderCol: string;
 }) {
-  const [current,  setCurrent]  = useState("");
-  const [next,     setNext]     = useState("");
-  const [confirm,  setConfirm]  = useState("");
-  const [saved,    setSaved]    = useState(false);
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const inputSt = { backgroundColor: isDark ? "#d0baa3" : "#ffffff", borderColor: borderCol, color: brandColor };
 
-  const handleSave = () => {
-    if (next && next === confirm) { setSaved(true); setTimeout(() => { setSaved(false); onClose(); }, 1200); }
+  const handleSave = async () => {
+    setError("");
+    if (!next || next !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSubmit({ currentPassword: current, newPassword: next, confirmPassword: confirm });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update password.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <ModalPortal>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative rounded-2xl p-6 w-96 max-w-[calc(100vw-2rem)] shadow-2xl"
         style={{ backgroundColor: isDark ? "#c9a898" : "#ffffff", border: `1px solid ${borderCol}` }}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold" style={{ color: brandColor }}>Change Password</h3>
-          <button onClick={onClose} className="text-lg font-bold" style={{ color: brandColor }}>×</button>
+          <button type="button" onClick={onClose} className="text-lg font-bold" style={{ color: brandColor }}>×</button>
         </div>
-        {[
-          { label: "Current Password",  val: current,  set: setCurrent },
-          { label: "New Password",      val: next,     set: setNext    },
-          { label: "Confirm Password",  val: confirm,  set: setConfirm },
-        ].map(f => (
-          <div key={f.label} className="mb-4">
-            <p className="text-[10px] font-bold tracking-widest uppercase mb-1.5" style={{ color: brandColor }}>{f.label}</p>
-            <input type="password" value={f.val} onChange={e => f.set(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-2.5 rounded-xl text-sm border outline-none"
-              style={inputSt} />
-          </div>
-        ))}
-        {next && confirm && next !== confirm && (
-          <p className="text-xs text-red-500 mb-3">Passwords do not match.</p>
-        )}
+        <PasswordField label="Current Password" value={current} onChange={setCurrent} inputSt={inputSt} brandColor={brandColor} />
+        <PasswordField label="New Password" value={next} onChange={setNext} inputSt={inputSt} brandColor={brandColor} />
+        <PasswordField label="Confirm Password" value={confirm} onChange={setConfirm} inputSt={inputSt} brandColor={brandColor} />
+        {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
         <div className="flex gap-3 justify-end mt-2">
-          <button onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm border font-semibold"
+          <button type="button" onClick={onClose} disabled={saving}
+            className="px-4 py-2 rounded-xl text-sm border font-semibold disabled:opacity-50"
             style={{ borderColor: borderCol, color: brandColor }}>
             Cancel
           </button>
-          <button onClick={handleSave}
-            className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          <button type="button" onClick={handleSave} disabled={saving}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: brandColor }}>
-            {saved ? "Saved ✓" : "Update"}
+            {saving ? "Updating..." : "Update"}
           </button>
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { theme } = useTheme();
+  const router = useRouter();
+  const { refreshProfile, setProfile: setAdminProfile } = useAdminProfile();
+  const { session } = usePermissions();
   const isDark = theme === "dark";
+  const canChangePassword = Boolean(session?.isSuperAdmin || session?.canChangePassword);
 
-  // ── Color tokens (same as BlogsPage) ──────────────────────────────────────
   const brandColor  = "#591727";
   const borderCol   = "#8e8787";
   const cardBg      = isDark ? "#c9a898" : "#ffffff";
   const cardInnerBg = isDark ? "#d0baa3" : "#f7f4ef";
-  const pageBg      = isDark ? "#2A0D18"  : "#f0ece4";
   const inputBg     = isDark ? "#d0baa3"  : "#f5f2ec";
   const text1       = brandColor;
   const text2       = isDark ? "#591727"  : "#7a6060";
   const labelColor  = isDark ? "#591727"  : "#9a7070";
 
-  // ── Profile state ─────────────────────────────────────────────────────────
-  const [fullName,    setFullName]    = useState("Dr. Ghita Ouazzani Tnacheri");
-  const [profTitle,   setProfTitle]   = useState("General Dentist");
-  const [email,       setEmail]       = useState("contact@atlasdentalcenter.com");
-  const [phone,       setPhone]       = useState("+1 (555) 012-3456");
-  const [photoUrl,    setPhotoUrl]    = useState<string>("/images/admin-avatar.jpg");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [profTitle, setProfTitle] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [profileSaved, setProfileSaved] = useState(false);
-  const photoRef = useRef<HTMLInputElement>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
-  // ── Security state ────────────────────────────────────────────────────────
-  const [twoFactor,   setTwoFactor]   = useState(true);
+  const [twoFactor, setTwoFactor] = useState(false);
+  const [securitySaving, setSecuritySaving] = useState(false);
+  const [passwordChangedLabel, setPasswordChangedLabel] = useState("Never changed");
   const [showPwModal, setShowPwModal] = useState(false);
 
-  // ── Alert Preferences ────────────────────────────────────────────────────
-  const [alertSMS,        setAlertSMS]        = useState(true);
-  const [alertReports,    setAlertReports]    = useState(true);
-  const [alertMarketing,  setAlertMarketing]  = useState(false);
+  const [alertSMS, setAlertSMS] = useState(true);
+  const [alertReports, setAlertReports] = useState(true);
+  const [alertMarketing, setAlertMarketing] = useState(false);
+  const [alertsSaving, setAlertsSaving] = useState(false);
 
-  // ── Clinic Preferences ───────────────────────────────────────────────────
-  const [clinicName,    setClinicName]    = useState("Atlas Dental Center");
-  const [primaryContact,setPrimaryContact]= useState("05 37 77 77 79 · 06 68 20 10 10");
-  const [address,       setAddress]       = useState("Ang Av Atlas, 61 rue Oued Oum Errabi n. 5, 2ème étage, Agdal - RABAT");
-  const [clinicSaved,   setClinicSaved]   = useState(false);
+  const [clinicName, setClinicName] = useState("");
+  const [clinicEmail, setClinicEmail] = useState("");
+  const [primaryContact, setPrimaryContact] = useState("");
+  const [address, setAddress] = useState("");
+  const [clinicSaved, setClinicSaved] = useState(false);
+  const [clinicSaving, setClinicSaving] = useState(false);
 
-  // ── Business Hours ────────────────────────────────────────────────────────
-  const [hours, setHours] = useState<HourEntry[]>([
-    { label: "Mon - Fri", start: "08:00", end: "18:00", closed: false },
-    { label: "Saturday",  start: "09:00", end: "14:00", closed: false },
-    { label: "Sunday",    start: "00:00", end: "00:00", closed: true  },
-  ]);
+  const [hours, setHours] = useState<BusinessHourEntry[]>(DEFAULT_SETTINGS_OVERVIEW.clinic.businessHours);
   const [editingHour, setEditingHour] = useState<number | null>(null);
+  const [hoursSaving, setHoursSaving] = useState(false);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-  const handlePhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setPhotoUrl(URL.createObjectURL(file));
+  const photoRef = useRef<HTMLInputElement>(null);
+
+  const applySettings = useCallback((data: SettingsOverview) => {
+    setFullName(data.profile.fullName);
+    setProfTitle(data.profile.professionalTitle);
+    setEmail(data.profile.email);
+    setPhone(data.profile.phone);
+    setPhotoUrl(data.profile.profilePhoto);
+    setTwoFactor(data.profile.twoFactorEnabled);
+    setPasswordChangedLabel(data.profile.passwordChangedLabel);
+    setAlertSMS(data.profile.alertPreferences.appointmentSms);
+    setAlertReports(data.profile.alertPreferences.clinicReports);
+    setAlertMarketing(data.profile.alertPreferences.marketingEmails);
+    setClinicName(data.clinic.clinicName);
+    setClinicEmail(data.clinic.clinicEmail);
+    setPrimaryContact(data.clinic.primaryContact);
+    setAddress(data.clinic.address);
+    setHours(data.clinic.businessHours);
   }, []);
 
-  const handleProfileSave = () => {
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 2000);
+  const loadSettings = useCallback(async () => {
+    setError("");
+    try {
+      const data = await fetchSettingsOverview();
+      applySettings(data);
+      setAdminProfile(data.profile);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load settings.");
+    } finally {
+      setLoading(false);
+    }
+  }, [applySettings, setAdminProfile]);
+
+  useEffect(() => {
+    const token = getToken();
+    const admin = getAdmin();
+    if (!token || !admin) {
+      router.push("/login");
+      return;
+    }
+    loadSettings();
+  }, [loadSettings, router]);
+
+  const handleProfileSave = async () => {
+    setProfileSaving(true);
+    setError("");
+    try {
+      const updated = await updateSettingsProfile({
+        fullName,
+        professionalTitle: profTitle,
+        email,
+        phone,
+      });
+      applySettings({
+        profile: updated,
+        clinic: { clinicName, clinicEmail, primaryContact, address, businessHours: hours },
+      });
+      setAdminProfile(updated);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+
+      const token = getToken();
+      const admin = getAdmin();
+      if (token && admin) {
+        const parts = fullName.trim().split(/\s+/);
+        setAuth(token, {
+          ...admin,
+          email: updated.email,
+          firstName: parts[0] || admin.firstName,
+          lastName: parts.slice(1).join(" ") || admin.lastName,
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save profile.");
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
-  const handleClinicSave = () => {
-    setClinicSaved(true);
-    setTimeout(() => setClinicSaved(false), 2000);
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    setError("");
+    try {
+      const result = await uploadSettingsProfilePhoto(file);
+      setPhotoUrl(result.profilePhoto);
+      setPhotoVersion(Date.now());
+      const latest = await refreshProfile();
+      if (latest) applySettings({
+        profile: latest,
+        clinic: { clinicName, clinicEmail, primaryContact, address, businessHours: hours },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload photo.");
+    } finally {
+      setPhotoUploading(false);
+      if (photoRef.current) photoRef.current.value = "";
+    }
   };
 
-  const updateHour = (idx: number, entry: HourEntry) => {
-    setHours(prev => prev.map((h, i) => i === idx ? entry : h));
+  const handlePhotoRemove = async () => {
+    setPhotoUploading(true);
+    setError("");
+    try {
+      await removeSettingsProfilePhoto();
+      setPhotoUrl("");
+      setPhotoVersion(Date.now());
+      const latest = await refreshProfile();
+      if (latest) applySettings({
+        profile: latest,
+        clinic: { clinicName, clinicEmail, primaryContact, address, businessHours: hours },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove photo.");
+    } finally {
+      setPhotoUploading(false);
+    }
   };
 
-  // ── Shared styles ─────────────────────────────────────────────────────────
+  const handleClinicSave = async () => {
+    setClinicSaving(true);
+    setError("");
+    try {
+      await updateSettingsClinic({ clinicName, clinicEmail, primaryContact, address });
+      setClinicSaved(true);
+      setTimeout(() => setClinicSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save clinic preferences.");
+    } finally {
+      setClinicSaving(false);
+    }
+  };
+
+  const persistAlerts = async (next: AlertPreferences) => {
+    setAlertsSaving(true);
+    setError("");
+    try {
+      await updateSettingsAlerts(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update alert preferences.");
+      await loadSettings();
+    } finally {
+      setAlertsSaving(false);
+    }
+  };
+
+  const handleTwoFactorChange = async (enabled: boolean) => {
+    const previous = twoFactor;
+    setTwoFactor(enabled);
+    setSecuritySaving(true);
+    setError("");
+    try {
+      await updateSettingsSecurity(enabled);
+    } catch (err) {
+      setTwoFactor(previous);
+      setError(err instanceof Error ? err.message : "Failed to update security settings.");
+    } finally {
+      setSecuritySaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (payload: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    const result = await changeSettingsPassword(payload);
+    setPasswordChangedLabel(result.passwordChangedLabel);
+  };
+
+  const updateHour = async (idx: number, entry: BusinessHourEntry) => {
+    const nextHours = hours.map((h, i) => (i === idx ? entry : h));
+    setHours(nextHours);
+    setHoursSaving(true);
+    setError("");
+    try {
+      const saved = await updateSettingsBusinessHours(nextHours);
+      setHours(saved);
+      setEditingHour(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save business hours.");
+      await loadSettings();
+    } finally {
+      setHoursSaving(false);
+    }
+  };
+
   const card: React.CSSProperties = {
     backgroundColor: cardBg,
     borderRadius: 16,
@@ -269,13 +516,21 @@ export default function SettingsPage() {
   const lbl = "text-[10px] font-bold tracking-widest uppercase mb-2 block";
   const lblSt: React.CSSProperties = { color: labelColor };
 
+  if (loading) {
+    return (
+      <div className="min-h-full ml-10 max-sm:ml-0 max-sm:px-3 flex items-center justify-center" style={{ marginTop: 40 }}>
+        <p className="text-sm italic" style={{ color: text2 }}>Loading settings...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-full ml-10 max-sm:ml-0 max-sm:px-3 transition-colors duration-300" style={{ marginTop: 40, background: "transparent" }}>
 
-      {/* Modals */}
       {showPwModal && (
         <ChangePasswordModal
           onClose={() => setShowPwModal(false)}
+          onSubmit={handlePasswordChange}
           isDark={isDark} brandColor={brandColor} borderCol={borderCol}
         />
       )}
@@ -285,10 +540,10 @@ export default function SettingsPage() {
           onSave={e => updateHour(editingHour, e)}
           onClose={() => setEditingHour(null)}
           isDark={isDark} brandColor={brandColor} borderCol={borderCol}
+          saving={hoursSaving}
         />
       )}
 
-      {/* ── PAGE TITLE ── */}
       <h1
         className="mb-6"
         style={{
@@ -301,15 +556,16 @@ export default function SettingsPage() {
         Settings
       </h1>
 
-      {/* ── TWO-COLUMN LAYOUT on desktop, single column on mobile ── */}
-      <div className="flex gap-5 items-start max-sm:flex-col">
+      {error && (
+        <div className="mb-4 rounded-xl px-4 py-3 text-sm border border-red-300 bg-red-50 text-red-700">
+          {error}
+        </div>
+      )}
 
-        {/* ══ LEFT COLUMN ══════════════════════════════════════════════════ */}
+      <div className="flex gap-5 items-start max-sm:flex-col">
         <div style={{ flex: "1 1 0", minWidth: 0 }}>
 
-          {/* ── PROFILE MANAGEMENT CARD ── */}
           <div style={card}>
-            {/* Header */}
             <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
               <div className="min-w-0">
                 <h2 className="text-xl font-semibold mb-1" style={{ color: text1, fontFamily: "'Cormorant Garamond', serif" }}>
@@ -321,14 +577,14 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={handleProfileSave}
-                className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+                disabled={profileSaving}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0 disabled:opacity-60"
                 style={{ backgroundColor: brandColor, minWidth: 90 }}
               >
-                {profileSaved ? "Saved ✓" : "Save"}
+                {profileSaving ? "Saving..." : profileSaved ? "Saved ✓" : "Save"}
               </button>
             </div>
 
-            {/* 2-col inputs on desktop, 1-col on mobile */}
             <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4 mb-4">
               <div>
                 <span className={lbl} style={lblSt}>Full Name</span>
@@ -352,35 +608,45 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Divider */}
             <div style={{ height: 1, background: isDark ? "rgba(89,23,39,0.2)" : "#591727", margin: "20px 0" }} />
 
-            {/* Profile Photo */}
             <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0"
-                style={{ backgroundColor: isDark ? "#b09a8a" : "#e8ddd4", border: `1px solid ${isDark ? borderCol : "#8e8787"}` }}>
+              <div
+                className="w-24 h-24 rounded-xl overflow-hidden shrink-0"
+                style={{ backgroundColor: isDark ? "#b09a8a" : "#e8ddd4", border: `1px solid ${isDark ? borderCol : "#8e8787"}` }}
+              >
                 {photoUrl ? (
-                  <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                  <img
+                    src={`${photoUrl}${photoUrl.includes("?") ? "&" : "?"}v=${photoVersion}`}
+                    alt="Profile"
+                    className="w-full h-full object-cover object-center"
+                    onError={() => setPhotoUrl("")}
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xl font-bold"
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold"
                     style={{ color: brandColor, opacity: 0.5 }}>
-                    {fullName.charAt(0)}
+                    {(fullName || email || "A").charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div>
-                <p className="text-sm font-semibold mb-2" style={{ color: text1 }}>Profile Photo</p>
+                <p className="text-sm font-semibold mb-1" style={{ color: text1 }}>Profile Photo</p>
+                <p className="text-xs mb-2" style={{ color: text2 }}>Upload or remove your profile photo below.</p>
                 <div className="flex items-center gap-3 flex-wrap">
                   <button
+                    type="button"
                     onClick={() => photoRef.current?.click()}
-                    className="px-4 py-1.5 rounded-lg text-sm font-semibold border transition-colors hover:opacity-80"
+                    disabled={photoUploading}
+                    className="px-4 py-1.5 rounded-lg text-sm font-semibold border transition-colors hover:opacity-80 disabled:opacity-50"
                     style={{ borderColor: isDark ? borderCol : "#8e8787", color: text1, backgroundColor: "transparent" }}
                   >
-                    Upload New
+                    {photoUploading ? "Uploading..." : "Upload New"}
                   </button>
                   <button
-                    onClick={() => setPhotoUrl("")}
-                    className="text-sm transition-opacity hover:opacity-60"
+                    type="button"
+                    onClick={handlePhotoRemove}
+                    disabled={photoUploading || !photoUrl}
+                    className="text-sm transition-opacity hover:opacity-60 disabled:opacity-40"
                     style={{ color: text2 }}
                   >
                     Remove
@@ -391,7 +657,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* ── CLINIC PREFERENCES CARD ── */}
           <div style={card}>
             <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
               <h2 className="text-xl font-semibold" style={{ color: text1, fontFamily: "'Cormorant Garamond', serif" }}>
@@ -399,19 +664,24 @@ export default function SettingsPage() {
               </h2>
               <button
                 onClick={handleClinicSave}
-                className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+                disabled={clinicSaving}
+                className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0 disabled:opacity-60"
                 style={{ backgroundColor: brandColor }}
               >
-                {clinicSaved ? "Saved ✓" : "Save"}
+                {clinicSaving ? "Saving..." : clinicSaved ? "Saved ✓" : "Save"}
               </button>
             </div>
 
-            {/* 2-col on desktop, 1-col on mobile */}
             <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4 mb-4">
               <div>
                 <span className={lbl} style={lblSt}>Clinic Name</span>
                 <input value={clinicName} onChange={e => setClinicName(e.target.value)}
                   placeholder="Atlas Dental Center" style={inputSt} />
+              </div>
+              <div>
+                <span className={lbl} style={lblSt}>Clinic Email</span>
+                <input type="email" value={clinicEmail} onChange={e => setClinicEmail(e.target.value)}
+                  placeholder="contact@atlasdentalcenter.com" style={inputSt} />
               </div>
               <div>
                 <span className={lbl} style={lblSt}>Primary Contact</span>
@@ -427,18 +697,13 @@ export default function SettingsPage() {
                 style={{ ...inputSt, width: "100%" }} />
             </div>
           </div>
-
         </div>
 
-        {/* ══ RIGHT COLUMN — full width on mobile, fixed 320px on desktop ══ */}
         <div className="w-full sm:w-auto" style={{ width: undefined, flexShrink: 0, display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* override inline width on desktop only */}
           <style>{`@media (min-width: 640px) { .settings-right-col { width: 320px !important; } }`}</style>
           <div className="settings-right-col flex flex-col gap-5 w-full">
 
-            {/* ── SECURITY CARD ── */}
             <div style={card}>
-              {/* Title */}
               <div className="flex items-center gap-2 mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={brandColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -446,22 +711,32 @@ export default function SettingsPage() {
                 <h3 className="text-base font-bold" style={{ color: text1 }}>Security</h3>
               </div>
 
-              {/* Change Password row */}
-              <button
-                onClick={() => setShowPwModal(true)}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl mb-3 transition-colors hover:opacity-80 text-left"
-                style={{ backgroundColor: cardInnerBg, border: `1px solid ${isDark ? borderCol : "#630808"}` }}
-              >
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: text1 }}>Change Password</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: text2 }}>Last changed 3 months ago</p>
+              {canChangePassword ? (
+                <button
+                  onClick={() => setShowPwModal(true)}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl mb-3 transition-colors hover:opacity-80 text-left"
+                  style={{ backgroundColor: cardInnerBg, border: `1px solid ${isDark ? borderCol : "#630808"}` }}
+                >
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: text1 }}>Change Password</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: text2 }}>{passwordChangedLabel}</p>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              ) : (
+                <div
+                  className="w-full p-3.5 rounded-xl mb-3 text-left"
+                  style={{ backgroundColor: cardInnerBg, border: `1px solid ${isDark ? borderCol : "#630808"}` }}
+                >
+                  <p className="text-sm font-semibold" style={{ color: text1 }}>Password Managed by Super Admin</p>
+                  <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: text2 }}>
+                    Use the login page to request a password reset from the Super Admin.
+                  </p>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
+              )}
 
-              {/* Two-Factor Auth row */}
               <div
                 className="flex items-center justify-between p-3.5 rounded-xl"
                 style={{ backgroundColor: cardInnerBg, border: `1px solid ${isDark ? borderCol : "#630808"}` }}
@@ -469,31 +744,47 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-sm font-semibold" style={{ color: text1 }}>Two-Factor Auth</p>
                   <p className="text-[11px] font-bold mt-0.5" style={{ color: twoFactor ? "#d14747" : "#541515" }}>
-                    {twoFactor ? "ENABLED" : "DISABLED"}
+                    {securitySaving ? "SAVING..." : twoFactor ? "ENABLED" : "DISABLED"}
                   </p>
                 </div>
-                <ToggleBlue checked={twoFactor} onChange={setTwoFactor} />
+                <ToggleBlue checked={twoFactor} onChange={handleTwoFactorChange} disabled={securitySaving} />
               </div>
             </div>
 
-            {/* ── ALERT PREFERENCES CARD ── */}
             <div style={{
               backgroundColor: brandColor,
               borderRadius: 16,
               padding: "24px 24px",
               border: `1px solid ${brandColor}`,
             }}>
-              <h3 className="text-base font-bold mb-5" style={{ color: "#f0e6d3" }}>Alert Preferences</h3>
+              <h3 className="text-base font-bold mb-5" style={{ color: "#f0e6d3" }}>
+                Alert Preferences{alertsSaving ? " · Saving..." : ""}
+              </h3>
 
               {[
-                { label: "Appointment SMS",  val: alertSMS,       set: setAlertSMS       },
-                { label: "Clinic Reports",   val: alertReports,   set: setAlertReports   },
-                { label: "Marketing Emails", val: alertMarketing, set: setAlertMarketing },
+                { label: "Appointment SMS", val: alertSMS, key: "appointmentSms" as const },
+                { label: "Clinic Reports", val: alertReports, key: "clinicReports" as const },
+                { label: "Marketing Emails", val: alertMarketing, key: "marketingEmails" as const },
               ].map((item, i, arr) => (
                 <div key={item.label}>
                   <div className="flex items-center justify-between py-3">
                     <span className="text-sm" style={{ color: "#f0e6d3" }}>{item.label}</span>
-                    <Toggle checked={item.val} onChange={item.set} color="#bf1515" />
+                    <Toggle
+                      checked={item.val}
+                      disabled={alertsSaving}
+                      onChange={(next) => {
+                        const updated = {
+                          appointmentSms: item.key === "appointmentSms" ? next : alertSMS,
+                          clinicReports: item.key === "clinicReports" ? next : alertReports,
+                          marketingEmails: item.key === "marketingEmails" ? next : alertMarketing,
+                        };
+                        if (item.key === "appointmentSms") setAlertSMS(next);
+                        if (item.key === "clinicReports") setAlertReports(next);
+                        if (item.key === "marketingEmails") setAlertMarketing(next);
+                        persistAlerts(updated);
+                      }}
+                      color="#bf1515"
+                    />
                   </div>
                   {i < arr.length - 1 && (
                     <div style={{ height: 1, background: "rgba(240,230,211,0.15)" }} />
@@ -502,7 +793,6 @@ export default function SettingsPage() {
               ))}
             </div>
 
-            {/* ── BUSINESS HOURS CARD ── */}
             <div style={card}>
               <div className="flex items-center gap-2 mb-5">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={brandColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -525,7 +815,8 @@ export default function SettingsPage() {
                       </span>
                       <button
                         onClick={() => setEditingHour(i)}
-                        className="w-6 h-6 flex items-center justify-center rounded transition-colors hover:opacity-70"
+                        disabled={hoursSaving}
+                        className="w-6 h-6 flex items-center justify-center rounded transition-colors hover:opacity-70 disabled:opacity-40"
                         style={{ color: text2 }}
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

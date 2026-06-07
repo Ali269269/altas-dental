@@ -1,5 +1,6 @@
 const DAYS_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const TIME_SLOTS = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+const { toDateKey } = require('./dateUtils');
 const MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -74,6 +75,27 @@ function timeToSlotIndex(timeStr) {
     }
   });
   return bestIdx;
+}
+
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function formatAvgMinutes(minutes) {
+  if (!minutes || !Number.isFinite(minutes)) return null;
+  const rounded = Math.round(minutes);
+  if (rounded < 60) return `${rounded} min`;
+  const hours = Math.floor(rounded / 60);
+  const mins = rounded % 60;
+  return mins ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
 function formatShortDate(date) {
@@ -227,24 +249,112 @@ function buildServicesBreakdown(appointments) {
 }
 
 function buildStaffProductivity(appointments) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const seenAppts = appointments.filter(
+    (a) =>
+      ['SEEN', 'COMPLETED'].includes(a.status) &&
+      new Date(a.appointmentDate) >= thirtyDaysAgo
+  );
+
   const counts = {};
-  appointments.forEach((a) => {
+  const durationTotals = {};
+  const durationCounts = {};
+
+  seenAppts.forEach((a) => {
     counts[a.specialty] = (counts[a.specialty] || 0) + 1;
+
+    if (a.checkup?.completedAt) {
+      const parsed = parseAppointmentTime(a.appointmentTime);
+      const start = new Date(a.appointmentDate);
+      if (parsed) start.setHours(parsed.hour, parsed.minute, 0, 0);
+      const end = new Date(a.checkup.completedAt);
+      const mins = (end.getTime() - start.getTime()) / 60000;
+      if (mins > 0 && mins < 480) {
+        durationTotals[a.specialty] = (durationTotals[a.specialty] || 0) + mins;
+        durationCounts[a.specialty] = (durationCounts[a.specialty] || 0) + 1;
+      }
+    }
   });
 
-  return STAFF_TEMPLATE.map((member) => {
+  const members = STAFF_TEMPLATE.map((member) => {
     const seen = member.specialties.reduce(
       (sum, specialty) => sum + (counts[specialty] || 0),
       0
     );
+
+    let totalMins = 0;
+    let totalCount = 0;
+    member.specialties.forEach((specialty) => {
+      totalMins += durationTotals[specialty] || 0;
+      totalCount += durationCounts[specialty] || 0;
+    });
+
+    const avgMins = totalCount > 0 ? totalMins / totalCount : null;
+
     return {
       name: member.name,
       role: member.role,
       seen,
-      avg: member.avg,
+      avg: formatAvgMinutes(avgMins) || member.avg,
       avatar: member.avatar,
     };
   });
+
+  const maxSeen = Math.max(...members.map((m) => m.seen), 1);
+  return members.map((member) => ({
+    ...member,
+    progress: Math.round((member.seen / maxSeen) * 100),
+  }));
+}
+
+function buildUpcomingAppointments(appointments) {
+  const now = new Date();
+  const today = startOfDay(now);
+  const openStatuses = ['NEW', 'PENDING', 'CONFIRMED'];
+
+  return appointments
+    .filter((a) => openStatuses.includes(a.status))
+    .map((a) => {
+      const parsed = parseAppointmentTime(a.appointmentTime);
+      const apptDate = new Date(a.appointmentDate);
+      if (parsed) apptDate.setHours(parsed.hour, parsed.minute, 0, 0);
+      return { appt: a, apptDate };
+    })
+    .filter(({ apptDate }) => apptDate >= now)
+    .sort((a, b) => a.apptDate - b.apptDate)
+    .map(({ appt }) => mapUpcomingAppointmentRow(appt, today));
+}
+
+function mapUpcomingAppointmentRow(appt, today = startOfDay(new Date())) {
+  const row = mapAppointmentRow(appt);
+  const apptDay = startOfDay(appt.appointmentDate);
+  let dateLabel = formatShortDate(appt.appointmentDate);
+
+  if (apptDay.getTime() === today.getTime()) {
+    dateLabel = 'Today';
+  } else if (apptDay.getTime() === addDays(today, 1).getTime()) {
+    dateLabel = 'Tomorrow';
+  }
+
+  return { ...row, dateLabel, appointmentDate: toDateKey(appt.appointmentDate) };
+}
+
+function appointmentHasStoredCheckup(appt) {
+  const c = appt?.checkup;
+  if (!c) return false;
+  return (
+    Boolean(String(c.complaint || '').trim()) ||
+    Boolean(String(c.clinicalObs || '').trim()) ||
+    Boolean(String(c.primaryDiagnosis || '').trim()) ||
+    (Array.isArray(c.diagnostics) && c.diagnostics.length > 0) ||
+    (Array.isArray(c.treatment) && c.treatment.length > 0) ||
+    Boolean(String(c.prescriptions || '').trim()) ||
+    Boolean(String(c.followUp || '').trim()) ||
+    (Array.isArray(c.postOpInstructions) && c.postOpInstructions.length > 0) ||
+    Boolean(String(c.additionalNotes || '').trim())
+  );
 }
 
 function mapAppointmentRow(appt) {
@@ -274,5 +384,8 @@ module.exports = {
   buildOccupancyGrid,
   buildServicesBreakdown,
   buildStaffProductivity,
+  buildUpcomingAppointments,
   mapAppointmentRow,
+  mapUpcomingAppointmentRow,
+  appointmentHasStoredCheckup,
 };

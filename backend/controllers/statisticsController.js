@@ -7,24 +7,60 @@ const {
   buildOccupancyGrid,
   buildServicesBreakdown,
   buildStaffProductivity,
+  buildUpcomingAppointments,
   mapAppointmentRow,
   formatShortDate,
   formatTimeAgo,
   formatLongDate,
   getInitials,
   getArrivalSubtitle,
+  appointmentHasStoredCheckup,
 } = require('../utils/dashboardHelpers');
 const {
   buildAppointmentsPageOverview,
   mapAppointmentListItem,
 } = require('../utils/appointmentsPageHelpers');
+const { buildPatientsPageOverview, computePatientStats } = require('../utils/patientsPageHelpers');
+const { buildAnalyticsOverview } = require('../utils/analyticsPageHelpers');
 const {
   sendAppointmentConfirmationEmail,
   sendAppointmentCancellationEmail,
+  sendAppointmentReminderEmail,
+  sendPatientFollowUpEmail,
+  sendPatientTreatmentSummaryEmail,
+  sendPatientEmailByType,
   sendAdminNewAppointmentEmail,
 } = require('../utils/emailService');
 const { verifyAppointmentAction } = require('../utils/appointmentActionTokens');
 const { renderActionResultPage } = require('../utils/emailHtmlPages');
+const { buildPatientProfileForAppointment } = require('../utils/patientProfileHelpers');
+const { mapScansForClient } = require('../utils/clinicalScanUrls');
+const fs = require('fs');
+const path = require('path');
+const { clinicalRoot } = require('../middleware/clinicalScanUpload');
+const { verifyClinicalScanDownload } = require('../utils/clinicalScanDownloadToken');
+
+function mapCheckupDetail(checkup, appointmentId) {
+  if (!checkup) return null;
+  const c = checkup.toObject ? checkup.toObject() : checkup;
+  const id = appointmentId ? String(appointmentId) : '';
+  return {
+    complaint: c.complaint || '',
+    clinicalObs: c.clinicalObs || '',
+    primaryDiagnosis: c.primaryDiagnosis || '',
+    diagnostics: Array.isArray(c.diagnostics) ? c.diagnostics : [],
+    treatment: Array.isArray(c.treatment) ? c.treatment : [],
+    prescriptions: c.prescriptions || '',
+    followUp: c.followUp || '',
+    postOpInstructions: Array.isArray(c.postOpInstructions)
+      ? c.postOpInstructions
+      : [],
+    additionalNotes: c.additionalNotes || '',
+    scanNames: Array.isArray(c.scanNames) ? c.scanNames : [],
+    scans: id ? mapScansForClient(id, c.scans) : [],
+    completedAt: c.completedAt || null,
+  };
+}
 
 function mapAppointmentDetail(appt) {
   return {
@@ -41,6 +77,7 @@ function mapAppointmentDetail(appt) {
     cancellationReason: appt.cancellationReason || '',
     isNewPatient: Boolean(appt.isNewPatient),
     createdAt: appt.createdAt,
+    checkup: mapCheckupDetail(appt.checkup, appt._id),
   };
 }
 
@@ -62,6 +99,7 @@ function mapNotificationRow(notification) {
       appointmentDate: notification.appointmentDate,
       appointmentTime: notification.appointmentTime || '',
       phone: notification.phone || '',
+      email: notification.email || '',
     },
   };
 }
@@ -132,6 +170,8 @@ async function buildDashboardOverview() {
     pendingRaw,
     weekAppointments,
     allAppointments,
+    futureAppointmentsRaw,
+    patientStats,
   ] = await Promise.all([
     Appointment.find({
       appointmentDate: { $gte: today, $lt: tomorrow },
@@ -143,9 +183,15 @@ async function buildDashboardOverview() {
       appointmentDate: { $gte: weekStart, $lt: weekEnd },
     }),
     Appointment.find({}),
+    Appointment.find({
+      appointmentDate: { $gte: today },
+      status: { $in: ['NEW', 'PENDING', 'CONFIRMED'] },
+    }).sort({ appointmentDate: 1, appointmentTime: 1 }),
+    computePatientStats(),
   ]);
 
   const todayAppointments = todayAppointmentsRaw.map(mapAppointmentRow);
+  const upcomingAppointments = buildUpcomingAppointments(futureAppointmentsRaw);
   const pendingConfirmations = pendingRaw.map((appt) => ({
     id: appt._id.toString(),
     name: appt.patientName,
@@ -159,17 +205,29 @@ async function buildDashboardOverview() {
   const staff = buildStaffProductivity(allAppointments);
 
   let nextPatient = null;
-  const nextAppt =
-    todayAppointmentsRaw.find((a) =>
-      ['NEW', 'PENDING', 'CONFIRMED'].includes(a.status)
-    ) || todayAppointmentsRaw[0];
+  const nextApptSource = upcomingAppointments.length
+    ? futureAppointmentsRaw.find((a) => a._id.toString() === upcomingAppointments[0].id)
+    : todayAppointmentsRaw.find((a) =>
+        ['NEW', 'PENDING', 'CONFIRMED'].includes(a.status)
+      ) || todayAppointmentsRaw[0];
+
+  const nextAppt = nextApptSource;
 
   if (nextAppt) {
-    const previousVisit = await Appointment.findOne({
-      email: nextAppt.email,
-      _id: { $ne: nextAppt._id },
-      appointmentDate: { $lt: nextAppt.appointmentDate },
-    }).sort({ appointmentDate: -1 });
+    const [previousVisit, lastClinicalAppt] = await Promise.all([
+      Appointment.findOne({
+        email: nextAppt.email,
+        _id: { $ne: nextAppt._id },
+        appointmentDate: { $lt: nextAppt.appointmentDate },
+      }).sort({ appointmentDate: -1 }),
+      Appointment.findOne({
+        email: nextAppt.email,
+        status: { $in: ['SEEN', 'COMPLETED'] },
+      }).sort({ appointmentDate: -1 }),
+    ]);
+
+    const hasClinicalRecord =
+      lastClinicalAppt && appointmentHasStoredCheckup(lastClinicalAppt);
 
     const hasAlert =
       nextAppt.notes &&
@@ -181,6 +239,10 @@ async function buildDashboardOverview() {
         nextAppt.appointmentDate,
         nextAppt.appointmentTime
       ),
+      appointmentId: nextAppt._id.toString(),
+      clinicalRecordAppointmentId:
+        hasClinicalRecord ? lastClinicalAppt._id.toString() : null,
+      hasClinicalRecord: Boolean(hasClinicalRecord),
       rows: [
         { label: 'Patient Name:', value: nextAppt.patientName, isTag: false },
         {
@@ -211,9 +273,16 @@ async function buildDashboardOverview() {
     services,
     topPerformer,
     todayAppointments,
+    upcomingAppointments,
     staff,
     pendingConfirmations,
     nextPatient,
+    patientStats: {
+      totalPatients: patientStats.totalPatients,
+      newPatientsThisMonth: patientStats.newPatients,
+      newToday: patientStats.newToday,
+      monthGrowthPct: patientStats.patientsMonthGrowthPct,
+    },
   };
 }
 
@@ -237,6 +306,26 @@ exports.getDashboardOverview = async (req, res, next) => {
   }
 };
 
+// @desc    Analytics page payload (charts, conversion, summary stats)
+// @route   GET /api/statistics/analytics-overview
+// @access  Private/Protected
+exports.getAnalyticsOverview = async (req, res, next) => {
+  try {
+    const data = await buildAnalyticsOverview();
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching analytics overview',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Appointments page payload (calendar, lists, stats)
 // @route   GET /api/statistics/appointments-overview
 // @access  Private/Protected
@@ -252,6 +341,26 @@ exports.getAppointmentsPageOverview = async (req, res, next) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching appointments overview',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Patients dashboard overview (list, stats, filters)
+// @route   GET /api/statistics/patients-overview
+// @access  Private/Protected
+exports.getPatientsPageOverview = async (req, res, next) => {
+  try {
+    const data = await buildPatientsPageOverview(req.query);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching patients overview',
       error: error.message,
     });
   }
@@ -357,6 +466,22 @@ async function findPendingDuplicateAppointment({
   });
 }
 
+async function notifyAdminNewBooking(appointment) {
+  try {
+    const emailResult = await sendAdminNewAppointmentEmail(appointment);
+    if (emailResult?.skipped) {
+      console.warn('Admin appointment email skipped:', emailResult.reason || 'unknown');
+    }
+    return emailResult;
+  } catch (emailError) {
+    console.error(
+      'Failed to send admin appointment notification:',
+      emailError.message || emailError
+    );
+    return { sent: false, error: emailError.message };
+  }
+}
+
 function respondBookingAccepted(res, appointment, alreadyExists = false) {
   return res.status(200).json({
     success: true,
@@ -420,6 +545,7 @@ exports.createAppointment = async (req, res, next) => {
 
     const existing = await findPendingDuplicateAppointment(normalized);
     if (existing) {
+      await notifyAdminNewBooking(existing);
       return respondBookingAccepted(res, existing, true);
     }
 
@@ -428,24 +554,24 @@ exports.createAppointment = async (req, res, next) => {
       status: 'NEW',
     });
 
-    await Notification.create({
-      type: 'APPOINTMENT_BOOKED',
-      title: 'New appointment request',
-      message: `${appointment.patientName} booked ${appointment.specialty}`,
-      appointmentId: appointment._id,
-      patientName: appointment.patientName,
-      service: appointment.specialty,
-      appointmentDate: appointment.appointmentDate,
-      appointmentTime: appointment.appointmentTime,
-      phone: appointment.phone,
-      isRead: false,
-    });
-
     try {
-      await sendAdminNewAppointmentEmail(appointment);
-    } catch (emailError) {
-      console.error('Failed to send admin appointment notification:', emailError);
+      await Notification.create({
+        type: 'APPOINTMENT_BOOKED',
+        title: 'New appointment request',
+        message: `${appointment.patientName} booked ${appointment.specialty}`,
+        appointmentId: appointment._id,
+        patientName: appointment.patientName,
+        service: appointment.specialty,
+        appointmentDate: appointment.appointmentDate,
+        appointmentTime: appointment.appointmentTime,
+        phone: appointment.phone,
+        isRead: false,
+      });
+    } catch (notifError) {
+      console.error('Notification create failed:', notifError.message || notifError);
     }
+
+    await notifyAdminNewBooking(appointment);
 
     return respondBookingAccepted(res, appointment, false);
   } catch (error) {
@@ -471,6 +597,7 @@ exports.createAppointment = async (req, res, next) => {
           appointmentTime: req.body.appointmentTime,
         });
         if (existing) {
+          await notifyAdminNewBooking(existing);
           return respondBookingAccepted(res, existing, true);
         }
       }
@@ -519,13 +646,28 @@ async function applyAppointmentStatusWithEmails(appointment, status, cancellatio
     runValidators: true,
   });
 
-  if (storedStatus === 'CONFIRMED') {
-    await sendAppointmentConfirmationEmail(updated);
-  } else if (storedStatus === 'CANCELLED') {
-    await sendAppointmentCancellationEmail(
-      updated,
-      updated.cancellationReason
+  try {
+    if (storedStatus === 'CONFIRMED') {
+      await sendAppointmentConfirmationEmail(updated);
+    } else if (storedStatus === 'CANCELLED') {
+      await sendAppointmentCancellationEmail(
+        updated,
+        updated.cancellationReason
+      );
+    }
+  } catch (emailError) {
+    console.error(
+      `Failed to send patient ${storedStatus.toLowerCase()} email:`,
+      emailError.message || emailError
     );
+  }
+
+  if (storedStatus === 'CONFIRMED' || storedStatus === 'CANCELLED') {
+    try {
+      await Notification.deleteMany({ appointmentId: updated._id });
+    } catch (notifError) {
+      console.error('Failed to remove appointment notification:', notifError.message || notifError);
+    }
   }
 
   return updated;
@@ -674,6 +816,160 @@ exports.cancelAppointmentByEmail = async (req, res) => {
   }
 };
 
+// @desc    Permanently delete an appointment record
+// @route   DELETE /api/statistics/appointments/:id
+// @access  Private/Protected
+exports.deleteAppointment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findById(id);
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    await Notification.deleteMany({ appointmentId: appointment._id });
+    await Appointment.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Appointment permanently deleted',
+      data: { id: appointment._id.toString() },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting appointment',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Send appointment reminder email to patient
+// @route   POST /api/statistics/appointments/:id/reminder
+// @access  Private/Protected
+exports.sendAppointmentReminder = async (req, res, next) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    const email = String(appointment.email || '').trim();
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'This appointment has no email address on file',
+      });
+    }
+
+    const status = String(appointment.status || '').toUpperCase();
+    if (status === 'CANCELLED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot send a reminder for a cancelled appointment',
+      });
+    }
+
+    const emailResult = await sendAppointmentReminderEmail(appointment);
+    if (!emailResult.sent) {
+      return res.status(503).json({
+        success: false,
+        message:
+          'Email could not be sent. Check SMTP settings (SMTP_HOST, SMTP_USER, SMTP_PASS) in backend/.env',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Reminder email sent to ${email}`,
+    });
+  } catch (error) {
+    console.error('sendAppointmentReminder error:', error.message || error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send reminder email',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Send patient email (reminder, follow-up, treatment summary)
+// @route   POST /api/statistics/appointments/:id/email
+// @access  Private/Protected
+exports.sendPatientAppointmentEmail = async (req, res, next) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    const type = String(req.body?.type || 'reminder').toLowerCase();
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    const email = String(appointment.email || '').trim();
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'This appointment has no email address on file',
+      });
+    }
+
+    const status = String(appointment.status || '').toUpperCase();
+    if (status === 'CANCELLED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot email patient for a cancelled appointment',
+      });
+    }
+
+    let emailResult;
+    let successMessage;
+
+    emailResult = await sendPatientEmailByType(appointment, type);
+    if (type === 'follow_up' || type === 'followup') {
+      successMessage = `Follow-up instructions sent to ${email}`;
+    } else if (type === 'treatment_summary' || type === 'summary') {
+      successMessage = `Treatment summary sent to ${email}`;
+    } else if (type === 'book_appointment') {
+      successMessage = `Booking invitation sent to ${email}`;
+    } else if (type === 'appointment_due') {
+      successMessage = `Appointment due notice sent to ${email}`;
+    } else {
+      successMessage = `Reminder email sent to ${email}`;
+    }
+
+    if (!emailResult.sent) {
+      return res.status(503).json({
+        success: false,
+        message:
+          'Email could not be sent. Check SMTP settings (SMTP_HOST, SMTP_USER, SMTP_PASS) in backend/.env',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: successMessage,
+    });
+  } catch (error) {
+    console.error('sendPatientAppointmentEmail error:', error.message || error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send email',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Get single appointment details
 // @route   GET /api/statistics/appointments/:id
 // @access  Private/Protected
@@ -687,9 +983,21 @@ exports.getAppointmentById = async (req, res, next) => {
       });
     }
 
+    const relatedAppointments = await Appointment.find({
+      email: String(appointment.email).trim().toLowerCase(),
+    })
+      .sort({ appointmentDate: -1, createdAt: -1 })
+      .lean();
+
     res.status(200).json({
       success: true,
-      data: mapAppointmentDetail(appointment),
+      data: {
+        ...mapAppointmentDetail(appointment),
+        patientProfile: buildPatientProfileForAppointment(
+          appointment,
+          relatedAppointments
+        ),
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -763,6 +1071,14 @@ exports.updateAppointmentStatus = async (req, res, next) => {
       emailResult = { sent: false, error: emailError.message };
     }
 
+    if (storedStatus === 'CONFIRMED' || storedStatus === 'CANCELLED') {
+      try {
+        await Notification.deleteMany({ appointmentId: appointment._id });
+      } catch (notifError) {
+        console.error('Failed to remove appointment notification:', notifError.message || notifError);
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: 'Appointment updated successfully',
@@ -782,6 +1098,161 @@ exports.updateAppointmentStatus = async (req, res, next) => {
   }
 };
 
+// @desc    Download clinical scan (patient email link, signed token)
+// @route   GET /api/statistics/clinical-scans/download?token=...
+// @access  Public (valid token required)
+exports.downloadClinicalScan = async (req, res) => {
+  try {
+    const payload = verifyClinicalScanDownload(req.query.token);
+    if (!payload) {
+      return res.status(401).json({
+        success: false,
+        message: 'This download link is invalid or has expired.',
+      });
+    }
+
+    const { appointmentId, storedName } = payload;
+    const safeName = path.basename(String(storedName || ''));
+    if (!safeName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file reference',
+      });
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Clinical record not found',
+      });
+    }
+
+    const scanMeta = (appointment.checkup?.scans || []).find(
+      (s) => s.storedName === safeName
+    );
+    if (!scanMeta) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found',
+      });
+    }
+
+    const filePath = path.join(clinicalRoot, appointmentId, safeName);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server',
+      });
+    }
+
+    const downloadName = scanMeta.originalName || safeName;
+    return res.download(filePath, downloadName);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Download failed',
+    });
+  }
+};
+
+// @desc    Upload clinical scan images for an appointment
+// @route   POST /api/statistics/appointments/:id/clinical-scans
+// @access  Private/Protected
+exports.uploadClinicalScans = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    if (!req.files?.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image files were uploaded',
+      });
+    }
+
+    if (!appointment.checkup) {
+      appointment.checkup = {};
+    }
+
+    const added = req.files.map((f) => ({
+      storedName: f.filename,
+      originalName: f.originalname || f.filename,
+      mimeType: f.mimetype || '',
+      size: f.size || 0,
+      uploadedAt: new Date(),
+    }));
+
+    appointment.checkup.scans = [...(appointment.checkup.scans || []), ...added];
+    appointment.markModified('checkup');
+    await appointment.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Images uploaded',
+      data: {
+        scans: mapScansForClient(id, appointment.checkup.scans),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading clinical images',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Remove a clinical scan image
+// @route   DELETE /api/statistics/appointments/:id/clinical-scans/:storedName
+// @access  Private/Protected
+exports.deleteClinicalScan = async (req, res, next) => {
+  try {
+    const { id, storedName } = req.params;
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    const safeName = path.basename(String(storedName || ''));
+    const filePath = path.join(clinicalRoot, id, safeName);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    if (appointment.checkup?.scans) {
+      appointment.checkup.scans = appointment.checkup.scans.filter(
+        (s) => s.storedName !== safeName
+      );
+      appointment.markModified('checkup');
+      await appointment.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Image removed',
+      data: {
+        scans: mapScansForClient(id, appointment.checkup?.scans || []),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error removing clinical image',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Complete checkup and mark appointment as SEEN
 // @route   POST /api/statistics/appointments/:id/checkup
 // @access  Private/Protected
@@ -791,8 +1262,15 @@ exports.completeAppointmentCheckup = async (req, res, next) => {
     const {
       complaint = '',
       clinicalObs = '',
+      primaryDiagnosis = '',
       diagnostics = [],
       treatment = [],
+      prescriptions = '',
+      followUp = '',
+      postOpInstructions = [],
+      additionalNotes = '',
+      scanNames = [],
+      isEdit = false,
       date,
       view,
       page,
@@ -816,17 +1294,43 @@ exports.completeAppointmentCheckup = async (req, res, next) => {
       });
     }
 
-    appointment.status = 'SEEN';
+    const editing =
+      isEdit === true ||
+      isEdit === 'true' ||
+      (appointment.checkup && appointment.checkup.completedAt);
+
+    const completedAt =
+      editing && appointment.checkup?.completedAt
+        ? appointment.checkup.completedAt
+        : new Date();
+
+    if (!editing) {
+      appointment.status = 'SEEN';
+    }
+
+    const priorScans = appointment.checkup?.scans || [];
+
     appointment.checkup = {
       complaint: String(complaint || '').trim(),
       clinicalObs: String(clinicalObs || '').trim(),
+      primaryDiagnosis: String(primaryDiagnosis || '').trim(),
       diagnostics: Array.isArray(diagnostics) ? diagnostics : [],
       treatment: Array.isArray(treatment)
-        ? treatment.filter(Boolean)
+        ? treatment.filter(Boolean).map(String)
         : treatment
           ? [String(treatment)]
           : [],
-      completedAt: new Date(),
+      prescriptions: String(prescriptions || '').trim(),
+      followUp: String(followUp || '').trim(),
+      postOpInstructions: Array.isArray(postOpInstructions)
+        ? postOpInstructions.filter(Boolean).map(String)
+        : [],
+      additionalNotes: String(additionalNotes || '').trim(),
+      scanNames: Array.isArray(scanNames)
+        ? scanNames.filter(Boolean).map(String)
+        : [],
+      scans: priorScans,
+      completedAt,
     };
     await appointment.save();
 
@@ -841,7 +1345,9 @@ exports.completeAppointmentCheckup = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Checkup saved and appointment marked as seen',
+      message: editing
+        ? 'Clinical record updated'
+        : 'Checkup saved and appointment marked as seen',
       data: {
         appointment,
         listItem: mapAppointmentListItem(appointment),
@@ -871,7 +1377,7 @@ exports.getAdminNotifications = async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
 
     const [notifications, unreadCount] = await Promise.all([
-      Notification.find({})
+      Notification.find({ isRead: false })
         .sort({ createdAt: -1 })
         .limit(limit),
       Notification.countDocuments({ isRead: false }),

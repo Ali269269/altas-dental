@@ -14,7 +14,11 @@ const errorHandler = (err, req, res, next) => {
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const message = `Duplicate field value entered`;
+    const field = Object.keys(err.keyPattern || {})[0] || 'field';
+    const message =
+      field === 'slug'
+        ? 'A blog with this URL slug already exists'
+        : `Duplicate ${field} value entered`;
     error = { message, statusCode: 400 };
   }
 
@@ -26,9 +30,15 @@ const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 400 };
   }
 
-  res.status(error.statusCode || 500).json({
+  const statusCode = error.statusCode || 500;
+  const message =
+    statusCode >= 500 && process.env.NODE_ENV === 'production'
+      ? 'Server Error'
+      : error.message || 'Server Error';
+
+  res.status(statusCode).json({
     success: false,
-    message: error.message || 'Server Error',
+    message,
   });
 };
 

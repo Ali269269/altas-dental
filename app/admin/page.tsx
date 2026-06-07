@@ -2,26 +2,33 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken, getAdmin } from '@/utils/auth';
+import { isAuthenticated, validateAuthSession } from '@/utils/auth';
 
 export default function AdminRoutePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = getToken();
-    const admin = getAdmin();
+    async function checkAccess() {
+      if (!isAuthenticated()) {
+        router.replace('/login');
+        return;
+      }
 
-    if (!token || !admin) {
-      router.replace('/login');
-      return;
+      const admin = await validateAuthSession();
+      if (!admin) {
+        router.replace('/login');
+        return;
+      }
+
+      if (!admin.roleSlug && !admin.isSuperAdmin) {
+        router.replace('/unauthorized');
+        return;
+      }
+
+      router.replace('/dashboard');
     }
 
-    if (admin.role !== 'admin') {
-      router.replace('/unauthorized');
-      return;
-    }
-
-    router.replace('/dashboard');
+    void checkAccess();
   }, [router]);
 
   return (

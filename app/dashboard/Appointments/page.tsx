@@ -30,9 +30,12 @@ import {
 } from "@/utils/appointmentDateLabels";
 import type { Patient } from "@/types/patient";
 import type { AppointmentTableRow } from "@/utils/appointmentsData";
-import { appointmentRowToPatient } from "@/utils/patientMapper";
+import { appointmentRowToPatient, appointmentDetailToPatient } from "@/utils/patientMapper";
 import { PatientDetail } from "@/components/admin/patient/PatientDetail";
-import { CheckupModal } from "@/components/admin/patient/CheckupModal";
+import { ClinicalRecordFormModal } from "@/components/admin/patient/ClinicalRecordFormModal";
+import { PatientEmailModal } from "@/components/admin/patient/PatientEmailModal";
+import { PatientListActions } from "@/components/admin/patient/PatientListActions";
+import type { ClinicalRecordSavePayload } from "@/utils/clinicalRecord";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ViewMode    = "month" | "week" | "day";
@@ -73,11 +76,11 @@ function shiftAnchorDate(anchor: string, viewMode: ViewMode, direction: -1 | 1):
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function statusStyle(status:string){
   switch(status){
-    case"CONFIRMED": return"text-[#3DAA7A] border border-[#3DAA7A] text-[10px] bg-[#D1FAE5] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"CONFIRMED": return"text-[#711c31] border border-[#C94A3A] text-[10px] bg-[#d3d3d3] font-bold px-2 py-0.5 rounded tracking-wide";
     case"PENDING":   return"text-[#753141] border border-[#D3D3D3] text-[10px] bg-[#d3d3d3] font-bold px-2 py-0.5 rounded tracking-wide";
     case"CANCELLED": return"text-[#C94A3A] border border-[#C94A3A] text-[10px] bg-[#bfafaa] font-bold px-2 py-0.5 rounded tracking-wide";
     case"SEEN":      return"text-[#ffffff] border border-[#591727] text-[10px] bg-[#591727] font-bold px-2 py-0.5 rounded tracking-wide";
-    case"ACTIVE":    return"text-[#3DAA7A] border border-[#3DAA7A] text-[10px] bg-[#D1FAE5] font-bold px-2 py-0.5 rounded tracking-wide";
+    case"ACTIVE":    return"text-[#711c31] border border-[#C94A3A] text-[10px] bg-[#d3d3d3] font-bold px-2 py-0.5 rounded tracking-wide";
     case"NEW":       return"text-[#C94A3A] border border-[#C94A3A] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
     default:         return"";
   }
@@ -216,12 +219,9 @@ function AppointmentDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 mb-5">
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold" style={{ color: isDark ? "#ffffff" : "#591727" }}>
-              Appointment Details
-            </h2>
-            <span className={`inline-block mt-2 ${statusStyle(appointment.status)}`}>{appointment.status}</span>
-          </div>
+          <h2 className="text-lg sm:text-xl font-bold" style={{ color: isDark ? "#ffffff" : "#591727" }}>
+            Appointment Details
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -236,48 +236,90 @@ function AppointmentDetailModal({
         {loading ? (
           <p className="text-sm py-8 text-center" style={{ color: text2 }}>Loading appointment...</p>
         ) : (
-          <div className={`rounded-2xl border p-4 sm:p-5 ${cardBorder} flex flex-col gap-3`} style={{ backgroundColor: card }}>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Patient</p>
-              <p className="text-base font-semibold" style={{ color: text1 }}>{appointment.patientName}</p>
+          <>
+            <div className={`rounded-2xl border p-4 sm:p-5 ${cardBorder} flex flex-col gap-3`} style={{ backgroundColor: card }}>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Patient</p>
+                <p className="text-base font-semibold" style={{ color: text1 }}>{appointment.patientName}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Email</p>
+                  <p className="text-sm break-all" style={{ color: text1 }}>{appointment.email}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Phone</p>
+                  <p className="text-sm" style={{ color: text1 }}>{appointment.phone}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Speciality</p>
+                <p className="text-sm" style={{ color: text1 }}>{appointment.specialty}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Date</p>
+                  <p className="text-sm" style={{ color: text1 }}>{appointment.appointmentDateLabel}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Time</p>
+                  <p className="text-sm" style={{ color: text1 }}>{appointment.appointmentTime}</p>
+                </div>
+              </div>
+              {appointment.notes ? (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Notes</p>
+                  <p className="text-sm whitespace-pre-wrap" style={{ color: text1 }}>{appointment.notes}</p>
+                </div>
+              ) : null}
+              {appointment.cancellationReason ? (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Cancellation reason</p>
+                  <p className="text-sm" style={{ color: text1 }}>{appointment.cancellationReason}</p>
+                </div>
+              ) : null}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Email</p>
-                <p className="text-sm break-all" style={{ color: text1 }}>{appointment.email}</p>
+
+            {!showCancelForm && (
+              <div
+                className="flex flex-row items-center justify-between gap-4 mt-4 pt-4"
+                style={{ borderTop: `1px solid ${isDark ? "#5C2A3A" : "#D9C9A8"}` }}
+              >
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: text2 }}>
+                    Current Status
+                  </p>
+                  <span className={`inline-block w-fit ${statusStyle(appointment.status)}`}>
+                    {appointment.status}
+                  </span>
+                </div>
+                <div className="flex flex-row items-center gap-2 sm:gap-3 shrink-0">
+                  {canConfirm && (
+                    <button
+                      type="button"
+                      onClick={onConfirm}
+                      disabled={actionLoading || loading}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold border whitespace-nowrap disabled:opacity-60"
+                      style={{ borderColor: "#591727", color: isDark ? "#591727" : "#3D0A1F" }}
+                    >
+                      {actionLoading ? "Confirming..." : "Confirm appointment"}
+                    </button>
+                  )}
+                  {canCancel && (
+                    <button
+                      type="button"
+                      onClick={onShowCancelForm}
+                      disabled={actionLoading || loading}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white whitespace-nowrap disabled:opacity-60"
+                      style={{ backgroundColor: "#8B1A2E" }}
+                    >
+                      Cancel appointment
+                    </button>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Phone</p>
-                <p className="text-sm" style={{ color: text1 }}>{appointment.phone}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Speciality</p>
-              <p className="text-sm" style={{ color: text1 }}>{appointment.specialty}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Date</p>
-                <p className="text-sm" style={{ color: text1 }}>{appointment.appointmentDateLabel}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Time</p>
-                <p className="text-sm" style={{ color: text1 }}>{appointment.appointmentTime}</p>
-              </div>
-            </div>
-            {appointment.notes ? (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Notes</p>
-                <p className="text-sm whitespace-pre-wrap" style={{ color: text1 }}>{appointment.notes}</p>
-              </div>
-            ) : null}
-            {appointment.cancellationReason ? (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: text2 }}>Cancellation reason</p>
-                <p className="text-sm" style={{ color: text1 }}>{appointment.cancellationReason}</p>
-              </div>
-            ) : null}
-          </div>
+            )}
+          </>
         )}
 
         {showCancelForm && canCancel && (
@@ -296,54 +338,105 @@ function AppointmentDetailModal({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-5">
-          {showCancelForm ? (
-            <>
-              <button
-                type="button"
-                onClick={onHideCancelForm}
-                disabled={actionLoading}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border"
-                style={{ borderColor: isDark ? "#5C2A3A" : "#3D0A1F", color: text1 }}
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={onCancelSubmit}
-                disabled={actionLoading || !cancelReason.trim()}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
-                style={{ backgroundColor: "#8B1A2E" }}
-              >
-                {actionLoading ? "Cancelling..." : "Confirm cancellation"}
-              </button>
-            </>
-          ) : (
-            <>
-              {canCancel && (
-                <button
-                  type="button"
-                  onClick={onShowCancelForm}
-                  disabled={actionLoading || loading}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
-                  style={{ backgroundColor: "#8B1A2E" }}
-                >
-                  Cancel appointment
-                </button>
-              )}
-              {canConfirm && (
-                <button
-                  type="button"
-                  onClick={onConfirm}
-                  disabled={actionLoading || loading}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border disabled:opacity-60"
-                  style={{ borderColor: "#591727", color: isDark ? "#591727" : "#3D0A1F" }}
-                >
-                  {actionLoading ? "Confirming..." : "Confirm appointment"}
-                </button>
-              )}
-            </>
-          )}
+        {showCancelForm && (
+          <div className="flex flex-row items-center justify-end gap-3 mt-5">
+            <button
+              type="button"
+              onClick={onHideCancelForm}
+              disabled={actionLoading}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold border"
+              style={{ borderColor: isDark ? "#5C2A3A" : "#3D0A1F", color: text1 }}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={onCancelSubmit}
+              disabled={actionLoading || !cancelReason.trim()}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+              style={{ backgroundColor: "#8B1A2E" }}
+            >
+              {actionLoading ? "Cancelling..." : "Confirm cancellation"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Delete Appointment Confirmation Modal ─────────────────────────────────────
+interface DeleteAppointmentModalProps {
+  isDark: boolean;
+  card: string;
+  cardBorder: string;
+  text1: string;
+  text2: string;
+  pageBg: string;
+  row: AppointmentTableRow;
+  loading: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}
+
+function DeleteAppointmentModal({
+  isDark,
+  card,
+  cardBorder,
+  text1,
+  text2,
+  pageBg,
+  row,
+  loading,
+  onConfirm,
+  onClose,
+}: DeleteAppointmentModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={loading ? undefined : onClose} />
+      <div
+        className={`relative w-full max-w-md rounded-2xl border p-5 sm:p-6 ${cardBorder}`}
+        style={{ backgroundColor: pageBg }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg sm:text-xl font-bold mb-2" style={{ color: isDark ? "#ffffff" : "#591727" }}>
+          Delete appointment?
+        </h2>
+        <p className="text-sm mb-4 leading-relaxed" style={{ color: text2 }}>
+          This will permanently remove the appointment for{" "}
+          <strong style={{ color: text1 }}>{row.name}</strong> ({row.nextAppt}). This action cannot be
+          undone and the record will not be kept as cancelled.
+        </p>
+        <div className={`rounded-xl border p-3 mb-5 text-sm ${cardBorder}`} style={{ backgroundColor: card }}>
+          <p style={{ color: text1 }}>
+            <span style={{ color: text2 }}>Email:</span> {row.email}
+          </p>
+          <p className="mt-1" style={{ color: text1 }}>
+            <span style={{ color: text2 }}>Phone:</span> {row.phone}
+          </p>
+          <p className="mt-1" style={{ color: text1 }}>
+            <span style={{ color: text2 }}>Service:</span> {row.specialty}
+          </p>
+        </div>
+        <div className="flex flex-row items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold border disabled:opacity-60"
+            style={{ borderColor: isDark ? "#5C2A3A" : "#3D0A1F", color: text1 }}
+          >
+            Keep appointment
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+            style={{ backgroundColor: "#8B1A2E" }}
+          >
+            {loading ? "Deleting..." : "Delete permanently"}
+          </button>
         </div>
       </div>
     </div>
@@ -494,8 +587,15 @@ export default function AppointmentsPage(){
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const datePickerRef = useRef<HTMLInputElement | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [checkupPatient, setCheckupPatient] = useState<Patient | null>(null);
-  const [checkupAppointmentId, setCheckupAppointmentId] = useState<string | null>(null);
+  const [viewingPatientAppointmentId, setViewingPatientAppointmentId] = useState<string | null>(null);
+  const [patientDetailLoading, setPatientDetailLoading] = useState(false);
+  const [patientDetailError, setPatientDetailError] = useState<string | null>(null);
+  const [clinicalModal, setClinicalModal] = useState<{
+    mode: "create" | "edit";
+    appointmentId: string;
+    patientName: string;
+    patientId: string;
+  } | null>(null);
   const [patientHistoryByAppointment, setPatientHistoryByAppointment] = useState<
     Record<string, Patient["historyEntries"]>
   >({});
@@ -505,6 +605,11 @@ export default function AppointmentsPage(){
   const [appointmentActionLoading, setAppointmentActionLoading] = useState(false);
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<AppointmentTableRow | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [emailTarget, setEmailTarget] = useState<AppointmentTableRow | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const overviewLoadedRef = useRef(false);
 
   const buildPatientFromRow = useCallback(
     (row: AppointmentTableRow): Patient =>
@@ -541,17 +646,21 @@ export default function AppointmentsPage(){
 
       const response = await fetch(
         apiUrl(`/api/statistics/appointments-overview?${params.toString()}`),
-        { headers: authHeaders() }
+        {
+          headers: authHeaders(),
+          cache: "no-store",
+        }
       );
 
       if (response.ok) {
         const json = await response.json();
         if (json.data) {
+          const nextAnchor = json.data.anchorDate ?? anchorDate;
           setData({
             statCards: json.data.statCards ?? DEFAULT_APPOINTMENTS_OVERVIEW.statCards,
             pendingConfirmations: json.data.pendingConfirmations ?? [],
             dateLabels: json.data.dateLabels ?? DEFAULT_APPOINTMENTS_OVERVIEW.dateLabels,
-            anchorDate: json.data.anchorDate ?? anchorDate,
+            anchorDate: nextAnchor,
             monthCalendar: json.data.monthCalendar ?? DEFAULT_APPOINTMENTS_OVERVIEW.monthCalendar,
             weekCalendar: json.data.weekCalendar ?? DEFAULT_APPOINTMENTS_OVERVIEW.weekCalendar,
             dayCalendar: json.data.dayCalendar ?? DEFAULT_APPOINTMENTS_OVERVIEW.dayCalendar,
@@ -561,8 +670,16 @@ export default function AppointmentsPage(){
             allAppointments: json.data.allAppointments ?? [],
             pagination: json.data.pagination ?? DEFAULT_APPOINTMENTS_OVERVIEW.pagination,
           });
+          overviewLoadedRef.current = true;
+          setOverviewLoading(false);
           return true;
         }
+      } else {
+        console.error(
+          "Appointments overview request failed:",
+          response.status,
+          response.statusText
+        );
       }
     } catch (error) {
       console.error("Failed to fetch appointments overview:", error);
@@ -573,18 +690,52 @@ export default function AppointmentsPage(){
   useEffect(() => {
     let cancelled = false;
     let retryTimer: number | null = null;
+    let retryAttempt = 0;
+    const maxRetries = 8;
+
+    const scheduleRetry = (load: () => void) => {
+      if (cancelled || retryAttempt >= maxRetries) {
+        if (!cancelled && !overviewLoadedRef.current) {
+          setOverviewLoading(false);
+        }
+        return;
+      }
+      retryAttempt += 1;
+      retryTimer = window.setTimeout(load, Math.min(250 * retryAttempt, 2000));
+    };
 
     const load = async () => {
       if (cancelled) return;
-      const ok = await fetchOverview();
-      if (!cancelled && !ok && !getToken()) {
-        retryTimer = window.setTimeout(load, 250);
+
+      if (!getToken()) {
+        scheduleRetry(load);
+        return;
       }
+
+      const ok = await fetchOverview();
+      if (cancelled) return;
+
+      if (ok) {
+        retryAttempt = 0;
+        return;
+      }
+
+      scheduleRetry(load);
     };
 
+    if (!overviewLoadedRef.current) {
+      setOverviewLoading(true);
+    }
     load();
-    const intervalId = window.setInterval(load, 5000);
-    const onFocus = () => load();
+
+    const intervalId = window.setInterval(() => {
+      retryAttempt = 0;
+      load();
+    }, 5000);
+    const onFocus = () => {
+      retryAttempt = 0;
+      load();
+    };
     window.addEventListener("focus", onFocus);
     return () => {
       cancelled = true;
@@ -710,16 +861,122 @@ export default function AppointmentsPage(){
   );
 
   const handleDeleteAppointment = (row: AppointmentTableRow) => {
-    openAppointmentDetail(row.id, { showCancelForm: true });
+    setDeleteTarget(row);
   };
 
+  const confirmDeleteAppointment = async () => {
+    if (!deleteTarget || deleteLoading) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await fetch(
+        apiUrl(`/api/statistics/appointments/${deleteTarget.id}`),
+        {
+          method: "DELETE",
+          headers: authHeaders(),
+        }
+      );
+      const json = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        window.alert(json.message || "Failed to delete appointment.");
+        return;
+      }
+
+      if (appointmentDetailId === deleteTarget.id) {
+        closeAppointmentDetail();
+      }
+      if (viewingPatientAppointmentId === deleteTarget.id) {
+        closePatientDetail();
+      }
+      if (clinicalModal?.appointmentId === deleteTarget.id) {
+        setClinicalModal(null);
+      }
+
+      setDeleteTarget(null);
+      await fetchOverview();
+    } catch (error) {
+      console.error("Failed to delete appointment:", error);
+      window.alert("Could not delete appointment. Please try again.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const closePatientDetail = () => {
+    setViewingPatientAppointmentId(null);
+    setSelectedPatient(null);
+    setPatientDetailError(null);
+    setPatientDetailLoading(false);
+  };
+
+  const fetchPatientDetailForAppointment = useCallback(async (appointmentId: string) => {
+    if (!getToken()) {
+      setPatientDetailError("Please sign in to view appointment details.");
+      setSelectedPatient(null);
+      return null;
+    }
+
+    setPatientDetailLoading(true);
+    setPatientDetailError(null);
+
+    try {
+      const response = await fetch(apiUrl(`/api/statistics/appointments/${appointmentId}`), {
+        headers: authHeaders(),
+      });
+      const json = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setPatientDetailError(json.message || "Failed to load appointment details.");
+        setSelectedPatient(null);
+        return null;
+      }
+
+      if (!json.data) {
+        setPatientDetailError("Appointment data was not found.");
+        setSelectedPatient(null);
+        return null;
+      }
+
+      const patient = appointmentDetailToPatient(json.data as AppointmentDetail);
+      setSelectedPatient(patient);
+      setPatientHistoryByAppointment((prev) => ({
+        ...prev,
+        [appointmentId]: patient.historyEntries,
+      }));
+      return patient;
+    } catch (error) {
+      console.error("Failed to load patient appointment details:", error);
+      setPatientDetailError("Network error while loading appointment details.");
+      setSelectedPatient(null);
+      return null;
+    } finally {
+      setPatientDetailLoading(false);
+    }
+  }, []);
+
   const handleViewPatient = (row: AppointmentTableRow) => {
-    setSelectedPatient(buildPatientFromRow(row));
+    setViewingPatientAppointmentId(row.id);
+    setSelectedPatient(null);
+    void fetchPatientDetailForAppointment(row.id);
   };
 
   const handleAddCheckup = (row: AppointmentTableRow) => {
-    setCheckupAppointmentId(row.id);
-    setCheckupPatient(buildPatientFromRow(row));
+    setClinicalModal({
+      mode: "create",
+      appointmentId: row.id,
+      patientName: row.name,
+      patientId: row.patientId,
+    });
+  };
+
+  const handleEditCheckup = (row: AppointmentTableRow) => {
+    setClinicalModal({
+      mode: "edit",
+      appointmentId: row.id,
+      patientName: row.name,
+      patientId: row.patientId,
+    });
   };
 
   const updateAppointmentStatus = async (
@@ -771,36 +1028,22 @@ export default function AppointmentsPage(){
     }
   };
 
-  const handleSaveCheckup = async (entry: Patient["historyEntries"][0]) => {
-    if (!checkupAppointmentId) return;
-    const appointmentId = checkupAppointmentId;
+  const handleSaveClinicalRecord = async (payload: ClinicalRecordSavePayload) => {
+    if (!clinicalModal) return;
+    const appointmentId = clinicalModal.appointmentId;
+    const isCreate = clinicalModal.mode === "create";
 
-    setData((prev) => {
-      const fromUpcoming = prev.upcomingAppointments.find(
-        (a) => a.id === appointmentId
-      );
-      if (!fromUpcoming) return prev;
-      return applyAppointmentSeenLocally(prev, appointmentId, {
-        ...fromUpcoming,
-        status: "SEEN",
+    if (isCreate) {
+      setData((prev) => {
+        const fromUpcoming = prev.upcomingAppointments.find(
+          (a) => a.id === appointmentId
+        );
+        if (!fromUpcoming) return prev;
+        return applyAppointmentSeenLocally(prev, appointmentId, {
+          ...fromUpcoming,
+          status: "SEEN",
+        });
       });
-    });
-
-    setPatientHistoryByAppointment((prev) => ({
-      ...prev,
-      [appointmentId]: [entry, ...(prev[appointmentId] ?? [])],
-    }));
-    if (selectedPatient) {
-      setSelectedPatient((prev) =>
-        prev
-          ? {
-              ...prev,
-              historyEntries: [entry, ...(prev.historyEntries ?? [])],
-              status: "COMPLETED",
-              upcomingStatus: "COMPLETED",
-            }
-          : prev
-      );
     }
 
     try {
@@ -810,17 +1053,15 @@ export default function AppointmentsPage(){
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({
-            complaint: entry.complaint,
-            clinicalObs: entry.clinicalObs,
-            diagnostics: entry.diagnostics,
-            treatment: entry.treatment,
+            ...payload,
             ...overviewQueryPayload(),
           }),
         }
       );
 
       if (!response.ok) {
-        console.error("Failed to save checkup");
+        const err = await response.json().catch(() => ({}));
+        window.alert(err.message || "Failed to save clinical record.");
         return;
       }
 
@@ -829,19 +1070,25 @@ export default function AppointmentsPage(){
 
       if (json.data?.overview) {
         setData((prev) => mergeOverviewLists(prev, json.data.overview));
-      } else if (listItem) {
+      } else if (listItem && isCreate) {
         setData((prev) =>
           applyAppointmentSeenLocally(prev, appointmentId, {
             ...listItem,
             status: "SEEN",
           })
         );
+      } else {
+        await fetchOverview();
       }
 
-      setCheckupPatient(null);
-      setCheckupAppointmentId(null);
+      if (viewingPatientAppointmentId === appointmentId) {
+        void fetchPatientDetailForAppointment(appointmentId);
+      }
+
+      setClinicalModal(null);
     } catch (error) {
-      console.error("Failed to save checkup:", error);
+      console.error("Failed to save clinical record:", error);
+      window.alert("Could not save clinical record. Please try again.");
     }
   };
 
@@ -961,16 +1208,19 @@ export default function AppointmentsPage(){
   const inputBg     = isDark?"#c1a694":"#ffffff";
   const inputBorder = isDark?"#5C2A3A":"#D9C9A8";
   const tableBg     = isDark?"#c1a694":"#FDFAF4";
-  const tableRowHover= isDark?"#ffffff":"#EDE0C4";
+  const tableRowHover = isDark ? "#E5E7EB" : "#F3F4F6";
 
   const dateTop    = viewMode==="week"?"WEEK":viewMode==="day"?"TODAY":"MONTH";
   const dateBottom = viewMode==="month"?currentMonth:viewMode==="week"?currentWeek:currentDay;
 
-  if (selectedPatient) {
+  if (viewingPatientAppointmentId) {
     return (
       <PatientDetail
         patient={selectedPatient}
-        onBack={() => setSelectedPatient(null)}
+        loading={patientDetailLoading}
+        error={patientDetailError}
+        onRetry={() => fetchPatientDetailForAppointment(viewingPatientAppointmentId)}
+        onBack={closePatientDetail}
         isDark={isDark}
         card={card}
         cardBorder={cardBorder}
@@ -1178,6 +1428,35 @@ export default function AppointmentsPage(){
     <div className="min-h-full transition-colors duration-300 overflow-x-hidden sm:pl-10" style={{marginTop:"40px"}}>
 
       {/* Modals */}
+      {emailTarget && (
+        <PatientEmailModal
+          row={emailTarget}
+          isDark={isDark}
+          card={card}
+          cardBorder={cardBorder}
+          text1={text1}
+          text2={text2}
+          pageBg={pageBg}
+          getAuthHeaders={authHeaders}
+          onClose={() => setEmailTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteAppointmentModal
+          isDark={isDark}
+          card={card}
+          cardBorder={cardBorder}
+          text1={text1}
+          text2={text2}
+          pageBg={pageBg}
+          row={deleteTarget}
+          loading={deleteLoading}
+          onConfirm={confirmDeleteAppointment}
+          onClose={() => {
+            if (!deleteLoading) setDeleteTarget(null);
+          }}
+        />
+      )}
       {modal==="pending" && (
         <PendingModal
           isDark={isDark} card={card} cardBorder={cardBorder} cardInner={cardInner}
@@ -1238,20 +1517,20 @@ export default function AppointmentsPage(){
           onClose={()=>{setModal("none");setAddForm({name:"",email:"",phone:"",specialty:"",date:"",time:"",notes:""}); }}
         />
       )}
-      {checkupPatient && (
-        <CheckupModal
-          patient={checkupPatient}
-          onClose={() => {
-            setCheckupPatient(null);
-            setCheckupAppointmentId(null);
-          }}
-          onSave={handleSaveCheckup}
+      {clinicalModal && (
+        <ClinicalRecordFormModal
+          mode={clinicalModal.mode}
+          appointmentId={clinicalModal.appointmentId}
+          patientName={clinicalModal.patientName}
+          patientId={clinicalModal.patientId}
+          getAuthHeaders={authHeaders}
+          onClose={() => setClinicalModal(null)}
+          onSave={handleSaveClinicalRecord}
           isDark={isDark}
           card={card}
           cardBorder={cardBorder}
           text1={text1}
           text2={text2}
-          sectionLabel="APPOINTMENTS"
         />
       )}
 
@@ -1280,6 +1559,12 @@ export default function AppointmentsPage(){
           </button>
         </div>
       </div>
+
+      {overviewLoading && (
+        <p className="text-sm text-center mb-4 italic" style={{ color: text2 }}>
+          Loading appointments...
+        </p>
+      )}
 
       {/* Stat Cards — 1 col on mobile, 2 on medium, 4 on sm+ */}
       <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -1550,13 +1835,22 @@ export default function AppointmentsPage(){
             </div>
           </div>
 
-          {/* Table — horizontal scroll on mobile */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[700px]">
+          {/* Table — fixed layout so actions stay visible */}
+          <div className="w-full overflow-hidden">
+            <table className="w-full text-xs sm:text-sm table-fixed">
+              <colgroup>
+                <col className="w-[14%]" />
+                <col className="w-[18%]" />
+                <col className="w-[12%]" />
+                <col className="w-[11%]" />
+                <col className="w-[14%]" />
+                <col className="w-[10%]" />
+                <col className="w-[21%]" />
+              </colgroup>
               <thead>
                 <tr style={{borderBottom:`1px solid ${isDark?"#5C2A3A":"#D9C9A8"}`}}>
                   {["Patient Name","Email & Phone","Spécialités","Last Visit","Next Appointment","Status","Actions"].map(h=>(
-                    <th key={h} className="text-left px-3 sm:px-4 py-3 text-[13px] sm:text-[14px] font-semibold whitespace-nowrap" style={{color:text2}}>{h}</th>
+                    <th key={h} className={`px-2 py-2.5 text-[11px] sm:text-[13px] font-semibold ${h==="Actions"?"text-center":"text-left"}`} style={{color:text2}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1577,71 +1871,40 @@ export default function AppointmentsPage(){
                     onMouseEnter={e=>(e.currentTarget.style.backgroundColor=tableRowHover)}
                     onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}
                   >
-                    <td className="px-3 sm:px-4 py-3">
-                      <div className="font-semibold whitespace-nowrap" style={{color:text1}}>{row.name}</div>
-                      <div className="text-[13px] numeric-font" style={{color:text2}}>ID: {row.patientId}</div>
+                    <td className="px-2 py-2.5 align-top">
+                      <div className="font-semibold truncate" style={{color:text1}} title={row.name}>{row.name}</div>
+                      <div className="text-[11px] numeric-font truncate" style={{color:text2}} title={row.patientId}>ID: {row.patientId}</div>
                     </td>
-                    <td className="px-3 sm:px-4 py-3">
-                      <div className="text-[13px] whitespace-nowrap" style={{color:text2}}>{row.email}</div>
-                      <div className="text-[13px]" style={{color:text2}}>{row.phone}</div>
+                    <td className="px-2 py-2.5 align-top">
+                      <div className="truncate text-[11px]" style={{color:text2}} title={row.email}>{row.email}</div>
+                      <div className="truncate text-[11px]" style={{color:text2}} title={row.phone}>{row.phone}</div>
                     </td>
-                    <td className="px-3 sm:px-4 py-3"><span className="text-[13px] whitespace-nowrap" style={{color:text2}}>{row.specialty}</span></td>
-                    <td className="px-3 sm:px-4 py-3"><span className="text-[13px] whitespace-nowrap" style={{color:text2}}>{row.lastVisit}</span></td>
-                    <td className="px-3 sm:px-4 py-3">
-                      <div className="flex items-center gap-1.5 whitespace-nowrap">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#711C31" : "#591727"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <td className="px-2 py-2.5 align-top"><span className="text-[11px] line-clamp-2" style={{color:text2}} title={row.specialty}>{row.specialty}</span></td>
+                    <td className="px-2 py-2.5 align-top"><span className="text-[11px] truncate block" style={{color:text2}} title={row.lastVisit}>{row.lastVisit}</span></td>
+                    <td className="px-2 py-2.5 align-top">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <svg className="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isDark ? "#711C31" : "#591727"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" />
                           <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        <span className="text-[13px]" style={{color:isDark?"#711C31":"#7A3048"}}>{row.nextAppt}</span>
+                        <span className="text-[11px] truncate" style={{color:isDark?"#711C31":"#7A3048"}} title={row.nextAppt}>{row.nextAppt}</span>
                       </div>
                     </td>
-                    <td className="px-3 sm:px-4 py-3"><span className={statusStyle(row.status)}>{row.status}</span></td>
-                    <td className="px-3 sm:px-4 py-3">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <button
-                          type="button"
-                          title="Delete patient"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteAppointment(row);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-red-100"
-                          style={{ color: text2 }}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          title="View patient details"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewPatient(row);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-blue-100"
-                          style={{ color: text2 }}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          title="Add checkup"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddCheckup(row);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-green-100"
-                          style={{ color: text2 }}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
-                          </svg>
-                        </button>
-                      </div>
+                    <td className="px-2 py-2.5 align-top"><span className={statusStyle(row.status)}>{row.status}</span></td>
+                    <td className="px-2 py-2.5 align-middle text-center">
+                      <PatientListActions
+                        variant="appointments"
+                        row={row}
+                        text2={text2}
+                        onDelete={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAppointment(row);
+                        }}
+                        onView={(e) => {
+                          e.stopPropagation();
+                          handleViewPatient(row);
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}

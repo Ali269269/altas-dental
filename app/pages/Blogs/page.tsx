@@ -1,108 +1,20 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  blogImageUrl,
+  fetchPublicBlogs,
+  type PublicBlog,
+} from "@/utils/blogsApi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Blog {
-  id: number;
-  image: string;
-  date: string;
-  tag?: string;
-  title: string;
-  slug: string;
-  specialite?: string;
-}
+type Blog = PublicBlog;
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-const ALL_BLOGS: Blog[] = [
-  {
-    id: 1,
-    image: "/images/blog1.jpg",
-    date: "May 19, 2023",
-    title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne",
-    slug: "evolution-experience-patient",
-    specialite: "Implants",
-  },
-  {
-    id: 2,
-    image: "/images/blog2.jpg",
-    date: "Jun 03, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "frontiere-dentaire-numerique",
-    specialite: "Orthodontie",
-  },
-  {
-    id: 3,
-    image: "/images/blog3.jpg",
-    date: "Apr 12, 2023",
-    tag: "Réhabilitation totale du sourire",
-    title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne",
-    slug: "rehabilitation-totale-sourire",
-    specialite: "Réhabilitation",
-  },
-  {
-    id: 4,
-    image: "/images/blog4.jpg",
-    date: "Mar 28, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "frontiere-dentaire-2",
-    specialite: "Implants",
-  },
-  {
-    id: 5,
-    image: "/images/blog5.jpg",
-    date: "Jul 15, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "frontiere-dentaire-3",
-    specialite: "Orthodontie",
-  },
-  {
-    id: 6,
-    image: "/images/blog6.jpg",
-    date: "Aug 02, 2023",
-    title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne",
-    slug: "evolution-experience-2",
-    specialite: "Réhabilitation",
-  },
-];
-
-const BEST_PICKS: Blog[] = [
-  {
-    id: 7,
-    image: "/images/blog1.jpg",
-    date: "May 19, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "best-frontiere-dentaire",
-  },
-  {
-    id: 8,
-    image: "/images/blog2.jpg",
-    date: "May 19, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "best-frontiere-dentaire-2",
-  },
-  {
-    id: 9,
-    image: "/images/blog3.jpg",
-    date: "May 19, 2023",
-    title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne",
-    slug: "best-evolution-patient",
-  },
-  {
-    id: 10,
-    image: "/images/blog3.jpg",
-    date: "May 19, 2023",
-    title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne",
-    slug: "best-evolution-patient-2",
-  },
-];
-
-const SPECIALITES = ["Toutes", "Implants", "Orthodontie", "Réhabilitation"];
-const TOTAL_PAGES = 5;
 const MOBILE_PAGE_SIZE = 2;
+const LIST_PAGE_SIZE = 9;
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function FilterIcon() {
@@ -129,11 +41,12 @@ type FilterType = "all" | "recent" | "popular" | string;
 interface FilterDropdownProps {
   activeFilter: FilterType;
   activeSpecialite: string;
+  specialites: string[];
   onFilterChange: (filter: FilterType) => void;
   onSpecialiteChange: (specialite: string) => void;
 }
 
-function FilterDropdown({ activeFilter, activeSpecialite, onFilterChange, onSpecialiteChange }: FilterDropdownProps) {
+function FilterDropdown({ activeFilter, activeSpecialite, specialites, onFilterChange, onSpecialiteChange }: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
   const [specialiteOpen, setSpecialiteOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -217,12 +130,12 @@ function FilterDropdown({ activeFilter, activeSpecialite, onFilterChange, onSpec
                 borderRadius: "14px", minWidth: "180px",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.45)", padding: "6px 0", zIndex: 1001,
               }}>
-                {SPECIALITES.map((s, i) => (
+                {specialites.map((s, i) => (
                   <button key={s} onClick={() => handleSpecialite(s)} style={{
                     width: "100%",
                     background: activeSpecialite === s ? "rgba(212,180,140,0.15)" : "none",
                     border: "none",
-                    borderBottom: i < SPECIALITES.length - 1 ? "1px solid rgba(212,180,140,0.18)" : "none",
+                    borderBottom: i < specialites.length - 1 ? "1px solid rgba(212,180,140,0.18)" : "none",
                     color: "#e8d5b0", fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: "16px", fontWeight: 500, padding: "13px 20px",
                     textAlign: "left", cursor: "pointer", letterSpacing: "0.01em",
@@ -291,7 +204,7 @@ function BlogCard({ blog, compact = false }: { blog: Blog; compact?: boolean }) 
           position: "relative",
           background: "#c8b89a",
         }}>
-          <Image src={blog.image} alt={blog.title} fill style={{ objectFit: "cover" }} />
+          <Image src={blogImageUrl(blog.image) || "/images/blog1.jpg"} alt={blog.title} fill style={{ objectFit: "cover" }} unoptimized />
           {blog.tag && (
             <div style={{
               position: "absolute", bottom: "10px", left: "12px",
@@ -356,19 +269,10 @@ function BlogCard({ blog, compact = false }: { blog: Blog; compact?: boolean }) 
   );
 }
 
-// ─── Filtering Logic ──────────────────────────────────────────────────────────
-function parseDate(dateStr: string): number {
-  return new Date(dateStr).getTime();
-}
-
-function applyFilter(blogs: Blog[], filter: FilterType, specialite: string): Blog[] {
-  let result = [...blogs];
-  if (filter === "specialite" && specialite && specialite !== "Toutes") {
-    result = result.filter((b) => b.specialite === specialite);
-  }
-  if (filter === "recent") result = result.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-  else if (filter === "popular") result = result.sort((a, b) => b.id - a.id);
-  return result;
+function resolveSort(filter: FilterType): "recent" | "popular" | "all" {
+  if (filter === "recent") return "recent";
+  if (filter === "popular") return "popular";
+  return "all";
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -379,9 +283,14 @@ export default function BlogsPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [mobileBlogPage, setMobileBlogPage] = useState(0);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [bestPicks, setBestPicks] = useState<Blog[]>([]);
+  const [specialites, setSpecialites] = useState<string[]>(["Toutes"]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   // ── Carousel state ──
-  const total = BEST_PICKS.length;
+  const total = bestPicks.length;
   const [carouselIndex, setCarouselIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -398,6 +307,52 @@ export default function BlogsPage() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  const loadBlogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const category =
+        activeFilter === "specialite" && activeSpecialite !== "Toutes"
+          ? activeSpecialite
+          : "all";
+      const data = await fetchPublicBlogs({
+        page: currentPage,
+        limit: LIST_PAGE_SIZE,
+        sort: resolveSort(activeFilter),
+        category,
+      });
+      setBlogs(data.blogs);
+      setTotalPages(data.pagination.totalPages);
+      if (data.categories.length) setSpecialites(data.categories);
+    } catch {
+      setBlogs([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilter, activeSpecialite, currentPage]);
+
+  const loadBestPicks = useCallback(async () => {
+    try {
+      const data = await fetchPublicBlogs({
+        page: 1,
+        limit: 12,
+        featured: true,
+        sort: "popular",
+      });
+      if (data.blogs.length > 0) {
+        setBestPicks(data.blogs);
+        return;
+      }
+      const fallback = await fetchPublicBlogs({ page: 1, limit: 12, sort: "popular" });
+      setBestPicks(fallback.blogs);
+    } catch {
+      setBestPicks([]);
+    }
+  }, []);
+
+  useEffect(() => { loadBlogs(); }, [loadBlogs]);
+  useEffect(() => { loadBestPicks(); }, [loadBestPicks]);
 
   // Reset mobile blog page when filter changes
   useEffect(() => { setMobileBlogPage(0); }, [activeFilter, activeSpecialite]);
@@ -466,8 +421,8 @@ export default function BlogsPage() {
     }
   }, [carouselIndex]);
 
-  const filteredBlogs = applyFilter(ALL_BLOGS, activeFilter, activeSpecialite);
-  const mobileTotalPages = Math.ceil(filteredBlogs.length / MOBILE_PAGE_SIZE);
+  const filteredBlogs = blogs;
+  const mobileTotalPages = Math.ceil(filteredBlogs.length / MOBILE_PAGE_SIZE) || 1;
   const mobileVisibleBlogs = filteredBlogs.slice(
     mobileBlogPage * MOBILE_PAGE_SIZE,
     mobileBlogPage * MOBILE_PAGE_SIZE + MOBILE_PAGE_SIZE
@@ -631,6 +586,7 @@ export default function BlogsPage() {
             </h1>
             <FilterDropdown
               activeFilter={activeFilter} activeSpecialite={activeSpecialite}
+              specialites={specialites}
               onFilterChange={handleFilterChange} onSpecialiteChange={handleSpecialiteChange}
             />
           </div>
@@ -653,7 +609,15 @@ export default function BlogsPage() {
             </div>
           )}
 
-          {filteredBlogs.length > 0 ? (
+          {loading ? (
+            <div style={{
+              textAlign: "center", padding: "60px 0",
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: "18px", color: "#711C31", fontStyle: "italic",
+            }}>
+              Chargement des articles…
+            </div>
+          ) : filteredBlogs.length > 0 ? (
             <>
               {/* ── Desktop/Tablet grid (hidden on mobile) ── */}
               <div className="blog-grid desktop-only" style={{ marginBottom: "36px" }}>
@@ -722,7 +686,7 @@ export default function BlogsPage() {
               style={{ background: "none", border: "none", color: "#5a4a3a", fontSize: "18px", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center" }}>
               ←
             </button>
-            {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((p) => (
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
               <button key={p} className="pagination-btn" onClick={() => setCurrentPage(p)}
                 style={{
                   width: "36px", height: "36px", borderRadius: "6px",
@@ -737,7 +701,7 @@ export default function BlogsPage() {
                 {p}
               </button>
             ))}
-            <button onClick={() => setCurrentPage(Math.min(TOTAL_PAGES, currentPage + 1))}
+            <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               style={{ background: "none", border: "none", color: "#5a4a3a", fontSize: "18px", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center" }}>
               →
             </button>
@@ -771,7 +735,7 @@ export default function BlogsPage() {
                 willChange: "transform",
               }}
             >
-              {BEST_PICKS.map((blog) => (
+              {bestPicks.map((blog) => (
                 <div
                   key={blog.id}
                   style={{

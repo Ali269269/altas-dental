@@ -3,44 +3,17 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface RelatedBlog {
-  id: number;
-  image: string;
-  date: string;
-  title: string;
-  slug: string;
-  tag?: string;
-}
-
-// ─── Related blogs data ───────────────────────────────────────────────────────
-const RELATED_BLOGS: RelatedBlog[] = [
-  {
-    id: 1,
-    image: "/images/blog1.jpg",
-    date: "May 19, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "frontiere-dentaire-numerique",
-  },
-  {
-    id: 2,
-    image: "/images/blog2.jpg",
-    date: "May 19, 2023",
-    title: "Naviguer dans la frontière dentaire numérique : comment les outils intelligents et les données transforment vos soins",
-    slug: "frontiere-dentaire-2",
-  },
-  {
-    id: 3,
-    image: "/images/blog3.jpg",
-    date: "May 19, 2023",
-    title: "L'évolution de l'expérience patient : fusionner l'excellence clinique avec le confort moderne",
-    slug: "evolution-experience-patient",
-  },
-];
+import { useParams } from "next/navigation";
+import { sanitizeRichHtml } from "@/utils/sanitizeHtml";
+import {
+  blogImageUrl,
+  fetchPublicBlogBySlug,
+  type PublicBlog,
+  type PublicBlogDetail,
+} from "@/utils/blogsApi";
 
 // ─── Related Card (identical to BlogCard on the blog page) ───────────────────
-function RelatedCard({ blog }: { blog: RelatedBlog }) {
+function RelatedCard({ blog }: { blog: PublicBlog }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -77,7 +50,7 @@ function RelatedCard({ blog }: { blog: RelatedBlog }) {
             background: "#c8b89a",
           }}
         >
-          <Image src={blog.image} alt={blog.title} fill style={{ objectFit: "cover" }} />
+          <Image src={blogImageUrl(blog.image) || "/images/blog1.jpg"} alt={blog.title} fill style={{ objectFit: "cover" }} unoptimized />
           {blog.tag && (
             <div
               style={{
@@ -171,7 +144,7 @@ function RelatedCard({ blog }: { blog: RelatedBlog }) {
 }
 
 // ─── Responsive Carousel ──────────────────────────────────────────────────────
-function ResponsiveCarousel() {
+function ResponsiveCarousel({ relatedBlogs }: { relatedBlogs: PublicBlog[] }) {
   const [carouselDot, setCarouselDot] = useState(0);
   const [viewMode, setViewMode] = useState<"mobile" | "tablet" | "desktop">("desktop");
   const trackRef = useRef<HTMLDivElement>(null);
@@ -190,7 +163,7 @@ function ResponsiveCarousel() {
 
   const perView = viewMode === "mobile" ? 1 : viewMode === "tablet" ? 2 : 3;
   const gap = 20;
-  const totalDots = Math.max(1, RELATED_BLOGS.length - perView + 1);
+  const totalDots = Math.max(1, relatedBlogs.length - perView + 1);
 
   useEffect(() => {
     if (carouselDot >= totalDots) setCarouselDot(0);
@@ -212,7 +185,7 @@ function ResponsiveCarousel() {
             willChange: "transform",
           }}
         >
-          {RELATED_BLOGS.map((blog) => (
+          {relatedBlogs.map((blog) => (
               <div
               key={blog.id}
               style={{
@@ -253,6 +226,49 @@ function ResponsiveCarousel() {
 }
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function BlogDetailPage() {
+  const params = useParams();
+  const slug = typeof params.slug === "string" ? params.slug : "";
+  const [blog, setBlog] = useState<PublicBlogDetail | null>(null);
+  const [relatedBlogs, setRelatedBlogs] = useState<PublicBlog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+    fetchPublicBlogBySlug(slug)
+      .then((data) => {
+        if (cancelled) return;
+        setBlog(data.blog);
+        setRelatedBlogs(data.related);
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <main className="blog-detail-body" style={{ background: "#ffffff", paddingTop: 220, textAlign: "center", color: "#711C31" }}>
+        Chargement de l&apos;article…
+      </main>
+    );
+  }
+
+  if (notFound || !blog) {
+    return (
+      <main className="blog-detail-body" style={{ background: "#ffffff", paddingTop: 220, textAlign: "center", color: "#711C31" }}>
+        Article introuvable.
+      </main>
+    );
+  }
+
   return (
     <>
       <style>{`
@@ -272,6 +288,27 @@ export default function BlogDetailPage() {
           line-height: 1.3;
         }
         .body-text {
+          font-size: 18px;
+          font-weight: 500;
+          color: #5D5153;
+          line-height: 1.85;
+          margin: 0 0 14px 0;
+        }
+        .article-col h2 {
+          font-size: 20px;
+          font-weight: 600;
+          color: #561420;
+          margin: 32px 0 12px 0;
+          line-height: 1.3;
+        }
+        .article-col h3 {
+          font-size: 20px;
+          font-weight: 600;
+          color: #561420;
+          margin: 24px 0 12px 0;
+          line-height: 1.3;
+        }
+        .article-col p {
           font-size: 18px;
           font-weight: 500;
           color: #5D5153;
@@ -387,8 +424,7 @@ export default function BlogDetailPage() {
               textAlign: "center", lineHeight: 1.25,
               letterSpacing: "0.03em", marginBottom: "18px",
             }}>
-              L'évolution de l'expérience patient :{" "}
-              fusionner l'excellence clinique avec le confort moderne
+              {blog.title}
             </h1>
 
             <div style={{
@@ -397,11 +433,11 @@ export default function BlogDetailPage() {
               flexWrap: "wrap",
             }}>
               <span style={{ fontSize: "17px", color: "#746A6C", fontWeight: 400 }}>
-                Réhabilitation totale du sourire
+                {blog.category || blog.specialite}
               </span>
               <span style={{ color: "#561420", fontSize: "13px" }}>●</span>
               <span style={{ fontSize: "14px", color: "#7a6a5a", fontWeight: 300 }}>
-                May 19, 2023
+                {blog.date}
               </span>
             </div>
 
@@ -410,10 +446,11 @@ export default function BlogDetailPage() {
               borderRadius: "16px", overflow: "hidden", marginBottom: "44px",
             }}>
               <Image
-                src="/images/blogdetail.jpg"
-                alt="Blog hero"
+                src={blogImageUrl(blog.image) || "/images/blogdetail.jpg"}
+                alt={blog.title}
                 width={1900} height={1060}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                unoptimized
               />
             </div>
 
@@ -425,67 +462,60 @@ export default function BlogDetailPage() {
         ══════════════════════════════════════════ */}
         <section style={{ background: "#ffffff", paddingBottom: "64px" }}>
           <div className="article-col">
+            <div
+              className="body-text"
+              style={{ color: "#5D5153" }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(blog.description) }}
+            />
 
-            <h2 className="section-heading">Redéfinir le Soin Dentaire</h2>
-
-            <p className="body-text">
-              Dans le paysage en constante évolution de la dentisterie moderne, l&apos;accent s&apos;est déplacé au-delà du
-              simple traitement clinique pour englober l&apos;ensemble du parcours du patient. Chez Atlas Dental Center,
-              nous croyons que l&apos;excellence des soins commence dès que vous franchissez nos portes.
-            </p>
-
-            <p className="body-text">
-              L&apos;intégration de technologies de pointe comme la radiographie numérique et la planification de traitement
-              assistée par ordinateur ne permet pas seulement des résultats plus précis ; elle réduit considérablement le
-              temps passé en fauteuil et l&apos;anxiété associée aux procédures traditionnelles.
-            </p>
-
-            <div className="blockquote">
-              <p>
-                &ldquo;Notre mission est de transformer la visite chez le dentiste d&apos;une nécessité redoutée
-                en une expérience de bien-être revitalisante.&rdquo;
-              </p>
-            </div>
-
-            <h2 className="section-heading" style={{ marginTop: "32px" }}>
-              Le Confort au Cœur de l&apos;Innovation
-            </h2>
-
-            <p className="body-text">
-              Le confort moderne ne se limite pas aux chaises ergonomiques. Il s&apos;agit d&apos;une approche globale qui
-              inclut une communication transparente, une atmosphère apaisante et des techniques minimalement
-              invasives préservant autant que possible la structure naturelle des dents.
-            </p>
-
-            <div className="inline-image-row">
-              <div className="inline-image-wrap">
-                <Image
-                  src="/images/bcard.png"
-                  alt="Outils Intelligents"
-                  width={320} height={320}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
+            {blog.quote && (
+              <div className="blockquote">
+                <p>{blog.quote}</p>
               </div>
+            )}
 
-              <div className="inline-image-text">
-                <h3 style={{ fontSize: "20px", fontWeight: 600, color: "#561420", marginBottom: "12px", lineHeight: 1.3 }}>
-                  Outils Intelligents
-                </h3>
-                <p style={{ marginBottom: 0, color: "#591727", fontSize: "18px" }}>
-                  L&apos;usage de l&apos;intelligence artificielle dans le diagnostic
-                  permet une détection précoce et des plans de soins
-                  personnalisés, garantissant une tranquillité d&apos;esprit
-                  totale pour nos patients.
-                </p>
+            {blog.afterQuoteHeading && (
+              <h2 className="section-heading" style={{ marginTop: "32px" }}>
+                {blog.afterQuoteHeading}
+              </h2>
+            )}
+
+            {blog.afterQuoteText && (
+              <p className="body-text">{blog.afterQuoteText}</p>
+            )}
+
+            {blog.additionalImageUrl && (
+              <div className="inline-image-row">
+                <div className="inline-image-wrap">
+                  <Image
+                    src={blogImageUrl(blog.additionalImageUrl)}
+                    alt={blog.additionalImageTitle || blog.title}
+                    width={320} height={320}
+                    style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                    unoptimized
+                  />
+                </div>
+
+                {(blog.additionalImageTitle || blog.additionalImageDescription) && (
+                  <div className="inline-image-text">
+                    {blog.additionalImageTitle && (
+                      <h3 style={{ fontSize: "20px", fontWeight: 600, color: "#561420", marginBottom: "12px", lineHeight: 1.3 }}>
+                        {blog.additionalImageTitle}
+                      </h3>
+                    )}
+                    {blog.additionalImageDescription && (
+                      <p style={{ marginBottom: 0, color: "#591727", fontSize: "18px" }}>
+                        {blog.additionalImageDescription}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
-            <p className="body-text">
-              En conclusion, l&apos;avenir du soin dentaire réside dans cet équilibre délicat entre la science rigoureuse et
-              l&apos;empathie humaine. Nous continuons d&apos;investir dans les deux pour offrir à nos patients ce qu&apos;il y a de
-              mieux.
-            </p>
-
+            {blog.conclusion && (
+              <p className="body-text">{blog.conclusion}</p>
+            )}
           </div>
         </section>
 
@@ -522,7 +552,7 @@ export default function BlogDetailPage() {
           </div>
 
           {/* Responsive carousel for both desktop and mobile */}
-          <ResponsiveCarousel />
+          <ResponsiveCarousel relatedBlogs={relatedBlogs} />
         </section>
 
       </main>

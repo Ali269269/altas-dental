@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { submitContactFormApi } from "@/utils/subscribersApi";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function PhoneIcon() {
@@ -92,11 +93,37 @@ function ContactRow({
 export default function ContactPage() {
   const [form, setForm] = useState({ nom: "", email: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
-    setTimeout(() => setSent(false), 3000);
+    if (submitting) return;
+
+    setSubmitting(true);
+    setFeedback(null);
+
+    try {
+      const result = await submitContactFormApi({
+        name: form.nom.trim(),
+        email: form.email.trim(),
+        message: form.message.trim(),
+      });
+      setSent(true);
+      setFeedback({ type: "success", message: result.message });
+      setForm({ nom: "", email: "", message: "" });
+      setTimeout(() => {
+        setSent(false);
+        setFeedback(null);
+      }, 4000);
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to submit the form. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -337,8 +364,27 @@ export default function ContactPage() {
                   required
                 />
 
+                {feedback ? (
+                  <p
+                    role="alert"
+                    style={{
+                      margin: 0,
+                      padding: "10px 12px",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      lineHeight: 1.45,
+                      background: feedback.type === "success" ? "#fff5f5" : "#fff0f0",
+                      color: feedback.type === "success" ? "#591727" : "#8B1A2E",
+                      border: "1px solid #e8a0a8",
+                    }}
+                  >
+                    {feedback.message}
+                  </p>
+                ) : null}
+
                 <button
                   type="submit"
+                  disabled={submitting}
                   style={{
                     marginTop: 4,
                     width: "100%",
@@ -361,7 +407,7 @@ export default function ContactPage() {
                     ((e.currentTarget as HTMLButtonElement).style.background = "#F0F0F0")
                   }
                 >
-                  {sent ? "Envoyé ✓" : "Envoyez"}
+                  {sent ? "Envoyé ✓" : submitting ? "Envoi…" : "Envoyez"}
                 </button>
               </form>
             </div>

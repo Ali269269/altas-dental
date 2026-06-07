@@ -227,6 +227,43 @@ html, body {
   width: 100%;
 }
 
+/* Dashboard: one scrollbar at the screen edge (body scrollport only). */
+html.dashboard-route {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body.dashboard-route {
+  position: fixed !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.dashboard-route > * {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.dashboard-shell {
+  min-height: 100%;
+  width: 100%;
+  overflow: visible !important;
+}
+
+.dashboard-main,
+.dashboard-content {
+  overflow: visible !important;
+  max-height: none !important;
+  min-height: 0;
+}
+
 * {
   box-sizing: border-box;
 }

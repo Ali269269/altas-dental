@@ -398,7 +398,7 @@ function buildNextUp(appointments, referenceDay) {
       const parsed = parseAppointmentTime(a.appointmentTime);
       const apptDate = new Date(a.appointmentDate);
       if (parsed) apptDate.setHours(parsed.hour, parsed.minute, 0, 0);
-      return { appt, apptDate };
+      return { appt: a, apptDate };
     })
     .filter(({ apptDate }) => apptDate >= now)
     .sort((a, b) => a.apptDate - b.apptDate);
@@ -421,7 +421,9 @@ async function buildAppointmentsPageOverview(query = {}) {
   const viewMode = query.view || 'month';
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 12));
-  const search = (query.search || '').trim();
+  const { escapeRegex } = require('./securityHelpers');
+  const searchRaw = (query.search || '').trim().slice(0, 200);
+  const search = searchRaw ? escapeRegex(searchRaw) : '';
   const statusFilter = (query.status || '').trim().toUpperCase();
 
   const year = anchor.getFullYear();

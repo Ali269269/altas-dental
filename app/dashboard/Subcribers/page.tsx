@@ -1,89 +1,45 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
+import { getToken, getAdmin } from "@/utils/auth";
+import type {
+  EmailSubscriber,
+  ContactEntry,
+  EmailTemplate,
+  NewsletterStatus,
+  ContactStatus,
+} from "@/utils/subscribersData";
+import {
+  fetchSubscribersOverview,
+  deleteNewsletterSubscriber,
+  deleteContactSubmission,
+  sendSubscriberEmailApi,
+  createEmailTemplateApi,
+  updateEmailTemplateApi,
+  deleteEmailTemplateApi,
+} from "@/utils/subscribersApi";
+import { templateBodyForDisplay } from "@/utils/templateBodyText";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type TabType = "email" | "contact";
-type NewsletterStatus = "SENT" | "PENDING";
-type ContactStatus = "Contacted" | "Converted";
 type ModalType = "none" | "sendEmail" | "templates" | "viewTemplate";
-
-interface EmailSubscriber {
-  id: string;
-  srNo: string;
-  email: string;
-  date: string;
-  status: NewsletterStatus;
-}
-
-interface ContactEntry {
-  id: string;
-  srNo: string;
-  name: string;
-  email: string;
-  message: string;
-  date: string;
-  status: ContactStatus;
-}
-
-interface EmailTemplate {
-  id: string;
-  title: string;
-  body: string;
-  created: string;
-  lastUsed: string;
-  usedTimes: number;
-}
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-const INITIAL_SUBSCRIBERS: EmailSubscriber[] = [
-  { id:"1",  srNo:"01", email:"eleanorvance@gmail.com",    date:"Oct 12, 2023", status:"SENT"    },
-  { id:"2",  srNo:"02", email:"eleanorvance@gmail.com",    date:"Oct 12, 2023", status:"PENDING" },
-  { id:"3",  srNo:"03", email:"johndoe@example.com",       date:"Oct 13, 2023", status:"SENT"    },
-  { id:"4",  srNo:"04", email:"admin@website.org",         date:"Oct 15, 2023", status:"SENT"    },
-  { id:"5",  srNo:"05", email:"contact@business.com",      date:"Oct 16, 2023", status:"SENT"    },
-  { id:"6",  srNo:"06", email:"mary.jane@domain.com",      date:"Oct 14, 2023", status:"SENT"    },
-  { id:"7",  srNo:"07", email:"support@service.com",       date:"Oct 18, 2023", status:"SENT"    },
-  { id:"8",  srNo:"08", email:"feedback@platform.net",     date:"Oct 19, 2023", status:"SENT"    },
-  { id:"9",  srNo:"09", email:"sales@company.com",         date:"Oct 20, 2023", status:"PENDING" },
-  { id:"10", srNo:"10", email:"info@example.com",          date:"Oct 17, 2023", status:"PENDING" },
-  { id:"11", srNo:"11", email:"hello@friend.com",          date:"Oct 21, 2023", status:"SENT"    },
-  { id:"12", srNo:"12", email:"newsletter@updates.org",    date:"Oct 22, 2023", status:"SENT"    },
-];
-
-const INITIAL_CONTACTS: ContactEntry[] = Array.from({ length: 12 }, (_, i) => ({
-  id: String(i + 1),
-  srNo: String(i + 1).padStart(2, "0"),
-  name: "Elena Eon",
-  email: "eleanorvance@gmail.com",
-  message: "Lorem ipsum dolor sit amet consectetur.",
-  date: "Oct 12, 2023",
-  status: i % 3 === 1 ? "Converted" : "Contacted",
-}));
-
-const INITIAL_TEMPLATES: EmailTemplate[] = [
-  { id:"1", title:"Book your Appointment Today",  body:"Hi {{first_name}},\n\nHere is what our company can do to your business.\n\n{{Image}}\n\nBest regards,\nThe SMB Axis Team", created:"2026·01·25", lastUsed:"2026·01·25", usedTimes:28 },
-  { id:"2", title:"Your Appointment is Due",       body:"Hi {{first_name}},\n\nYour appointment is coming up soon.\n\nBest regards,\nThe SMB Axis Team",                           created:"2026·01·25", lastUsed:"2026·01·25", usedTimes:14 },
-  { id:"3", title:"You need a follow up",          body:"Hi {{first_name}},\n\nWe wanted to follow up with you.\n\nBest regards,\nThe SMB Axis Team",                              created:"2026·01·25", lastUsed:"2026·01·25", usedTimes:9  },
-  { id:"4", title:"Book your Appointment Today",  body:"Hi {{first_name}},\n\nHere is what our company can do to your business.\n\nBest regards,\nThe SMB Axis Team",             created:"2026·01·25", lastUsed:"2026·01·25", usedTimes:5  },
-  { id:"5", title:"Your Appointment is Due",       body:"Hi {{first_name}},\n\nReminder about your appointment.\n\nBest regards,\nThe SMB Axis Team",                              created:"2026·01·25", lastUsed:"2026·01·25", usedTimes:3  },
-  { id:"6", title:"You need a follow up",          body:"Hi {{first_name}},\n\nFollowing up from our last conversation.\n\nBest regards,\nThe SMB Axis Team",                      created:"2026·01·25", lastUsed:"2026·01·25", usedTimes:7  },
-];
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function statusBadge(status: NewsletterStatus) {
   if (status === "SENT") return "text-[#f4f4f4] bg-[#753141] border border-[#753141] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
   return "text-[#753141] bg-[#d3d3d3] border border-[#d3d3d3] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide";
 }
 
 function contactBadge(status: ContactStatus) {
+  if (status === "Contact") return "text-[#753141] text-sm font-semibold";
   if (status === "Contacted") return "text-[#4f4f4f] text-sm font-semibold";
   return "text-[#753141] text-sm font-semibold";
 }
 
 function contactDot(status: ContactStatus) {
-  return status === "Contacted" ? "#4f4f4f" : "#753141";
+  if (status === "Contact") return "#C94A3A";
+  if (status === "Contacted") return "#4f4f4f";
+  return "#753141";
 }
 
 // ── Envelope SVG (template thumbnail placeholder) ─────────────────────────────
@@ -106,6 +62,7 @@ function EnvelopeThumbnail() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SubscribersPage() {
   const { theme } = useTheme();
+  const router = useRouter();
   const isDark = theme === "dark";
 
   // Color tokens — from Blogs page
@@ -122,11 +79,16 @@ export default function SubscribersPage() {
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [tab,          setTab]          = useState<TabType>("email");
-  const [subscribers,  setSubscribers]  = useState<EmailSubscriber[]>(INITIAL_SUBSCRIBERS);
-  const [contacts,     setContacts]     = useState<ContactEntry[]>(INITIAL_CONTACTS);
-  const [templates,    setTemplates]    = useState<EmailTemplate[]>(INITIAL_TEMPLATES);
+  const [subscribers,  setSubscribers]  = useState<EmailSubscriber[]>([]);
+  const [contacts,     setContacts]     = useState<ContactEntry[]>([]);
+  const [templates,    setTemplates]    = useState<EmailTemplate[]>([]);
+  const [loadError,    setLoadError]    = useState<string | null>(null);
   const [modal,        setModal]        = useState<ModalType>("none");
-  const [sendTarget,   setSendTarget]   = useState<string>("");      // email being targeted
+  const [sendTarget,   setSendTarget]   = useState<string>("");
+  const [sendSubscriberId, setSendSubscriberId] = useState<string | null>(null);
+  const [sendContactId, setSendContactId] = useState<string | null>(null);
+  const [sendRecipientName, setSendRecipientName] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [viewTpl,      setViewTpl]      = useState<EmailTemplate | null>(null);
 
   // Email search + filter
@@ -148,6 +110,50 @@ export default function SubscribersPage() {
   const [addTplTitle, setAddTplTitle] = useState("");
   const [addTplBody,  setAddTplBody]  = useState("");
   const [showAddTpl,  setShowAddTpl]  = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const loadOverview = useCallback(async () => {
+    try {
+      const data = await fetchSubscribersOverview();
+      setSubscribers(data.subscribers);
+      setContacts(data.contacts);
+      setTemplates(data.templates);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load subscribers data.");
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = getToken();
+    const admin = getAdmin();
+    if (!token || !admin) {
+      router.push("/login");
+      return;
+    }
+    if (!admin?.roleSlug && !admin?.isSuperAdmin) {
+      router.push("/unauthorized");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!cancelled) await loadOverview();
+    };
+
+    load();
+    const intervalId = window.setInterval(load, 30000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [loadOverview]);
 
   // ── Derived lists ─────────────────────────────────────────────────────────
   const filteredSubs = subscribers.filter(s => {
@@ -165,69 +171,124 @@ export default function SubscribersPage() {
   });
 
   // ── Actions ───────────────────────────────────────────────────────────────
-  function deleteSubscriber(id: string) { setSubscribers(p => p.filter(s => s.id !== id)); }
-  function deleteContact(id: string)    { setContacts(p => p.filter(c => c.id !== id)); }
+  async function deleteSubscriber(id: string) {
+    try {
+      setActionError(null);
+      await deleteNewsletterSubscriber(id);
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to delete subscriber.");
+    }
+  }
 
-  function openSendEmail(email: string) {
+  async function deleteContact(id: string) {
+    try {
+      setActionError(null);
+      await deleteContactSubmission(id);
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to delete contact.");
+    }
+  }
+
+  function openSendEmail(
+    email: string,
+    subscriberId?: string,
+    contactId?: string,
+    recipientName?: string
+  ) {
     setSendTarget(email);
+    setSendSubscriberId(subscriberId ?? null);
+    setSendContactId(contactId ?? null);
+    setSendRecipientName(recipientName ?? "");
+    setSelectedTemplateId(null);
     setSendTitle("");
     setSendBody("");
+    setActionError(null);
     setModal("sendEmail");
   }
 
-  function handleSend() {
+  async function handleSend() {
     if (!sendTitle.trim() || !sendBody.trim()) return;
     setSending(true);
-    setTimeout(() => {
-      // Mark subscriber as SENT if found
-      setSubscribers(prev => prev.map(s =>
-        s.email === sendTarget ? { ...s, status: "SENT" } : s
-      ));
-      setSending(false);
+    setActionError(null);
+    try {
+      await sendSubscriberEmailApi({
+        to: sendTarget,
+        title: sendTitle.trim(),
+        body: sendBody.trim(),
+        subscriberId: sendSubscriberId ?? undefined,
+        contactId: sendContactId ?? undefined,
+        templateId: selectedTemplateId ?? undefined,
+        recipientName: sendRecipientName || undefined,
+      });
       setModal("none");
-    }, 800);
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to send email.");
+    } finally {
+      setSending(false);
+    }
   }
 
-  function handleSaveTemplate() {
+  async function handleSaveTemplate() {
     if (!sendTitle.trim() || !sendBody.trim()) return;
-    const newTpl: EmailTemplate = {
-      id: Date.now().toString(),
-      title: sendTitle,
-      body: sendBody,
-      created: new Date().toISOString().slice(0,10).replace(/-/g,"·"),
-      lastUsed: new Date().toISOString().slice(0,10).replace(/-/g,"·"),
-      usedTimes: 0,
-    };
-    setTemplates(p => [newTpl, ...p]);
-    setModal("none");
+    try {
+      setActionError(null);
+      await createEmailTemplateApi({ title: sendTitle.trim(), body: sendBody.trim() });
+      setModal("none");
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to save template.");
+    }
   }
 
   function selectTemplate(tpl: EmailTemplate) {
-    setSendTitle(tpl.title);
-    setSendBody(tpl.body);
+    setSendTitle(tpl.subject || tpl.title);
+    setSendBody(templateBodyForDisplay(tpl));
+    setSelectedTemplateId(tpl.id);
     setModal("sendEmail");
   }
 
-  function addNewTemplate() {
+  async function addNewTemplate() {
     if (!addTplTitle.trim() || !addTplBody.trim()) return;
-    const newTpl: EmailTemplate = {
-      id: Date.now().toString(),
-      title: addTplTitle,
-      body: addTplBody,
-      created: new Date().toISOString().slice(0,10).replace(/-/g,"·"),
-      lastUsed: new Date().toISOString().slice(0,10).replace(/-/g,"·"),
-      usedTimes: 0,
-    };
-    setTemplates(p => [newTpl, ...p]);
-    setAddTplTitle("");
-    setAddTplBody("");
-    setShowAddTpl(false);
+    try {
+      setActionError(null);
+      await createEmailTemplateApi({ title: addTplTitle.trim(), body: addTplBody.trim() });
+      setAddTplTitle("");
+      setAddTplBody("");
+      setShowAddTpl(false);
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to add template.");
+    }
   }
 
-  function saveViewTemplate() {
+  async function saveViewTemplate() {
     if (!viewTpl) return;
-    setTemplates(p => p.map(t => t.id === viewTpl.id ? viewTpl : t));
-    setModal("none");
+    try {
+      setActionError(null);
+      await updateEmailTemplateApi(viewTpl.id, {
+        title: viewTpl.title.trim(),
+        bodyPlain: viewTpl.body.trim(),
+      });
+      setModal("none");
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to update template.");
+    }
+  }
+
+  async function deleteTemplate(tpl: EmailTemplate) {
+    if (!window.confirm(`Delete template "${tpl.title}"?`)) return;
+    try {
+      setActionError(null);
+      await deleteEmailTemplateApi(tpl.id);
+      if (viewTpl?.id === tpl.id) setModal("none");
+      await loadOverview();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to delete template.");
+    }
   }
 
   // ── Shared styles ─────────────────────────────────────────────────────────
@@ -291,6 +352,10 @@ export default function SubscribersPage() {
               style={{ backgroundColor: "#F8F7F5", borderColor: "#D9C9A8", color: brand }}
             />
           </div>
+
+          {actionError ? (
+            <p className="text-xs mb-3" style={{ color: "#8B1A2E" }} role="alert">{actionError}</p>
+          ) : null}
 
           {/* Buttons */}
           <div className="flex gap-3">
@@ -366,45 +431,55 @@ export default function SubscribersPage() {
           {/* Template grid — 3 columns on desktop, 1 on mobile, 2 on sm */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {templates.map(tpl => (
-              <div key={tpl.id} className="flex flex-col rounded-xl overflow-hidden  border cursor-pointer hover:opacity-90 transition-opacity"
+              <div key={tpl.id} className="flex flex-col rounded-xl overflow-hidden border transition-opacity hover:opacity-95"
                 style={{ borderColor: "#D9C9A8" }}>
-                {/* Thumbnail */}
                 <div style={{ height: 120, position: "relative" }}>
                   <EnvelopeThumbnail/>
-                  {/* Arrow link icon */}
-                  <button
-                    onClick={() => { setViewTpl({ ...tpl }); setModal("viewTemplate"); }}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-white/80"
-                  >
-                   <svg
-  width="14"
-  height="14"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke={brand}
-  strokeWidth="2.5"
-  strokeLinecap="round"
-  strokeLinejoin="round"
->
-  <path d="M12 20h9" />
-  <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-</svg>
-                  </button>
                 </div>
-                {/* Info */}
-                <div className="px-2 py-2" style={{ backgroundColor: "#F8F7F5" }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[14px] font-semibold truncate" style={{ color: brand }}>{tpl.title}</span>
-                    <button onClick={() => selectTemplate(tpl)}>
+                <div className="px-3 py-2" style={{ backgroundColor: "#F8F7F5" }}>
+                  <div className="flex items-center gap-2 mb-1 min-h-[28px]">
+                    <button
+                      type="button"
+                      onClick={() => void deleteTemplate(tpl)}
+                      title="Delete template"
+                      className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg transition-colors hover:bg-red-100"
+                      style={{ color: brand }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                      </svg>
+                    </button>
+                    <span className="text-[14px] font-semibold truncate flex-1 min-w-0" style={{ color: brand }}>{tpl.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setViewTpl({ ...tpl, body: templateBodyForDisplay(tpl) }); setModal("viewTemplate"); }}
+                      title="Edit template"
+                      className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg hover:bg-[#F5ECD7] transition-colors"
+                      style={{ color: brand }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 text-[12px] min-w-0" style={{ color: "#7A6040" }}>
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <span className="truncate">Created: {tpl.created} · Last Used: {tpl.lastUsed}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => selectTemplate(tpl)}
+                      title="Use template"
+                      className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg hover:bg-[#F5ECD7] transition-colors"
+                      style={{ color: brand }}
+                    >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={brand} strokeWidth="2.5">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                         <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                       </svg>
                     </button>
-                  </div>
-                  <div className="flex items-center gap-1 text-[12px]" style={{ color: "#7A6040" }}>
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    <span className="truncate">Created: {tpl.created} &nbsp; Last Used: {tpl.lastUsed}</span>
                   </div>
                 </div>
               </div>
@@ -515,6 +590,12 @@ export default function SubscribersPage() {
         </span>
       </div>
 
+      {(loadError || actionError) && modal === "none" ? (
+        <p className="mb-4 text-sm rounded-xl px-4 py-3 border" style={{ color: "#8B1A2E", borderColor: "#753141", backgroundColor: isDark ? "#c9a898" : "#fff5f5" }} role="alert">
+          {loadError || actionError}
+        </p>
+      ) : null}
+
       {/* ── Tab bar ──────────────────────────────────────── */}
       <div className="flex mb-5" style={{ borderBottom: `1px solid ${borderCol}` }}>
         {[
@@ -590,6 +671,13 @@ export default function SubscribersPage() {
 
             {/* Desktop table — hidden on small screens */}
             <table className="w-full text-sm hidden sm:table">
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${borderCol}`, backgroundColor: isDark ? "#b89a88" : "#F5ECD7" }}>
+                  {["Sr. No.", "Email", "Date of subscription", "Monthly Newsletter", "Actions"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-[12px] font-semibold" style={{ color: text2 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {filteredSubs.map(sub => (
                   <tr
@@ -600,23 +688,19 @@ export default function SubscribersPage() {
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     {/* Sr. No */}
-                    <td className="px-6 py-4 w-16">
+                    <td className="px-4 py-4">
                       <span className="text-sm font-semibold" style={{ color: text2 }}>{sub.srNo}</span>
                     </td>
-                    {/* Email */}
                     <td className="px-4 py-4">
                       <span className="text-sm" style={{ color: text1 }}>{sub.email}</span>
                     </td>
-                    {/* Date */}
                     <td className="px-4 py-4">
                       <span className="text-sm" style={{ color: text2 }}>{sub.date}</span>
                     </td>
-                    {/* Status badge */}
                     <td className="px-4 py-4">
                       <span className={statusBadge(sub.status)}>{sub.status}</span>
                     </td>
-                    {/* Actions */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         {/* Delete */}
                         <button
@@ -631,7 +715,7 @@ export default function SubscribersPage() {
                         </button>
                         {/* Send email */}
                         <button
-                          onClick={() => openSendEmail(sub.email)}
+                          onClick={() => openSendEmail(sub.email, sub.id)}
                           title="Send Email"
                           className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-100 transition-colors"
                           style={{ color: text2 }}
@@ -674,7 +758,7 @@ export default function SubscribersPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={() => openSendEmail(sub.email)}
+                        onClick={() => openSendEmail(sub.email, sub.id)}
                         title="Send Email"
                         className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-100 transition-colors"
                         style={{ color: text2 }}
@@ -696,23 +780,9 @@ export default function SubscribersPage() {
               )}
             </div>
 
-            {/* Table footer labels + pagination */}
-            <div
-              className="hidden sm:flex items-center justify-between px-6 py-3"
-              style={{ borderTop: `1px solid ${borderCol}` }}
-            >
-              {/* Column labels at bottom — matches Figma */}
-              <div className="flex gap-12 text-xs" style={{ color: text2 }}>
-                <span>Sr. No.</span>
-                <span>Email</span>
-                <span className="ml-20">Date of subscription</span>
-                <span className="ml-8">Monthly Newsletter</span>
-                <span>Actions</span>
-              </div>
-            </div>
             <div className="flex items-center justify-between px-4 sm:px-6 py-3" style={{ borderTop: `1px solid ${borderCol}` }}>
               <span className="text-xs" style={{ color: text2 }}>
-                Showing 1 to {Math.min(12, filteredSubs.length)} of {filteredSubs.length} results
+                Showing 1 to {filteredSubs.length} of {filteredSubs.length} results
               </span>
               <div className="flex items-center gap-1">
                 <button className="w-7 h-7 rounded flex items-center justify-center text-xs" style={{ color: text2 }}>‹</button>
@@ -767,7 +837,7 @@ export default function SubscribersPage() {
               {conDropOpen && (
                 <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl border py-1 min-w-[140px]"
                   style={{ backgroundColor: "#ffffff", borderColor: "#D9C9A8" }}>
-                  {["All Statuses", "Contacted", "Converted"].map((opt, i, arr) => (
+                  {["All Statuses", "Contact", "Contacted", "Converted"].map((opt, i, arr) => (
                     <button key={opt} onClick={() => { setContactFilter(opt); setConDropOpen(false); }}
                       className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#F5ECD7] transition-colors"
                       style={{ color: brand, fontWeight: opt === contactFilter ? 700 : 400, borderBottom: i < arr.length-1 ? "1px solid #F0E8DC" : "none" }}>
@@ -832,7 +902,7 @@ export default function SubscribersPage() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => openSendEmail(c.email)}
+                          onClick={() => openSendEmail(c.email, undefined, c.id, c.name)}
                           title="Send Email"
                           className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-100 transition-colors"
                           style={{ color: text2 }}
@@ -878,7 +948,7 @@ export default function SubscribersPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={() => openSendEmail(c.email)}
+                        onClick={() => openSendEmail(c.email, undefined, c.id, c.name)}
                         title="Send Email"
                         className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-100 transition-colors"
                         style={{ color: text2 }}
@@ -907,7 +977,7 @@ export default function SubscribersPage() {
 
             <div className="flex items-center justify-between px-4 sm:px-6 py-3" style={{ borderTop: `1px solid ${borderCol}` }}>
               <span className="text-xs" style={{ color: text2 }}>
-                Showing 1 to {Math.min(12, filteredContacts.length)} of {filteredContacts.length} results
+                Showing 1 to {filteredContacts.length} of {filteredContacts.length} results
               </span>
               <div className="flex items-center gap-1">
                 <button className="w-7 h-7 rounded flex items-center justify-center text-xs" style={{ color: text2 }}>‹</button>

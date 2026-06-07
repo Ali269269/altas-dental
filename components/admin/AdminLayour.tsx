@@ -24,19 +24,15 @@ export default function AdminLayout({
 
   return (
     <div
-      className="min-h-screen flex transition-colors duration-300"
+      className="dashboard-shell flex transition-colors duration-300"
       style={{ backgroundColor: isDark ? "#2A0812" : "#F0E4C8" }}
     >
-      {/* Fixed Sidebar */}
       <Sidebar />
 
-      {/* Main content area — offset from sidebar */}
-      <div className="flex-1 ml-[220px] flex flex-col min-h-screen">
-        {/* Fixed Header */}
+      <div className="dashboard-main flex-1 ml-[220px] flex flex-col">
         <HeaderAdmin title={title} userImage={userImage} userName={userName} />
 
-        {/* Page body — padded below the fixed header */}
-        <main className="flex-1 pt-[72px] p-6">
+        <main className="dashboard-content pt-[72px] p-6">
           {children}
         </main>
       </div>
