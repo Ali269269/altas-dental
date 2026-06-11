@@ -1761,8 +1761,7 @@ pour votre confort.
         </div>
       </section>
 
-      {/* ───────────────── About / Doctor Section (hidden on home page) ───────────────── */}
-      {false && (
+      {/* ───────────────── About / Doctor Section ───────────────── */}
       <section
         className="about-section"
         style={{ background: 'linear-gradient(15deg, #5c0d2a 0%, #5c0d2a 10%, #5c0d2a 100%)', height: '640px', width: '1150px', maxWidth: '95%', marginTop: '80px', marginLeft: '100px', borderRadius: '20px', position: 'relative', overflow: 'hidden' }}
@@ -1827,7 +1826,6 @@ pour votre confort.
           />
         </div>
       </section>
-      )}
 
       {/* ───────────────── Reviews Section ───────────────── */}
  <section
