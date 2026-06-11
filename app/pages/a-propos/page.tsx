@@ -100,6 +100,30 @@ export default function AProposPage() {
     <>
       <style>{`
 
+        .hero-about-flex {
+          align-items: flex-start !important;
+        }
+
+        .hero-about-section-first {
+          padding-bottom: 14px !important;
+        }
+
+        .doctor-second-block {
+          margin-top: 18px;
+        }
+
+        .doctor-sections-divider {
+          border-top: 1px solid rgba(255, 255, 255, 0.12);
+          margin: 18px 56px 18px;
+        }
+
+        .hero-about-section-alt {
+          margin-top: 0 !important;
+          padding-top: 14px !important;
+          padding-bottom: 16px !important;
+          border-top: none !important;
+          min-height: 0 !important;
+        }
 
         /* ──────────────────────────────────────── MOBILE (≤ 768px) ──────────────────────────────────────── */
       @media (min-width: 426px) and (max-width: 768px) {
@@ -112,7 +136,7 @@ export default function AProposPage() {
 
   .hero-about-text {
     text-align: left !important;
-    max-width: 55% !important;
+    max-width: 62% !important;
     margin-bottom: 0 !important;
   }
 
@@ -164,8 +188,27 @@ export default function AProposPage() {
           /* Hero Section */
           .hero-about-section {
             height: auto !important;
+            padding: 24px 16px !important;
+          }
+
+          .hero-about-section-first {
             margin-top: 130px !important;
-            padding: 40px 16px !important;
+            padding-bottom: 14px !important;
+          }
+
+          .hero-about-section-alt {
+            margin-top: 0 !important;
+            padding-top: 14px !important;
+            padding-bottom: 12px !important;
+            min-height: 0 !important;
+          }
+
+          .doctor-second-block {
+            margin-top: 12px !important;
+          }
+
+          .doctor-sections-divider {
+            margin: 14px 16px !important;
           }
 
           .hero-about-flex {
@@ -186,14 +229,14 @@ export default function AProposPage() {
             margin-bottom: 16px !important;
           }
 
-          .hero-about-text p {
-            font-size: 15px !important;
-            line-height: 1.6 !important;
-            margin-bottom: 12px !important;
+          .hero-about-desc {
+            font-size: 15.5px !important;
+            line-height: 1.45 !important;
+            margin-bottom: 10px !important;
             max-width: 100% !important;
           }
 
-          .hero-about-text p:last-of-type {
+          .hero-about-desc:last-of-type {
             margin-bottom: 0 !important;
           }
 
@@ -377,9 +420,28 @@ export default function AProposPage() {
         /* Hero Section */
           .hero-about-section {
             height: auto !important;
-            margin-top: 130px !important;
-            padding: 70px 10px !important;
+            padding: 40px 10px !important;
             margin-left:50px;
+          }
+
+          .hero-about-section-first {
+            margin-top: 130px !important;
+            padding-bottom: 14px !important;
+          }
+
+          .hero-about-section-alt {
+            margin-top: 0 !important;
+            padding-top: 14px !important;
+            padding-bottom: 16px !important;
+            min-height: 0 !important;
+          }
+
+          .doctor-second-block {
+            margin-top: 14px !important;
+          }
+
+          .doctor-sections-divider {
+            margin: 16px 16px !important;
           }
 
           .hero-about-flex {
@@ -399,10 +461,10 @@ export default function AProposPage() {
             margin-bottom: 16px !important;
           }
 
-          .hero-about-text p {
-            font-size: 19px !important;
-            line-height: 1.6 !important;
-            margin-bottom: 12px !important;
+          .hero-about-desc {
+            font-size: 16px !important;
+            line-height: 1.45 !important;
+            margin-bottom: 10px !important;
             max-width: 100% !important;
           }
 
@@ -464,8 +526,28 @@ export default function AProposPage() {
         /* Hero Section */
           .hero-about-section {
             height: auto !important;
+            padding: 0 60px !important;
+          }
+
+          .hero-about-section-first {
             margin-top: 130px !important;
-            padding: 70px 60px !important;
+            padding-top: 48px !important;
+            padding-bottom: 14px !important;
+          }
+
+          .hero-about-section-alt {
+            margin-top: 0 !important;
+            padding-top: 14px !important;
+            padding-bottom: 16px !important;
+            min-height: 0 !important;
+          }
+
+          .doctor-second-block {
+            margin-top: 14px !important;
+          }
+
+          .doctor-sections-divider {
+            margin: 18px 56px !important;
           }
 
           .hero-about-flex {
@@ -476,7 +558,7 @@ export default function AProposPage() {
           .hero-about-text {
             max-width: 100% !important;
             padding: 0 !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 0 !important;
           }
 
           .hero-about-text h1 {
@@ -485,10 +567,10 @@ export default function AProposPage() {
             margin-bottom: 16px !important;
           }
 
-          .hero-about-text p {
-            font-size: 19px !important;
-            line-height: 1.6 !important;
-            margin-bottom: 12px !important;
+          .hero-about-desc {
+            font-size: 16px !important;
+            line-height: 1.45 !important;
+            margin-bottom: 10px !important;
             max-width: 100% !important;
           }
 
@@ -496,9 +578,8 @@ export default function AProposPage() {
           .doctor-card-wrapper {
             width: 100% !important;
             padding: 0 !important;
-            
             margin-right: 120px !important;
-            margin-bottom: 20px !important;
+            margin-bottom: 0 !important;
           }
 
           .doctor-image-container {
@@ -623,12 +704,12 @@ export default function AProposPage() {
         ══════════════════════════════════════════════════════════ */}
              <div className='bg-[#711C31]'> 
               <section
-          className="hero-about-section relative w-full"
-          style={{ height: 520, marginTop: "130px " }}
+          className="hero-about-section hero-about-section-first relative w-full"
+          style={{ height: 520, marginTop: "130px ", paddingBottom: 0 }}
         >
           <div className="hero-about-flex flex items-stretch w-full h-full">
             {/* Left: text content */}
-            <div className="hero-about-text flex-1 flex flex-col justify-center px-19 py-16 pr-8 lg:max-w-[55%] w-full">
+            <div className="hero-about-text flex-1 flex flex-col justify-center px-19 pt-16 pb-6 pr-8 lg:max-w-[65%] w-full">
               {/* Small italic label */}
               <p
                 className="hero-about-text-label text-[14px] font-light mb-3"
@@ -638,7 +719,7 @@ export default function AProposPage() {
                   letterSpacing: "0.3px",
                 }}
               >
-                À propos de moi
+                Notre équipe
               </p>
 
               {/* Doctor name */}
@@ -657,34 +738,44 @@ export default function AProposPage() {
                 Tnacheri
               </h1>
 
-              {/* Paragraph 1 (bold / larger) */}
+              {/* Paragraph 1 */}
               <p
-                className="mb-5 leading-relaxed"
+                className="hero-about-desc mb-3"
                 style={{
-                  fontSize: "18px",
+                  fontSize: "16px",
+                  lineHeight: 1.45,
                   color: "#F0F0F0",
-                  fontWeight: 500,
-                  maxWidth: 480,
+                  fontWeight: 300,
+                  maxWidth: 680,
                 }}
               >
-                Redéfinir la santé bucco-dentaire à travers un prisme de précision
-                esthétique et d'excellence clinique. Pour le Dr Ghita, la dentisterie
-                est là où l'architecture rencontre l'intégrité biologique.
+                Diplômée de la Faculté de Médecine Dentaire de Rabat –Université 
+                Mohammed V, Dr. Ghita OuazzaniTnacheri incarne une approche moderne de la 
+                dentisterie, où expertise clinique, innovation et esthétique se rencontrent.
+
               </p>
 
-              {/* Paragraph 2 (lighter) */}
+              {/* Paragraph 2 */}
               <p
-                className="leading-relaxed"
+                className="hero-about-desc"
                 style={{
-                  fontSize: "18px",
+                  fontSize: "16px",
+                  lineHeight: 1.45,
                   color: "#F0F0F0",
-                  fontWeight: 500,
-                  maxWidth: 480,
+                  fontWeight: 300,
+                  maxWidth: 680,
                 }}
               >
-                Redéfinir la santé bucco-dentaire à travers un prisme de précision
-                esthétique et d'excellence clinique. Pour le Dr Ghita, la dentisterie
-                est là où l'architecture rencontre l'intégrité biologique.
+                Animée par une recherche constante d’excellence, elle enrichit 
+               continuellement sa pratique à travers des formations avancées nationales et 
+              internationales en dentisterie esthétique et numérique, orthodontie, 
+              endodontie, pédodontie, urgences, prothèse, réhabilitation orale. Titulaire d’un Diplôme Universitaire d’Orthodontie de l’université de Murcie en Espagne et 
+              forte d’une immersion clinique à Barcelone dédiée à la dentisterie esthétique 
+              et à la réhabilitation globale du sourire, elle propose une approche 
+              multidisciplinaire alliant précisionet harmonie esthétique. <br/>
+
+              Dr. Ghita Ouazzani Tnacheriaccorde une importance particulière aux détails, au confort du patient et à l’utilisation des techniques les plus actuelles. Son 
+              approche associe rigueur scientifiqueet sens de l’esthétique pour garantir une prise en charge conforme aux standards internationaux les plus élevés.
               </p>
             </div>
 
@@ -820,6 +911,160 @@ maxWidth: 300,
           </div>
         </section>
 
+        <div className="doctor-second-block">
+          <div className="doctor-sections-divider" aria-hidden="true" />
+
+        {/* ══════════════════════════════════════════════════════════
+            SECTION 1B — DR SAMI KANDIL
+        ══════════════════════════════════════════════════════════ */}
+        <section
+          className="hero-about-section hero-about-section-alt relative w-full"
+          style={{
+            height: "auto",
+            marginTop: 0,
+            paddingTop: 0,
+            paddingBottom: 16,
+          }}
+        >
+          <div className="hero-about-flex flex items-stretch w-full h-full">
+            {/* Left: text content */}
+            <div className="hero-about-text flex-1 flex flex-col justify-center px-19 pt-2 pb-6 pr-8 lg:max-w-[65%] w-full">
+              <h2
+                className="mb-5 leading-[1.3]"
+                style={{
+                  fontSize: "35px",
+                  fontWeight: 600,
+                  color: "#ffffff",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Dr. Sami Kandil
+              </h2>
+
+              <p
+                className="hero-about-desc mb-3"
+                style={{
+                  fontSize: "16px",
+                  lineHeight: 1.45,
+                  color: "#F0F0F0",
+                  fontWeight: 300,
+                  maxWidth: 680,
+                }}
+              >
+                Diplômé de la Faculté de Médecine Dentaire de Casablanca – Université Hassan II,
+                Dr Sami Kandil consacre sa pratique à l&apos;implantologie, à la chirurgie et aux
+                réhabilitations complexes du sourire.
+              </p>
+
+              <p
+                className="hero-about-desc mb-3"
+                style={{
+                  fontSize: "16px",
+                  lineHeight: 1.45,
+                  color: "#F0F0F0",
+                  fontWeight: 300,
+                  maxWidth: 680,
+                }}
+              >
+                Titulaire de formations universitaires avancées en implantologie et dentisterie esthétique
+                à la New York University, ainsi qu&apos;en chirurgie parodontale avancée en Corée du Sud,
+                il prend en charge l&apos;ensemble des traitements chirurgicaux et implantaires, des cas les
+                plus simples aux réhabilitations les plus complexes.
+              </p>
+
+              <p
+                className="hero-about-desc"
+                style={{
+                  fontSize: "16px",
+                  lineHeight: 1.45,
+                  color: "#F0F0F0",
+                  fontWeight: 300,
+                  maxWidth: 680,
+                }}
+              >
+                Son approche allie excellence chirurgicale et planification rigoureuse afin
+                d&apos;offrir à chaque patient des traitements précis, durables et conformes aux standards
+                internationaux les plus exigeants.
+              </p>
+            </div>
+
+            {/* Right: doctor image card */}
+            <div
+              className="doctor-card-wrapper relative flex items-center justify-center w-full lg:justify-end"
+              style={{
+                maxWidth: 490,
+                margin: "0 auto",
+                paddingRight: "24px",
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                className="doctor-image-container"
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: 300,
+                  height: 520,
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  className="doctor-bg-card"
+                  style={{
+                    position: "absolute",
+                    top: 40,
+                    width: 400,
+                    height: 420,
+                    borderRadius: "30px 30px 0px 0px",
+                    marginTop: "75px",
+                    background:
+                      "linear-gradient(180deg, #F4E7D3 0%, #EAD7C1 55%, #B56C7D 100%)",
+                    overflow: "hidden",
+                    zIndex: 1,
+                  }}
+                />
+
+                <img
+                  className="doctor-image"
+                  src="/images/udrimag.png"
+                  alt="Dr. Sami Kandil"
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    width: 320,
+                    height: "auto",
+                    objectFit: "contain",
+                    zIndex: 3,
+                    marginBottom: "127px",
+                    transform: "scale(1.55)",
+                  }}
+                />
+
+                <div
+                  className="doctor-fade-overlay"
+                  style={{
+                    position: "absolute",
+                    bottom: -20,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 420,
+                    height: 220,
+                    background:
+                      "linear-gradient(to top, rgba(113,28,49,1) 15%, rgba(113,28,49,0.85) 35%, rgba(113,28,49,0) 100%)",
+                    zIndex: 10,
+                    pointerEvents: "none",
+                    filter: "blur(1px)",
+                    opacity: 2.5,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+        </div>
 
         {/* ══════════════════════════════════════════════════════════
             SECTION 2 — PHILOSOPHY + START YOUR JOURNEY
@@ -848,7 +1093,7 @@ maxWidth: 300,
                     color: "#711C31",
                   }}
                 >
-                  Philosophy of Care
+                  Notre philosophie
                 </p>
                 <p
                   className=" mb-6"
@@ -861,10 +1106,10 @@ maxWidth: 300,
                     borderLeft: "none",
                   }}
                 >
-                  "I believe that clinical excellence should never feel sterile. My approach combines
-                  the rigorous standards of modern medical science with the bespoke attention of a
-                  boutique studio. We don't just treat symptoms; we curate smiles that reflect the
-                  individual's character and vitality."
+                  "Notre approche repose sur une dentisterie fondée sur les preuves scientifiques (evidence-based dentistry), associée aux technologies les plus avancées et à 
+une planification rigoureuse des traitements. Chaque décision clinique est 
+guidée par les données scientifiques actuelles, avec pour objectif d’assurer des résultats prévisibles, durables et conformes aux standards internationaux les 
+plus exigeants."
               </p>
               </div>
 

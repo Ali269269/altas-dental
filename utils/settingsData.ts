@@ -40,9 +40,9 @@ export type SettingsOverview = {
 };
 
 export const DEFAULT_BUSINESS_HOURS: BusinessHourEntry[] = [
-  { label: "Mon - Fri", start: "08:00", end: "18:00", closed: false },
-  { label: "Saturday", start: "09:00", end: "14:00", closed: false },
-  { label: "Sunday", start: "00:00", end: "00:00", closed: true },
+  { label: "Lundi - Vendredi", start: "08:00", end: "18:00", closed: false },
+  { label: "Samedi", start: "09:00", end: "14:00", closed: false },
+  { label: "Dimanche", start: "00:00", end: "00:00", closed: true },
 ];
 
 export const DEFAULT_SETTINGS_OVERVIEW: SettingsOverview = {

@@ -1,0 +1,433 @@
+================================================================================
+ALTAS DENTAL CENTER — PROJECT STRUCTURE & WORKFLOW
+================================================================================
+
+
+================================================================================
+SYSTEM OVERVIEW
+================================================================================
+
+  [Browser]
+      |
+      +-- Public site (Next.js)     app/pages/*  app/page.tsx
+      |
+      +-- Admin dashboard           app/dashboard/*
+      |
+      v
+  utils/api.ts  -->  NEXT_PUBLIC_API_URL  -->  Backend Express (port 5000)
+      |
+      v
+  MongoDB Atlas
+
+
+Connection hub:
+  utils/api.ts          builds all API URLs
+  utils/auth.ts         JWT token in sessionStorage + Bearer header
+  backend/server.js     mounts routes, CORS, static uploads
+
+
+================================================================================
+ROOT FOLDER MAP
+================================================================================
+
+altas/
+|
+|-- app/                    Next.js pages (routes = URLs)
+|-- components/             React UI components
+|-- context/                Global React state (theme, auth permissions, profile)
+|-- hooks/                  Reusable React hooks
+|-- lib/                    Shared libs (security headers)
+|-- types/                  TypeScript types
+|-- utils/                  Frontend API clients + helpers
+|-- public/                 Static images/assets (served by Next.js)
+|-- middleware.ts           Next.js edge middleware (security headers, no-cache dashboard)
+|-- next.config.ts          Next.js config (image domains from API URL)
+|-- package.json            Frontend dependencies
+|-- DEPLOYMENT.txt          Production deploy checklist
+|-- PROJECT_STRUCTURE.txt   This file
+|
+|-- backend/                Express API (separate Node server)
+    |-- server.js           Entry point — starts API
+    |-- config/             DB + security config
+    |-- routes/             API route definitions
+    |-- controllers/        Request handlers (business logic)
+    |-- models/             MongoDB schemas (Mongoose)
+    |-- middleware/         Auth, RBAC, uploads, rate limits
+    |-- utils/              Backend helpers (email, RBAC, sanitization)
+    |-- scripts/            DB seed scripts
+    |-- uploads/            Uploaded files (blogs, profiles, specialities, clinical)
+    |-- .env                Backend secrets (NOT in git)
+
+
+================================================================================
+FRONTEND — app/ (PAGES = ROUTES)
+================================================================================
+
+app/layout.tsx              Root HTML shell, fonts, LayoutWrapper
+app/globals.css             Global styles + dashboard scroll rules
+app/page.tsx                Home page (/)
+
+PUBLIC MARKETING SITE — app/pages/
+  Appointment/page.tsx      Book appointment form          --> POST /api/statistics/appointments
+  contact/page.tsx            Contact form                 --> POST /api/subscribers/contact
+  Blogs/page.tsx              Blog listing                 --> GET  /api/blogs/public
+  Blogs/[slug]/page.tsx       Single blog                  --> GET  /api/blogs/public/:slug
+  specialites/[slug]/         Dynamic speciality pages     --> GET  /api/specialities/public/:slug
+  specialites/*               Static speciality pages      (legacy/hardcoded pages)
+  a-propos, notre-centre, avant-apres, Privacy_Policy, Terms_condition
+
+AUTH
+  login/page.tsx              Admin login                  --> POST /api/auth/login
+  unauthorized/page.tsx       Access denied page
+  admin/page.tsx              Redirect to dashboard or login
+
+ADMIN DASHBOARD — app/dashboard/
+  layout.tsx                  Wraps all dashboard pages
+  DashboardLayoutClient.tsx   PermissionsProvider + ProtectedDashboard + AdminLayout
+  ProtectedDashboard.tsx      Verifies JWT before render
+  page.tsx                    Dashboard home               --> GET /api/statistics/overview
+  Appointments/page.tsx       Appointments CRUD            --> /api/statistics/appointments*
+  Patients/page.tsx           Patient list + clinical      --> /api/statistics/patients-overview
+  Clinical_Notes/page.tsx     Clinical notes view
+  Blogs/page.tsx              Blog CMS                     --> /api/blogs/*
+  Specialities/page.tsx       Speciality CMS               --> /api/specialities/*
+  Subcribers/page.tsx         Newsletter + contact inbox   --> /api/subscribers/*
+  Analytics/page.tsx          Charts/stats                 --> GET /api/statistics/analytics-overview
+  Settings/page.tsx           Admin profile + clinic       --> /api/settings/*
+  Admin_Management/page.tsx   Users, roles, passwords      --> /api/admin-management/*
+  Marketing/page.tsx          Marketing placeholder
+
+
+================================================================================
+FRONTEND — components/
+================================================================================
+
+LayoutWrapper.tsx           Public header/footer OR bare dashboard shell
+Header.tsx / Footer.tsx     Public site navigation
+components/admin/
+  AdminLayout.tsx             Sidebar + HeaderAdmin + main content area
+  Sidebar.tsx                 Nav links filtered by RBAC permissions
+  HeaderAdmin.tsx             Top bar, notifications, profile
+  AuthSessionWatcher.tsx      Clears session when leaving /dashboard
+  DashboardRouteGuard.tsx     Blocks pages user has no view permission for
+  ProtectedDashboard.tsx      (in app/dashboard/) server-side auth gate
+  patient/                    Patient modals, checkup, clinical records, email
+  dashboard/                  Dashboard modals (appointments, staff)
+  analytics/                  Chart components
+components/specialites/       Public speciality page template
+
+
+================================================================================
+FRONTEND — context/ + hooks/
+================================================================================
+
+context/ThemeContext.tsx        Light/dark theme (localStorage)
+context/PermissionsContext.tsx  Loads admin session + permissions from API
+context/AdminProfileContext.tsx Admin profile for header/settings
+hooks/useDashboardAuthGuard.ts  Re-validates session on tab focus/back button
+
+
+================================================================================
+FRONTEND — utils/ (API CLIENTS)
+================================================================================
+
+File                      Connects to                         Used by
+--------------------------------------------------------------------------------
+api.ts                    Base URL builder                    All API files
+auth.ts                   /api/auth/*                         login, guards, logout
+permissions.ts            Module keys + route mapping         Sidebar, route guard
+dashboardData.ts          /api/statistics/overview            Dashboard home
+appointmentsData.ts       /api/statistics/appointments*       Appointments page
+patientsData.ts           /api/statistics/patients-overview   Patients page
+clinicalRecord.ts         Clinical record helpers             Patient modals
+blogsApi.ts               /api/blogs/*                        Blogs dashboard + public
+specialitiesApi.ts        /api/specialities/*                 Specialities + home
+subscribersApi.ts         /api/subscribers/*                  Subscribers + contact/footer
+settingsApi.ts            /api/settings/*                     Settings page
+adminManagementApi.ts     /api/admin-management/*             Admin Management
+clinicPublicApi.ts        GET /api/settings/public            Public site clinic info
+analyticsData.ts          Analytics types                     Analytics page
+sanitizeHtml.ts             XSS sanitization for blog HTML      Public + dashboard blogs
+
+
+================================================================================
+BACKEND — server.js WORKFLOW
+================================================================================
+
+  1. Load .env
+  2. validateSecurityConfig()
+  3. connectDB()                    --> config/database.js --> MongoDB Atlas
+  4. ensureRbacSeed()               --> creates roles + Super Admin
+  5. seedSystemEmailTemplates()
+  6. verifySmtpConnection()
+  7. Mount routes:
+       /api/auth
+       /api/statistics
+       /api/blogs
+       /api/subscribers
+       /api/settings
+       /api/specialities
+       /api/admin-management
+  8. Serve static uploads:
+       /uploads/blogs
+       /uploads/profiles
+       /uploads/specialities
+       (clinical files = signed token download only)
+
+
+================================================================================
+BACKEND — routes/ --> controllers/ --> models/
+================================================================================
+
+routes/authRoutes.js
+  controller: authController.js
+  models: Admin, Role, PasswordResetRequest
+  purpose: login, logout, verify session, password reset request
+
+routes/statisticsRoutes.js
+  controller: statisticsController.js
+  models: Appointment, Notification
+  purpose: dashboard stats, appointments, patients, analytics, notifications,
+           clinical scans, checkups, emails to patients
+
+routes/blogRoutes.js
+  controller: blogController.js
+  model: Blog
+  purpose: public blog API + admin blog CMS + image upload
+
+routes/specialityRoutes.js
+  controller: specialityController.js
+  model: Speciality
+  purpose: public speciality pages + admin CMS + image upload
+
+routes/subscribersRoutes.js
+  controller: subscribersController.js
+  models: NewsletterSubscriber, ContactSubmission, EmailTemplate, Notification
+  purpose: newsletter signup, contact form, admin subscriber management
+
+routes/settingsRoutes.js
+  controller: settingsController.js
+  models: Admin, ClinicSettings
+  purpose: admin profile, clinic info, business hours, profile photo
+
+routes/adminManagementRoutes.js
+  controller: adminManagementController.js
+  models: Admin, Role, PasswordResetRequest, AuditLog
+  purpose: create/edit admins, roles, permissions, password resets, audit log
+
+
+================================================================================
+BACKEND — models/ (DATABASE COLLECTIONS)
+================================================================================
+
+Admin                   Admin users (email, password hash, role, permissions flags)
+Role                    RBAC roles + module permissions map
+Appointment             Patient appointments + checkup/clinical data
+Blog                    Blog posts (HTML content, images, SEO)
+Speciality              Speciality/service pages content
+NewsletterSubscriber      Email newsletter signups
+ContactSubmission       Contact form messages
+EmailTemplate           Email templates for subscriber campaigns
+ClinicSettings          Clinic name, hours, contact info (public settings)
+Notification            Admin inbox notifications
+PasswordResetRequest    Admin password reset queue
+AuditLog                  Security audit trail
+
+
+================================================================================
+BACKEND — middleware/ (REQUEST PIPELINE)
+================================================================================
+
+auth.js                 JWT verify (Bearer token), checkActiveAdmin
+permissions.js          attachPermissions, requirePermission, requireSuperAdmin
+protectedRoute.js       Shortcut: auth + permissions for a module
+blogImageUpload.js      Multer upload --> uploads/blogs/
+profilePhotoUpload.js   Multer upload --> uploads/profiles/
+specialityImageUpload.js Multer upload --> uploads/specialities/
+clinicalScanUpload.js   Multer upload --> uploads/clinical/ (private)
+uploadValidation.js     File type + extension validation
+rateLimiter.js          Brute-force protection on login/forms
+
+
+================================================================================
+API ENDPOINT MAP (BASE: /api)
+================================================================================
+
+AUTH  /api/auth
+  GET    /roles                         Public — login role dropdown
+  POST   /login                         Public
+  POST   /password-reset-request          Public
+  POST   /signup                        Super Admin only
+  GET    /verify                        Protected — session check
+  GET    /profile                       Protected
+  POST   /logout                        Protected
+
+STATISTICS  /api/statistics
+  GET    /overview                      dashboard view
+  GET    /analytics-overview              analytics view
+  GET    /appointments-overview           appointments view
+  GET    /patients-overview               patients view
+  GET    /appointments-today              dashboard view
+  GET    /pending-confirmations           dashboard view
+  GET    /notifications                   dashboard view
+  POST   /appointments                    PUBLIC — book appointment
+  GET    /appointments/:id                appointments view
+  PUT    /appointments/:id                appointments edit
+  DELETE /appointments/:id                appointments edit
+  POST   /appointments/:id/checkup        appointments edit
+  POST   /appointments/:id/clinical-scans patients edit (file upload)
+  DELETE /appointments/:id/clinical-scans/:storedName  patients edit
+  GET    /clinical-scans/download?token=  PUBLIC — signed clinical file
+  GET    /appointments/actions/confirm    PUBLIC — email action token
+  GET    /appointments/actions/cancel     PUBLIC — email action token
+
+BLOGS  /api/blogs
+  GET    /public                          PUBLIC — blog list
+  GET    /public/:slug                    PUBLIC — single blog
+  GET    /overview                        blogs view
+  POST   /upload-image                    blogs edit
+  POST   /                                blogs edit
+  GET    /:id                             blogs view
+  PUT    /:id                             blogs edit
+  PATCH  /:id/status                      blogs edit
+  DELETE /:id                             blogs edit
+
+SPECIALITIES  /api/specialities
+  GET    /public                          PUBLIC
+  GET    /public/:slug                    PUBLIC
+  GET    /overview                        specialities view
+  POST   /upload-image                    specialities edit
+  POST   /                                specialities edit
+  PUT    /:id                             specialities edit
+  DELETE /:id                             specialities edit
+
+SUBSCRIBERS  /api/subscribers
+  POST   /newsletter                      PUBLIC
+  POST   /contact                         PUBLIC
+  GET    /overview                        subscribers view
+  DELETE /newsletter/:id                  subscribers edit
+  DELETE /contact/:id                     subscribers edit
+  POST   /send-email                      subscribers edit
+  POST   /templates                       subscribers edit
+
+SETTINGS  /api/settings
+  GET    /public                          PUBLIC — clinic info for website
+  GET    /                                settings view
+  PUT    /profile                         settings edit
+  POST   /profile-photo                   settings edit
+  PUT    /password                        settings edit
+  PUT    /clinic                          settings edit
+  PUT    /business-hours                  settings edit
+
+ADMIN MANAGEMENT  /api/admin-management
+  GET    /overview                        admin_management view
+  GET    /roles                           admin_management view
+  GET    /password-requests               admin_management view
+  GET    /audit-logs                      admin_management view
+  POST   /members                         Super Admin + edit
+  PUT    /members/:id                     Super Admin + edit
+  DELETE /members/:id                     Super Admin + edit
+  PUT    /roles/:id/permissions           Super Admin + edit
+
+HEALTH
+  GET    /api/health                      Public — server status
+
+
+================================================================================
+AUTH + RBAC WORKFLOW
+================================================================================
+
+LOGIN FLOW:
+  login/page.tsx
+    --> POST /api/auth/login  { email, password, roleSlug }
+    --> utils/auth.ts setAuth(token, admin)  [sessionStorage]
+    --> redirect /dashboard
+
+DASHBOARD ENTRY:
+  app/dashboard/layout.tsx
+    --> ProtectedDashboard  --> GET /api/auth/verify
+    --> PermissionsProvider --> loads permissions
+    --> DashboardRouteGuard --> checks module access per URL
+    --> AdminLayout         --> Sidebar filters links by canViewModule()
+
+API REQUEST (every protected call):
+  utils/*Api.ts
+    --> Authorization: Bearer <token from sessionStorage>
+    --> backend middleware: protect --> attachPermissions --> requirePermission
+
+LOGOUT:
+  Sidebar logout
+    --> POST /api/auth/logout
+    --> utils/auth.ts clearAuth()
+    --> redirect /login
+
+
+================================================================================
+DATA FLOW EXAMPLES
+================================================================================
+
+PUBLIC APPOINTMENT BOOKING:
+  app/pages/Appointment/page.tsx
+    --> utils (fetch) --> POST /api/statistics/appointments
+    --> statisticsController.createAppointment
+    --> Appointment model save
+    --> emailService sends confirmation emails
+
+BLOG PUBLISH:
+  app/dashboard/Blogs/page.tsx
+    --> blogsApi.uploadBlogImage --> POST /api/blogs/upload-image
+    --> file saved to backend/uploads/blogs/
+    --> blogsApi.createBlog --> POST /api/blogs
+    --> public site reads GET /api/blogs/public
+
+PUBLIC BLOG DISPLAY:
+  app/pages/Blogs/[slug]/page.tsx
+    --> blogsApi.fetchPublicBlogBySlug --> GET /api/blogs/public/:slug
+    --> blogImageUrl() --> http://API/uploads/blogs/filename
+
+IMAGE URL CHAIN:
+  DB stores:        /uploads/blogs/1234-abc.jpg
+  blogImageUrl():   NEXT_PUBLIC_API_URL + /uploads/blogs/1234-abc.jpg
+  Browser loads:    Backend static file OR Next.js img remotePatterns
+
+CLINICAL FILE (PRIVATE):
+  Upload:   POST /api/statistics/appointments/:id/clinical-scans
+  Storage:  backend/uploads/clinical/:appointmentId/:file
+  Access:   Signed URL --> GET /api/statistics/clinical-scans/download?token=...
+  NOT served from public /uploads/clinical static route
+
+
+================================================================================
+ENV FILES (WHAT CONNECTS WHAT)
+================================================================================
+
+FRONTEND (Vercel / .env.local):
+  NEXT_PUBLIC_API_URL=http://localhost:5000     Target backend for all fetch()
+
+BACKEND (backend/.env):
+  MONGODB_URI=           Database connection
+  JWT_SECRET=            Signs login tokens
+  FRONTEND_URL=          CORS allowed origin (Vercel URL)
+  API_BASE_URL=          Public URL for emails + image links
+  SMTP_*                 Email sending
+  SUPER_ADMIN_EMAIL=     Auto-created admin account
+  SUPER_ADMIN_PASSWORD=  Auto-created admin password
+
+
+================================================================================
+KEY FILES QUICK REFERENCE
+================================================================================
+
+Need to change API URL          utils/api.ts + Vercel env NEXT_PUBLIC_API_URL
+Need to change login logic      backend/controllers/authController.js
+Need to change permissions      backend/constants/dashboardModules.js
+Need to change sidebar links    components/admin/Sidebar.tsx
+Need to add new dashboard page  app/dashboard/NewPage/page.tsx + Sidebar link
+Need to add new API endpoint    backend/routes/ + controller/ + utils/*Api.ts
+Need to change CORS             backend/server.js FRONTEND_URL env
+Need to change uploaded images  backend/uploads/ (persistent storage in production)
+Need security headers           middleware.ts + lib/securityHeaders.ts
+
+================================================================================
+END
+================================================================================

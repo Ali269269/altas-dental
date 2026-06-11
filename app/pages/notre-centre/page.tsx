@@ -757,25 +757,34 @@ export default function NotreCentrePage() {
           >
             Notre centre
           </h2>
-          <p
+          <div
+            className="notre-centre-text-desc"
             style={{
-              fontSize: 19.8,
-              lineHeight: 1.2,
-              color: "#5D5153",
               marginLeft: "26px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
             }}
           >
-            Dans notre clinique dentaire, vous recevez des soins clairs et pratiques axés sur la
-            santé bucco-dentaire à long terme. Nous proposons des contrôles de routine, des
-            nettoyages professionnels, des obturations, des traitements cosmétiques et des
-            procédures restauratrices en utilisant des équipements modernes et des normes
-            d&apos;hygiène strictes. Chaque visite commence par un examen minutieux afin que des
-            problèmes comme les caries, les problèmes de gencives ou les dommages à l&apos;émail soient
-            identifiés tôt. Les options de traitement sont expliquées en termes simples afin que vous
-            puissiez prendre des décisions éclairées concernant vos soins. Notre objectif est simple :
-            garder vos dents saines, fonctionnelles et d&apos;apparence naturelle tout en rendant chaque
-            rendez-vous efficace et confortable. 🦷✨
-          </p>
+            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.2, color: "#5D5153" }}>
+              <span className="font-bold">Atlas Dental Center a été </span>
+              conçu selon les standards les plus exigeants de la dentisterie moderne.
+              Pensé pour offrir une expérience de soins optimale, notre centre intègre les
+              dernières avancées technologiques en matière de diagnostic, d’imagerie et de dentisterie numérique.
+              Équipé d’un scanner intra-oral, d’une radiologie numérique de haute précision, d’un laser et de technologies 3D,
+              il permet une prise en charge plus précise, plus confortable et plus efficace.
+            </p>
+            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.2, color: "#5D5153" }}>
+              L’architecture du centre a été imaginée pour allier innovation, fonctionnalité et sérénité.
+              Chaque espace a été conçu avec soin afin d’offrir un environnement élégant, apaisant et parfaitement adapté
+              aux exigences de la pratique moderne.
+            </p>
+            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.2, color: "#5D5153" }}>
+              À travers ses équipements de dernière génération et son engagement constant envers l’innovation,
+              Atlas Dental Center incarne une vision moderne de la dentisterie, où technologie, précision et excellence
+              se rencontrent au service de chaque patient.
+            </p>
+          </div>
         </div>
 
         <div className="notre-centre-image"
@@ -818,20 +827,28 @@ export default function NotreCentrePage() {
           <StepCard
             num={1}
             title="Avant votre visite"
-            imgSrc="/images/center1.png"
-            body="Prenez rendez-vous en quelques secondes grâce à la réservation en ligne en temps réel. Nous vous envoyons par SMS des formulaires sécurisés et un rapide contrôle des avantages d'assurance afin que vous arriviez sans clipboard."
+            imgSrc="/images/visit3.png"
+            body="La prise de rendez-vous est simple et rapide. Vous pouvez réserver directement en ligne via notre site internet, nous contacter sur WhatsApp ou joindre notre 
+équipe par téléphone grâce à nos deux numéros dédiés. Nous restons à votre 
+disposition pour vous accompagner et répondre à toutes vos questions avant 
+votre visite."
           />
           <StepCard
             num={2}
             title="Dans le studio"
-            imgSrc="/images/center2.jpg"
-            body="Votre premier rendez-vous comprend un nettoyage complet, un examen complet et des radiographies numériques ultra rapides. Besoin d'une distraction ? Diffusez Netflix, Prime ou Spotify au-dessus pendant que nous travaillons."
+            imgSrc="/images/visit2.png"
+            body="Vous serez accueilli dans un environnement calme et moderne, conçu pour 
+votre confort. Chaque consultation débute par une écoute attentive de vos 
+besoins, suivie d’un examen clinique approfondi et, si nécessaire, d’examens 
+complémentaires réalisés à l’aide de nos technologies de pointe. Nous prenons le temps de vous expliquer clairement les différentes options de traitement 
+afin que vous puissiez prendre vos décisions en toute confiance."
           />
           <StepCard
             num={3}
             title="Après ton départ"
-            imgSrc="/images/center3.jpg"
-            body="Il y a de fortes chances que vous vous surpreniez à penser : « Attendez, c'était merveilleux ! » (Nous espérons que vous parlerez de votre expérience à vos amis aussi !) À la prochaine fois !"
+            imgSrc="/images/visite1.png"
+            body="À l’issue de votre rendez-vous, vous recevrez toutes les recommandations nécessaires au bon suivi de votre traitement. Notre équipe reste disponible pour répondre à vos interrogations et assurer un accompagnement 
+personnaliséet rigoureux."
           />
         </div>
       </section>
@@ -917,7 +934,7 @@ export default function NotreCentrePage() {
                 letterSpacing: "1px",
               }}
             >
-              Assurez votre consultation privée
+             Planifiez votre visite
             </h2>
 
             <p
@@ -930,9 +947,7 @@ export default function NotreCentrePage() {
                 maxWidth: 600,
               }}
             >
-              Sélectionnez un horaire qui vous convient, et notre équipe
-              <br />
-              préparera une présentation adaptée pour votre session.
+              Choisissez le créneau qui vous convient et notre équipe vous accueillera dans les meilleures conditions pour votre consultation.
             </p>
 
             <a

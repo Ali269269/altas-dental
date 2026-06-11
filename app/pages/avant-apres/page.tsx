@@ -563,7 +563,7 @@ marginLeft: "0px",
                 letterSpacing: "1px",
               }}
             >
-              Assurez votre consultation privée
+              Planifiez votre visite
             </h2>
 
             <p
@@ -576,9 +576,7 @@ marginLeft: "0px",
                 maxWidth: 600,
               }}
             >
-              Sélectionnez un horaire qui vous convient, et notre équipe
-              <br />
-              préparera une présentation adaptée pour votre session.
+              Choisissez le créneau qui vous convient et notre équipe vous accueillera dans les meilleures conditions pour votre consultation.
             </p>
 
             <a

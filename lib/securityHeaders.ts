@@ -31,6 +31,7 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
       `img-src ${apiImgSrc()}`,
       "font-src 'self' data:",
       `connect-src ${apiConnectSrc()}`,
+      "frame-src 'self' https://www.google.com https://maps.google.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

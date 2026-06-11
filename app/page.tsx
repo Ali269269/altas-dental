@@ -11,7 +11,6 @@ import {
 } from "@/utils/specialitiesApi";
 
 type CarouselCard = {
-  tag: string;
   title: string;
   sub: string;
   image: string;
@@ -19,16 +18,111 @@ type CarouselCard = {
 };
 
 const cards: CarouselCard[] = [
-  { tag: "Pédodontie", title: "Teeth Whitening", sub: "Professional-grade whitening treatments that restore your smile's natural brilliance in just one session.", image: '/images/card10.png' },
-  { tag: "Restorative", title: "Dental Implants", sub: "Permanent, natural-looking replacements for missing teeth that feel and function just like your own.", image: '/images/cardbg1.jpg' },
-  { tag: "Orthodontics", title: "Invisible Aligners", sub: "Discreet, comfortable alignment systems tailored to your smile goals without traditional braces.", image: '/images/cardbg2.png' },
-  { tag: "Preventive", title: "Deep Cleaning", sub: "Thorough scaling and root planing to eliminate buildup and protect long-term gum health.", image: '/images/cardbg3.png' },
-  { tag: "Emergency", title: "Same-Day Care", sub: "Urgent dental pain or injury? We offer same-day emergency appointments for immediate relief.", image: '/images/cardgb4.png' },
-  { tag: "Pediatric", title: "Children's Dentistry", sub: "Gentle, playful care designed to make young patients comfortable and cavity-free for life.", image: '/images/cardgb5.png' },
-  { tag: "Cosmetic", title: "Porcelain Veneers", sub: "Ultra-thin ceramic shells that correct chips, stains, and gaps for a flawless, confident smile.", image: '/images/cardbg6.png' },
-  { tag: "Restorative", title: "Crowns & Bridges", sub: "Durable restorations that rebuild damaged teeth and fill gaps with seamless precision.", image: '/images/cardbg7.jpg' },
-  { tag: "Cosmetic", title: "Smile Design", sub: "A full digital preview of your transformed smile before any treatment begins.", image: '/images/cardbg8.png' },
-  { tag: "Preventive", title: "Oral Cancer Screening", sub: "Early detection saves lives. Our painless screening takes just minutes and provides peace of mind.", image: '/images/cardbg9.jpg' },
+  {
+    title: "Smile Design",
+    sub: "Prévisualisation numérique complète de votre futur sourire avant même le début du traitement.",
+    image: '/images/card10.png'
+  },
+  {
+    title: "Facettes Dentaires",
+    sub: "Sublimez la forme, la couleur et l’harmonie du sourire avec des restaurations fines et naturelles.",
+    image: '/images/cardbg1.jpg'
+  },
+  {
+    title: "Composites Stratifiés sous Digue",
+    sub: "Des restaurations esthétiques réalisées avec précision pour un rendu naturel et durable.",
+    image: '/images/cardbg2.png'
+  },
+  {
+    title: "Blanchiment Dentaire",
+    sub: "Des protocoles modernes pour révéler l’éclat naturel du sourire en douceur.",
+    image: '/images/cardbg3.png'
+  },
+  {
+    title: "Couronnes & Bridges",
+    sub: "Des restaurations alliant esthétique, confort et intégration naturelle au sourire.",
+    image: '/images/cardgb4.png'
+  },
+  {
+    title: "Implants Dentaires",
+    sub: "Une solution moderne, biocompatible et durable pour retrouver fonction, stabilité et confiance.",
+    image: '/images/cardgb5.png'
+  },
+  {
+    title: "Orthodontie Invisible",
+    sub: "Des aligneurs transparents pour harmoniser le sourire avec discrétion et confort.",
+    image: '/images/cardbg6.png'
+  },
+  {
+    title: "Orthodontie",
+    sub: "Une approche sur mesure visant à améliorer l’alignement des dents, l’harmonie du sourire et l’équilibre du profil facial.",
+    image: '/images/cardbg7.jpg'
+  },
+  {
+    title: "Dentisterie Numérique",
+    sub: "Des technologies de pointe permettant des soins plus précis, fluides et confortables.",
+    image: '/images/cardbg8.png'
+  },
+  {
+    title: "Scanner Intra-Oral",
+    sub: "Une empreinte numérique haute précision pour une expérience moderne et sans inconfort.",
+    image: '/images/cardbg9.jpg'
+  },
+  {
+    title: "Imagerie 3D & CBCT",
+    sub: "Une visualisation avancée pour des diagnostics précis et une planification optimale des traitements.",
+    image: '/images/cardbg10.jpg'
+  },
+  {
+    title: "Endodontie sous Microscope",
+    sub: "Une approche endodontique de haute précision réalisés sous magnification permettant une prise en charge conservatrice.",
+    image: '/images/cardbg11.jpg'
+  },
+  {
+    title: "Dentisterie sous Microscope",
+    sub: "Une approche microscopique moderne permettant une précision accrue dans les soins dentaires.",
+    image: '/images/cardbg12.jpg'
+  },
+  {
+    title: "Soins Conservateurs",
+    sub: "Préserver la structure naturelle des dents grâce à des traitements précis et minimalement invasifs.",
+    image: '/images/cardbg13.jpg'
+  },
+  {
+    title: "Parodontologie",
+    sub: "Des soins spécialisés et techniques avancées dédiés à la santé et à la stabilité des gencives.",
+    image: '/images/cardbg14.jpg'
+  },
+  {
+    title: "NETTOYAGE PRÉVENTIF EN PROFONDEUR",
+    sub: "Détartrage et surfaçage radiculaire approfondis afin d’éliminer les dépôts et préserver durablement la santé gingivale.",
+    image: '/images/cardbg15.jpg'
+  },
+  {
+    title: "Réhabilitation Orale",
+    sub: "Une prise en charge globale visant à restaurer esthétique, fonction et harmonie du sourire.",
+    image: '/images/cardbg16.jpg'
+  },
+  {
+    title: "Chirurgie Dentaire",
+    sub: "Des interventions réalisées avec précision dans une approche moderne et maîtrisée.",
+    image: '/images/cardbg17.jpg'
+  },
+  {
+    title: "Dentisterie Laser",
+    sub: "Une technologie avancée favorisant précision, confort et récupération optimisée.",
+    image: '/images/cardbg18.jpg'
+  },
+  {
+    title: "Urgences Dentaires",
+    sub: "Une prise en charge le jour même : intervention rapide et attentive face aux douleurs et situations d’urgence pour un soulagement immédiat.",
+    image: '/images/cardbg19.jpg'
+  },
+  {
+    title: "Dentisterie Pédiatrique",
+    sub: "Une approche douce, ludique et adaptée pour accompagner les enfants dans leur santé bucco-dentaire.",
+    image: '/images/cardbg20.jpg'
+  }
 ];
 
 const reviews = [
@@ -198,166 +292,447 @@ function BlogCard({ post, onPause, onResume }: { post: { image: string; date: st
     </Link>
   );
 }
+// ─── FAQ data ───────────────────────────────────────────────────────────────
+type FaqEntry = { id: string; q: string; a: string };
+type FaqCategory = { id: string; name: string; items: FaqEntry[] };
+
+const FAQ_CATEGORIES: FaqCategory[] = [
+  {
+    id: "soins-generaux",
+    name: "Soins Généraux",
+    items: [
+      {
+        id: "sg-1",
+        q: "Les soins dentaires sont-ils douloureux ?",
+        a: "Les techniques modernes et les anesthésies utilisées permettent de réaliser les soins dans des conditions optimales de confort.",
+      },
+      {
+        id: "sg-2",
+        q: "À quelle fréquence faut-il consulter ?",
+        a: "Un contrôle tous les 6 à 12 mois est recommandé afin de prévenir les problèmes bucco-dentaires et maintenir une bonne santé orale.",
+      },
+      {
+        id: "sg-3",
+        q: "Combien de détartrages faut-il faire par an ?",
+        a: "Un à deux détartrages par an sont généralement recommandés selon l’hygiène bucco-dentaire et les besoins de chaque patient.",
+      },
+      {
+        id: "sg-4",
+        q: "Prenez-vous en charge les urgences dentaires ?",
+        a: "Oui, les urgences dentaires sont prises en charge rapidement afin de soulager douleur et inconfort.",
+      },
+    ],
+  },
+  {
+    id: "esthetique",
+    name: "Esthétique du Sourire",
+    items: [
+      {
+        id: "es-1",
+        q: "Qu’est-ce que le Smile Design ?",
+        a: "Le SmileDesign permet d’analyser et planifier l’esthétique du sourire afin d’obtenir un résultat harmonieux et personnalisé.",
+      },
+      {
+        id: "es-2",
+        q: "Proposez-vous le blanchiment au fauteuil ou par gouttières ?",
+        a: "Le centre propose le blanchiment au fauteuil, le blanchiment ambulatoire par gouttières, ou une combinaison des deux selon les besoins et objectifs du patient.",
+      },
+      {
+        id: "es-3",
+        q: "Quelle est la durée d’un blanchiment dentaire ?",
+        a: "Une séance dure généralement entre 45 minutes et 1h30 selon le protocole et les besoins du patient.",
+      },
+      {
+        id: "es-4",
+        q: "Le blanchiment dentaire abîme-t-il les dents ?",
+        a: "Réalisé sous contrôle professionnel, le blanchiment respecte les structures dentaires et suit des protocoles sécurisés.",
+      },
+      {
+        id: "es-5",
+        q: "Les facettes dentaires donnent-elles un résultat naturel ?",
+        a: "Les facettes sont conçues pour s’intégrer harmonieusement au sourire tout en respectant l’esthétique naturelle du visage.",
+      },
+    ],
+  },
+  {
+    id: "orthodontie",
+    name: "Orthodontie & Aligneurs",
+    items: [
+      {
+        id: "or-1",
+        q: "Proposez-vous des aligneurs invisibles ?",
+        a: "Oui, des traitements par aligneurs transparents sont proposés pour corriger l’alignement dentaire discrètement.",
+      },
+      {
+        id: "or-2",
+        q: "L’orthodontie est-elle réservée aux adolescents ?",
+        a: "Non, les traitements orthodontiques peuvent être réalisés à tout âge selon les besoins du patient.",
+      },
+      {
+        id: "or-3",
+        q: "Combien de temps dure un traitement orthodontique ?",
+        a: "La durée varie selon la complexité du cas et les objectifs du traitement.",
+      },
+    ],
+  },
+  {
+    id: "implants",
+    name: "Implants & Réhabilitation",
+    items: [
+      {
+        id: "im-1",
+        q: "Est-il important de remplacer rapidement une dent absente ?",
+        a: "Oui, remplacer une dent manquante permet de préserver l’équilibre de l’occlusion, la fonction masticatoire et l’alignement des dents voisines.",
+      },
+      {
+        id: "im-2",
+        q: "Les implants dentaires sont-ils durables ?",
+        a: "Les implants constituent une solution fiable et durable lorsqu’ils sont correctement entretenus.",
+      },
+      {
+        id: "im-3",
+        q: "Peut-on remplacer plusieurs dents manquantes ?",
+        a: "Oui, différentes solutions de réhabilitation permettent de restaurer fonction et esthétique du sourire.",
+      },
+      {
+        id: "im-4",
+        q: "Quelle est la différence entre une couronne et un bridge ?",
+        a: "Une couronne restaure une dent tandis qu’un bridge permet de remplacer une ou plusieurs dents absentes.",
+      },
+    ],
+  },
+  {
+    id: "endodontie",
+    name: "Endodontie & Soins Conservateurs",
+    items: [
+      {
+        id: "en-1",
+        q: "Pourquoi utiliser un microscope en endodontie ?",
+        a: "Le microscope opératoire améliore la visualisation du système canalaire et la précision des traitements.",
+      },
+      {
+        id: "en-2",
+        q: "Peut-on sauver une dent infectée ?",
+        a: "Dans de nombreux cas, un traitement endodontique permet de conserver la dent naturelle.",
+      },
+    ],
+  },
+  {
+    id: "numerique",
+    name: "Dentisterie Numérique",
+    items: [
+      {
+        id: "dn-1",
+        q: "Utilisez-vous des technologies numériques ?",
+        a: "Le cabinet est équipé de technologies modernes telles que le scanner intra-oral, l’imagerie 3D (CBCT) et le laser.",
+      },
+      {
+        id: "dn-2",
+        q: "Le scanner intra-oral remplace-t-il les empreintes classiques ?",
+        a: "Oui, il permet de réaliser des empreintes numériques plus confortables et précises.",
+      },
+      {
+        id: "dn-3",
+        q: "Qu’est-ce que l’imagerie 3D CBCT ?",
+        a: "Le CBCT permet une analyse tridimensionnelle précise pour améliorer le diagnostic et la planification des traitements.",
+      },
+      {
+        id: "dn-4",
+        q: "Quels sont les avantages de la dentisterie numérique ?",
+        a: "Elle permet des traitements plus précis, plus confortables et une meilleure prévisibilité des résultats.",
+      },
+    ],
+  },
+  {
+    id: "confort",
+    name: "Confort & Expérience Patient",
+    items: [
+      {
+        id: "co-1",
+        q: "Les soins sont-ils adaptés aux patients anxieux ?",
+        a: "Une approche douce et personnalisée est privilégiée afin d’assurer une expérience rassurante et confortable.",
+      },
+      {
+        id: "co-2",
+        q: "Qu’est-ce que la sédation consciente ?",
+        a: "La sédation consciente au protoxyde d’azote aide à réduire le stress et améliorer le confort pendant les soins.",
+      },
+      {
+        id: "co-3",
+        q: "Les enfants peuvent-ils être pris en charge au centre ?",
+        a: "Oui, des soins adaptés aux enfants sont proposés dans une approche rassurante et bienveillante.",
+      },
+    ],
+  },
+];
+
+const FEATURED_FAQS = FAQ_CATEGORIES.map((category) => ({
+  categoryId: category.id,
+  categoryName: category.name,
+  ...category.items[0],
+}));
+
+function FaqNestedItem({
+  item,
+  isOpen,
+  onToggle,
+}: {
+  item: FaqEntry;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div style={{ borderTop: "1px solid #d4c4c8" }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px 0",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+          gap: "16px",
+        }}
+      >
+        <span
+          style={{
+            color: "#591727",
+            fontSize: "15px",
+            fontWeight: 500,
+            fontFamily: "var(--font-seasons-reg)",
+            lineHeight: 1.45,
+          }}
+        >
+          {item.q}
+        </span>
+        <span style={{ color: "#6b1228", fontSize: "14px", flexShrink: 0 }}>
+          {isOpen ? "▲" : "▼"}
+        </span>
+      </button>
+      <div
+        style={{
+          maxHeight: isOpen ? "400px" : "0px",
+          overflow: "hidden",
+          transition: "max-height 0.35s ease",
+        }}
+      >
+        <p
+          style={{
+            color: "#591727",
+            fontSize: "15px",
+            lineHeight: 1.75,
+            fontFamily: "var(--font-seasons-reg)",
+            fontWeight: 400,
+            padding: "0 0 16px",
+            margin: 0,
+          }}
+        >
+          {item.a}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── FaqSection component ───────────────────────────────────────────────────
 function FaqSection() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFeaturedId, setOpenFeaturedId] = useState<string | null>(null);
+  const [showCategoryMore, setShowCategoryMore] = useState(false);
+  const [openNestedId, setOpenNestedId] = useState<string | null>(null);
 
-  const faqs = [
-    {
-      q: "What kind of care and support do you provide?",
-      a: "Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu. Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.",
-    },
-    {
-      q: "How do you tailor your services to individual needs?",
-      a: "Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu. Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.",
-    },
-    {
-      q: "Can I meet the team members and the Senior Consultant?",
-      a: "Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu. Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.",
-    },
-    {
-      q: "How do you ensure the quality of care provided?",
-      a: "Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu. Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.",
-    },
-    {
-      q: "What is the process for getting started with your services?",
-      a: "Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu. Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.",
-    },
-    { 
-      q: "How can I contact you for more information or to schedule a consultation?",
-      a: "Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu. Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.",
-    },
-  ];
+  const toggleFeatured = (id: string) => {
+    if (openFeaturedId === id) {
+      setOpenFeaturedId(null);
+      setShowCategoryMore(false);
+      setOpenNestedId(null);
+      return;
+    }
+    setOpenFeaturedId(id);
+    setShowCategoryMore(false);
+    setOpenNestedId(null);
+  };
 
   return (
     <section
       style={{
-        background: '#FFFFFF',
+        background: "#FFFFFF",
         fontFamily: "var(--font-seasons-reg)",
-        padding: '80px 0 100px',
+        padding: "80px 0 100px",
       }}
     >
       <div
         className="faq-inner"
         style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          gap: '90px',
-          alignItems: 'flex-start',
-          marginRight:"62px",
+          maxWidth: "1200px",
+          margin: "0 auto",
+          display: "flex",
+          gap: "90px",
+          alignItems: "flex-start",
+          marginRight: "62px",
         }}
       >
-        {/* LEFT: Title + description */}
-        <div style={{ flex: '0 0 340px' }}>
+        <div style={{ flex: "0 0 340px" }}>
           <h2
             style={{
-              color: '#6b1228',
-              fontSize: '29px',
+              color: "#6b1228",
+              fontSize: "29px",
               fontWeight: 600,
               fontFamily: "var(--font-cinzel)",
               lineHeight: 1.2,
-              marginBottom: '28px',
-              letterSpacing: '0.01em',
+              marginBottom: "28px",
+              letterSpacing: "0.01em",
             }}
           >
             Frequently Asked Questions (FAQ)
           </h2>
           <p
             style={{
-              color: '#45383B',
-              fontSize: '18px',
-              lineHeight: 1.60,
+              color: "#45383B",
+              fontSize: "18px",
+              lineHeight: 1.6,
               fontFamily: "var(--font-seasons-reg)",
               fontWeight: 400,
             }}
           >
-            Nous répondons à certaines des questions les plus courantes concernant notre équipe,
-            nos services et notre approche des soins. Que vous cherchiez des informations sur nos
-            soins compatissants pour les personnes âgées et vulnérables, ou que vous soyez
-            curieux à propos de notre Consultant Senior et de l'expertise que nous apportons à
-            chaque client
+            Explorez les questions les plus fréquentes sur nos traitements, notre approche
+            clinique et les technologies modernes utilisées au sein du centre.
           </p>
         </div>
 
-        {/* RIGHT: Accordion */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {faqs.map((faq, i) => {
-            const isOpen = openFaq === i;
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
+          {FEATURED_FAQS.map((faq) => {
+            const isOpen = openFeaturedId === faq.id;
+            const category = FAQ_CATEGORIES.find((c) => c.id === faq.categoryId);
+            const relatedItems =
+              category?.items.filter((item) => item.id !== faq.id) ?? [];
+
             return (
               <div
-                key={i}
+                key={faq.id}
                 style={{
-                  overflow: 'hidden',
-                  border:'1px solid #753141'
+                  overflow: "hidden",
+                  border: "1px solid #753141",
+                  borderRadius: isOpen ? "12px" : "0",
                 }}
               >
                 <button
-                  onClick={() => setOpenFaq(isOpen ? null : i)}
+                  type="button"
+                  onClick={() => toggleFeatured(faq.id)}
                   style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '22px 24px',
-                    background: isOpen ? '#f0f0f0' : '#f0f0f0',
-                    border: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    gap: '20px',
-                    transition: 'background 0.3s',
-                    borderRadius: isOpen ? '12px 12px 0 0' : '0',
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "22px 24px",
+                    background: "#f0f0f0",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    gap: "20px",
+                    borderRadius: isOpen ? "12px 12px 0 0" : "0",
                   }}
                 >
                   <span
                     style={{
-                      color: isOpen ? '#6b1220' : '#591727',
-                      fontSize: '17px',
+                      color: isOpen ? "#6b1220" : "#591727",
+                      fontSize: "17px",
                       fontWeight: 500,
                       fontFamily: "var(--font-seasons-reg)",
                       lineHeight: 1.4,
-                      letterSpacing: '0.01em',
-                      transition: 'color 0.3s',
+                      letterSpacing: "0.01em",
                     }}
                   >
                     {faq.q}
                   </span>
-                  <span
-                    style={{
-                      color: isOpen ? '#6b1228' : '#300E16',
-                      fontSize: '18px',
-                      flexShrink: 0,
-                      transition: 'transform 0.3s, color 0.3s',
-                      transform: isOpen ? 'rotate(0deg)' : 'rotate(0deg)',
-                      lineHeight: 1,
-                    }}
-                  >
-                    {isOpen ? '▲' : '▼'}
+                  <span style={{ color: isOpen ? "#6b1228" : "#300E16", fontSize: "18px", flexShrink: 0 }}>
+                    {isOpen ? "▲" : "▼"}
                   </span>
                 </button>
 
-                {/* Answer panel */}
                 <div
                   style={{
-                    background: '#F0F0F0',
-                    maxHeight: isOpen ? '200px' : '0px',
-                    overflow: 'hidden',
-                    transition: 'max-height 0.4s cubic-bezier(.4,0,.2,1)',
-                    borderRadius: isOpen ? '0 0 12px 12px' : '0',
+                    background: "#F0F0F0",
+                    maxHeight: isOpen ? "1200px" : "0px",
+                    overflow: "hidden",
+                    transition: "max-height 0.45s cubic-bezier(.4,0,.2,1)",
+                    borderRadius: isOpen ? "0 0 12px 12px" : "0",
                   }}
                 >
-                  <p
-                    style={{
-                      color: '#591727',
-                      fontSize: '16px',
-                      lineHeight: 1.8,
-                      fontFamily: "var(--font-seasons-reg)",
-                      fontWeight: 400,
-                      padding: '4px 24px 24px',
-                    }}
-                  >
-                    {faq.a}
-                  </p>
+                  <div style={{ padding: "4px 24px 20px" }}>
+                    <p
+                      style={{
+                        color: "#591727",
+                        fontSize: "16px",
+                        lineHeight: 1.8,
+                        fontFamily: "var(--font-seasons-reg)",
+                        fontWeight: 400,
+                        margin: "0 0 16px",
+                      }}
+                    >
+                      {faq.a}
+                    </p>
+
+                    {relatedItems.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCategoryMore((prev) => !prev);
+                            setOpenNestedId(null);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            fontFamily: "var(--font-seasons-reg)",
+                            fontSize: "15px",
+                            lineHeight: 1.5,
+                            textAlign: "left",
+                          }}
+                        >
+                          <span style={{ color: "#591727" }}>En savoir plus — </span>
+                          <span
+                            style={{
+                              color: "#6b1228",
+                              fontWeight: 600,
+                              textDecoration: "underline",
+                              textUnderlineOffset: "3px",
+                            }}
+                          >
+                            {faq.categoryName}
+                          </span>
+                          <span style={{ color: "#591727" }}> {showCategoryMore && isOpen ? "▲" : "▼"}</span>
+                        </button>
+
+                        {showCategoryMore && (
+                          <div
+                            style={{
+                              marginTop: "12px",
+                              paddingTop: "4px",
+                              borderTop: "1px solid #c9b4b8",
+                            }}
+                          >
+                            {relatedItems.map((item) => (
+                              <FaqNestedItem
+                                key={item.id}
+                                item={item}
+                                isOpen={openNestedId === item.id}
+                                onToggle={() =>
+                                  setOpenNestedId((prev) => (prev === item.id ? null : item.id))
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -413,7 +788,6 @@ export default function Home() {
     fetchPublicSpecialities()
       .then((specs) => {
         const dynamic: CarouselCard[] = specs.map((s) => ({
-          tag: s.title.split(" ")[0] || "Spécialité",
           title: s.title,
           sub:
             s.description?.slice(0, 140) ||
@@ -1176,16 +1550,16 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
             className="text-white font-bold uppercase leading-tight mb-8"
             style={{ fontFamily: "var(--font-cinzel)", fontSize: '34px', letterSpacing: '0.01em', transform: 'translateY(90px)' }}
           >
-            Votre sourire le plus sain,{' '}
-            <span style={{ color: '#D3D3D3', fontSize: '34px' }}>simplifié.</span>
+            L' art du sourire{' '}
+            <span style={{ color: '#D3D3D3', fontSize: '34px' }}>naturel.</span>
           </h1>
 
           <p
             className="font-light leading-relaxed mb-11 max-w-[420px]"
             style={{ fontSize: '17px', letterSpacing: '0.01em', transform: 'translateY(70px)', color: '#F0F0F0' }}
           >
-            Fournir des soins doux et experts dans un environnement<br /> chaleureux.
-            Des premiers examens aux restaurations qui <br /> changent la vie.
+            Des soins dentaires précis et personnalisés réalisés <br /> 
+            avec expertise et attention. <br /> 
           </p>
 
           {/* ── MOBILE ONLY: 2 cards + doctor in one row ── */}
@@ -1244,11 +1618,11 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
             <div className="hero-mobile-doctor-col">
               <div className="relative" style={{ width: '100%', height: '230px', position: 'relative' }}>
                 <Image
-                  src="/images/drghitau.png"
+                  src="/images/udrimage.png"
                   alt="Dental doctor"
                   fill
                   className="object-contain object-bottom"
-                  style={{ transform: 'translateY(4px) scale(1.35)', transformOrigin: 'bottom right'}}
+                  style={{ transform: 'translateY(4px) scale(1.55)', transformOrigin: 'bottom right'}}
                   priority
                 />
               </div>
@@ -1290,8 +1664,8 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
 
         {/* ── DESKTOP ONLY: Doctor image ── */}
         <div className="hero-doctor-img relative z-0 flex flex-1 justify-end items-end self-stretch pointer-events-none">
-          <div className="relative w-[390px] h-[460px]">
-            <Image src="/images/drghitau.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-8 scale-140 " priority />
+          <div className="relative w-[380px] h-[460px]">
+            <Image src="/images/udrimage.png" alt="Dental doctor" fill className="object-contain object-bottom translate-y-1 scale-130 " priority />
           </div>
         </div>
       </section>
@@ -1303,9 +1677,10 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
             Pourquoi choisir notre centre dentaire ?
           </h2>
           <p style={{ color: '#4a3728', fontSize: '17px', lineHeight: 1.75, fontFamily: "var(--font-seasons-reg)", fontWeight: 500, maxWidth: '620px' }}>
-            Choisissez notre centre dentaire pour une combinaison parfaite de technologie avancée
-            et de soins compatissants. Notre équipe d'experts est dédiée à fournir des traitements
-            précis et sans stress dans un environnement moderne conçu pour votre confort.
+          Choisissez notre centre dentaire pour une combinaison parfaite de technologie 
+avancée et de soins personnalisés. Notre équipe d'experts est dédiée à fournir 
+des traitements précis et sans stress dans un environnement moderne conçu 
+pour votre confort.
           </p>
         </div>
         <div className="stats-wrapper" style={{ background: '#f0f0f0', border: '1px solid #753141' }}>
@@ -1367,7 +1742,6 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
                     <div style={{ position: 'absolute', width: '212px', height: '212px', top: '100px', left: '-80px', background: '#D3D3D3', opacity: 0.99, borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
                     <div style={{ position: 'absolute', inset: 0, backgroundImage: isOpen ? `linear-gradient(135deg, rgba(90,22,39,0.7), rgba(113,28,49,0.9)), url(${card.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', opacity: isOpen ? 1 : 0, transition: 'opacity 0.5s', zIndex: 0, borderRadius: '16px' }} />
                     <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '16px', letterSpacing: '2px', fontWeight: '700', textTransform: 'uppercase', color: isOpen ? '#ffffff' : '#65192b', marginBottom: '10px', display: 'block' }}>{card.tag}</span>
                       <h3 style={{ fontSize: '15px', fontWeight: 700, color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.4, marginBottom: '14px', fontFamily: "var(--font-cinzel)" }}>{card.title}</h3>
                       <div style={{ fontSize: '12px', color: isOpen ? '#ffffff' : '#711C31', lineHeight: 1.7, overflow: 'hidden', maxHeight: isOpen ? '100px' : '0px', opacity: isOpen ? 1 : 0, transition: 'max-height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s', fontFamily: "var(--font-seasons-reg)" }}>{card.sub}</div>
                     </div>
@@ -1387,7 +1761,8 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
         </div>
       </section>
 
-      {/* ───────────────── About / Doctor Section ───────────────── */}
+      {/* ───────────────── About / Doctor Section (hidden on home page) ───────────────── */}
+      {false && (
       <section
         className="about-section"
         style={{ background: 'linear-gradient(15deg, #5c0d2a 0%, #5c0d2a 10%, #5c0d2a 100%)', height: '640px', width: '1150px', maxWidth: '95%', marginTop: '80px', marginLeft: '100px', borderRadius: '20px', position: 'relative', overflow: 'hidden' }}
@@ -1452,6 +1827,7 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
           />
         </div>
       </section>
+      )}
 
       {/* ───────────────── Reviews Section ───────────────── */}
  <section
@@ -1598,25 +1974,24 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
       {/* ───────────────── Why Choose Us Video Section ───────────────── */}
       <section
         className="why-section"
-        style={{ background: '#FFFFFF', fontFamily: "var(--font-seasons-reg)", padding: '0px 60px', marginBottom: '70px' }}
+        style={{ background: '#FFFFFF', fontFamily: "var(--font-seasons-reg)", padding: '0px 60px', marginBottom: '60px' }}
       >
         {/* Header */}
         <div
           className="why-header"
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px', gap: '410px' }}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '410px' }}
         >
           <div style={{ flex: '0 0 380px', marginLeft: '25px' }}>
             <p style={{ color: '#6b1228', fontSize: '16px', fontStyle: 'italic', marginBottom: '16px', marginTop: '20px', letterSpacing: '0.04em' }}>
-              Nous servons des patients du monde entier.
+            Nous accueillons une patientèle locale et internationale.
             </p>
             <h2 style={{ color: '#6b1228', fontSize: '29px', fontWeight: 600, fontFamily: "var(--font-cinzel)", textTransform: 'uppercase', lineHeight: 1.1, letterSpacing: '0.02em' }}>
-              Pourquoi nous choisir
+              Pourquoi nous choisir ?
             </h2>
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', paddingTop: '28px' }}>
             <p style={{ color: '#6b1228', fontSize: '17px', lineHeight: 1.6, fontFamily: "var(--font-seasons-reg)", fontWeight: 400, maxWidth: '480px' }}>
-              Lorem ipsum dolor sit amet consectetur. Eu mi sed lacus mi amet augue est arcu.
-              Sit congue dolor neque orci sed ornare arcu adipiscing. Nec mollis ut tellus auctor.
+            Atlas Dental Center : Le choix d’une patientèle en quête d’excellence.
             </p>
             <Link href="/pages/Appointment">
               <button
@@ -1631,10 +2006,10 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
         </div>
 
         {/* Body: video + right col */}
-        <div className="why-body" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginLeft: '10px',}}>
+        <div className="why-body" style={{ display: 'flex', gap: '29px', alignItems: 'flex-start', marginLeft: '10px',}}>
           <div
             className="why-video-col"
-            style={{ flex: '0 0 62%', position: 'relative', border: '1px solid #753141', borderRadius: '16px', overflow: 'hidden', background: '#1a1008', aspectRatio: '17/9', cursor: 'pointer',marginTop: '40px' }}
+            style={{ flex: '0 0 62%', position: 'relative', border: '1px solid #753141', borderRadius: '16px', overflow: 'hidden', background: '#1a1008', aspectRatio: '17/9', cursor: 'pointer',marginTop: '110px' }}
             onMouseEnter={() => setIsVideoHovered(true)}
             onMouseLeave={() => setIsVideoHovered(false)}
             onClick={() => {
@@ -1661,17 +2036,31 @@ body, html { overflow-x: hidden !important; max-width: 100vw !important; }
             )}
           </div>
 
-          <div className="why-right-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ width: '100%', borderRadius: '16px', border: '1px solid #753141', overflow: 'hidden', position: 'relative',aspectRatio: '13/14',
- }}>
-              <Image src="/images/drfooter.jpeg" alt="Clinic treatment" fill style={{      objectPosition: 'center',
-    transform: 'scale(0.99)', }} />
+          <div className="why-right-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '40px' }}>
+            <div
+              style={{
+                width: '100%',
+                borderRadius: '16px',
+                border: '1px solid #753141',
+                overflow: 'hidden',
+                position: 'relative',
+                aspectRatio: '4 / 5',
+                lineHeight: 0,
+              }}
+            >
+              <Image
+                src="/images/drfooter.jpeg"
+                alt="Clinic treatment"
+                fill
+                sizes="(max-width: 768px) 100vw, 35vw"
+                style={{
+                  objectFit: 'cover',
+                  objectPosition: 'center center',
+                }}
+              />
             </div>
-            <p style={{ color: '#5c0d2a', fontSize: '14px', lineHeight: 1.4, fontFamily: "var(--font-seasons-reg)", fontWeight: 40 }}>
-              Nous croyons que des soins de santé de qualité sont la base d'une vie épanouissante.
-              Nos services de santé complets sont conçus pour améliorer votre bien-être global,
-              offrant des soins personnalisés et des solutions innovantes pour répondre à vos besoins
-              uniques.
+            <p style={{ color: '#5c0d2a', fontSize: '17px', lineHeight: 1.4, fontFamily: "var(--font-seasons-reg)", fontWeight: 40 }}>
+            L’équilibre entre santé, esthétique et précision au service de votre sourire.
             </p>
           </div>
         </div>

@@ -1,0 +1,309 @@
+================================================================================
+ALTAS DENTAL CENTER — PRODUCTION DEPLOYMENT GUIDE
+================================================================================
+
+Current setup:
+  - Frontend: Next.js  → deploy on Vercel
+  - Backend:  Express  → must NOT stay on localhost for production
+  - Database: MongoDB Atlas (already cloud-ready)
+
+You do NOT need to change application code for a normal deploy.
+Almost everything is controlled by ENVIRONMENT VARIABLES.
+
+
+================================================================================
+1. WHAT YOU NEED BEFORE DEPLOYING
+================================================================================
+
+[ ] MongoDB Atlas cluster (you already use this)
+[ ] A backend host (pick one):
+      - Render.com          (easy, free tier available)
+      - Railway.app
+      - Fly.io
+      - DigitalOcean App Platform
+      - VPS (Ubuntu + PM2 + Nginx)
+[ ] Vercel account (frontend — you already use this)
+[ ] Domain names (optional but recommended):
+      - https://www.yourdomain.com        → Vercel (frontend)
+      - https://api.yourdomain.com        → backend host
+[ ] Gmail App Password (or other SMTP) for emails
+[ ] Strong secrets generated locally:
+      JWT_SECRET (min 32 random chars)
+      SUPER_ADMIN_PASSWORD
+
+
+Generate a JWT secret (run once locally):
+  node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+
+
+================================================================================
+2. ARCHITECTURE (PRODUCTION)
+================================================================================
+
+  Browser
+     |
+     v
+  Vercel (Next.js frontend)     https://www.yourdomain.com
+     |
+     |  API calls + images
+     v
+  Backend server (Express)      https://api.yourdomain.com
+     |
+     v
+  MongoDB Atlas
+
+
+================================================================================
+3. DEPLOY THE BACKEND FIRST (leave localhost behind)
+================================================================================
+
+WHY: Vercel only hosts the frontend. Your Express API must run on a
+separate server with a public HTTPS URL.
+
+Steps:
+  1. Push your code to GitHub (backend folder is inside the repo).
+  2. Create a new Web Service on Render / Railway / etc.
+  3. Point it to your repo.
+  4. Set ROOT DIRECTORY to:  backend
+  5. Build command:          npm install
+  6. Start command:          npm start
+  7. Add ALL backend env vars from section 4 below.
+  8. Deploy and copy your public backend URL, e.g.:
+        https://api.yourdomain.com
+        or https://altas-api.onrender.com
+
+IMPORTANT — UPLOADED FILES:
+  Blog images, profile photos, and speciality images are stored in:
+    backend/uploads/
+  This folder is gitignored. On most cloud hosts the disk is EPHEMERAL
+  (files disappear on redeploy) unless you attach persistent storage.
+
+  For production you should either:
+    a) Add a persistent disk/volume on your host, OR
+    b) Later migrate uploads to S3 / Cloudinary (not required for first deploy,
+       but plan for it if you upload many images).
+
+MongoDB Atlas:
+  - Network Access → allow your backend host IP, or 0.0.0.0/0 for cloud hosts
+  - Database user must have read/write on your database
+
+
+================================================================================
+4. BACKEND ENVIRONMENT VARIABLES (backend/.env on server)
+================================================================================
+
+File to copy from:  backend/.env.example
+Set these on your HOSTING DASHBOARD (not in git):
+
+REQUIRED IN PRODUCTION:
+--------------------------------------------------------------------------------
+MONGODB_URI=mongodb+srv://USER:PASS@cluster....mongodb.net/mydatabase?...
+
+NODE_ENV=production
+
+JWT_SECRET=<64-char random hex from crypto command above>
+JWT_EXPIRE=7d
+
+PORT=5000
+(or leave default — host may inject PORT automatically)
+
+FRONTEND_URL=https://www.yourdomain.com
+  - Use your exact Vercel production URL
+  - If you have www AND non-www, comma-separate both:
+    FRONTEND_URL=https://yourdomain.com,https://www.yourdomain.com
+  - CORS will block the frontend if this is wrong
+
+API_BASE_URL=https://api.yourdomain.com
+  - Your PUBLIC backend URL (HTTPS, no trailing slash)
+  - Used in emails, profile photo URLs, blog image links, clinical download links
+
+SUPER_ADMIN_EMAIL=your-admin@email.com
+SUPER_ADMIN_PASSWORD=YourStrongPassword123!
+FORCE_SUPER_ADMIN_PASSWORD=false
+
+EMAIL (required for appointments, notifications, password reset):
+--------------------------------------------------------------------------------
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+ADMIN_EMAIL=your-email@gmail.com
+
+OPTIONAL:
+--------------------------------------------------------------------------------
+BACKEND_URL=https://api.yourdomain.com
+  (fallback alias for API_BASE_URL)
+
+API_PUBLIC_URL=https://api.yourdomain.com
+  (used for public asset URLs in settings)
+
+
+================================================================================
+5. VERCEL — FRONTEND ENVIRONMENT VARIABLES
+================================================================================
+
+Go to: Vercel → your project → Settings → Environment Variables
+
+REQUIRED:
+--------------------------------------------------------------------------------
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+
+  - Must be your live backend HTTPS URL
+  - No trailing slash
+  - This is read by: utils/api.ts, next.config.ts, security headers
+  - After changing this, REDEPLOY the frontend
+
+Vercel project settings:
+  Framework Preset:     Next.js
+  Root Directory:       .  (repo root, not /backend)
+  Build Command:        npm run build   (default)
+  Output Directory:     .next           (default)
+  Install Command:      npm install     (default)
+
+
+================================================================================
+6. FILES IN THE REPO — WHAT TO CHANGE (AND WHAT NOT TO)
+================================================================================
+
+DO NOT commit secrets. Never push backend/.env to GitHub.
+
+FILES YOU CONFIGURE VIA HOSTING DASHBOARDS (no code edit needed):
+  backend/.env              → set on backend host only
+  Vercel env vars           → NEXT_PUBLIC_API_URL
+
+CODE FILES (only change if you add a custom domain to next.config):
+  next.config.ts
+    - remotePatterns for images auto-uses NEXT_PUBLIC_API_URL hostname
+    - Usually NO manual edit needed if env var is set before build
+
+  lib/securityHeaders.ts
+    - connect-src / img-src auto-use NEXT_PUBLIC_API_URL
+    - NO manual edit needed
+
+  backend/server.js
+    - CORS reads FRONTEND_URL from env
+    - NO manual edit needed
+
+FILES NEVER PUSHED (already gitignored):
+  backend/.env
+  backend/uploads/
+  .env*
+  *.md
+
+
+================================================================================
+7. DEPLOY ORDER (RECOMMENDED)
+================================================================================
+
+Step 1 — Backend
+  - Deploy backend to Render/Railway/etc.
+  - Set all env vars from section 4
+  - Test: open https://api.yourdomain.com/api/health
+    Expected: {"success":true,"ok":true}
+
+Step 2 — Vercel frontend
+  - Set NEXT_PUBLIC_API_URL to your backend URL
+  - Trigger redeploy (Deployments → Redeploy)
+  - Test: open https://www.yourdomain.com/login
+
+Step 3 — Login
+  - Log in with SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD
+  - If login fails after first deploy, confirm Super Admin was seeded
+    (backend creates it on first startup from env vars)
+
+Step 4 — Smoke tests
+  [ ] Login / logout works
+  [ ] Dashboard loads data
+  [ ] Public blog page shows uploaded images
+  [ ] Appointment booking from public site works
+  [ ] Contact form / newsletter submission works
+  [ ] Email notifications send (check SMTP)
+
+
+================================================================================
+8. CUSTOM DOMAIN (OPTIONAL)
+================================================================================
+
+Frontend (Vercel):
+  - Vercel → Settings → Domains → add www.yourdomain.com
+  - Update FRONTEND_URL on backend to match
+
+Backend (Render/Railway/etc.):
+  - Add custom domain: api.yourdomain.com
+  - Update API_BASE_URL and NEXT_PUBLIC_API_URL to new URL
+  - Redeploy both frontend and backend
+
+
+================================================================================
+9. COMMON PRODUCTION ERRORS
+================================================================================
+
+"Failed to fetch" / CORS error in browser:
+  → FRONTEND_URL on backend must exactly match your Vercel URL (https included)
+  → NEXT_PUBLIC_API_URL must point to live backend, not localhost
+
+Images not showing on website:
+  → API_BASE_URL must be correct HTTPS backend URL
+  → NEXT_PUBLIC_API_URL must match
+  → Redeploy Vercel after env change
+  → Check backend/uploads files exist on server (persistent storage)
+
+Login works locally but not production:
+  → JWT_SECRET must be set on backend (32+ chars)
+  → SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD must be set
+  → MongoDB Atlas must allow backend server IP
+
+Emails not sending:
+  → SMTP_USER / SMTP_PASS correct (Gmail App Password, not normal password)
+  → ADMIN_EMAIL set
+
+Backend crashes on start in production:
+  → Missing JWT_SECRET, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD, or FRONTEND_URL
+  → Check host logs
+
+
+================================================================================
+10. QUICK REFERENCE — LOCAL vs PRODUCTION
+================================================================================
+
+                        LOCAL DEV                  PRODUCTION
+--------------------------------------------------------------------------------
+Frontend URL            http://localhost:3000      https://www.yourdomain.com
+Backend URL             http://localhost:5000      https://api.yourdomain.com
+Frontend env            (optional)                 NEXT_PUBLIC_API_URL=<backend>
+Backend FRONTEND_URL    http://localhost:3000      https://www.yourdomain.com
+Backend API_BASE_URL    http://localhost:5000      https://api.yourdomain.com
+NODE_ENV                development                production
+Secrets                 backend/.env (local)       hosting dashboard only
+
+
+================================================================================
+11. MINIMAL CHECKLIST
+================================================================================
+
+Backend host:
+  [ ] Root directory = backend
+  [ ] Start = npm start
+  [ ] MONGODB_URI set
+  [ ] NODE_ENV=production
+  [ ] JWT_SECRET set (32+ chars)
+  [ ] FRONTEND_URL = Vercel URL
+  [ ] API_BASE_URL = public backend URL
+  [ ] SUPER_ADMIN_EMAIL + SUPER_ADMIN_PASSWORD set
+  [ ] SMTP vars set
+  [ ] /api/health returns ok
+
+Vercel:
+  [ ] NEXT_PUBLIC_API_URL = public backend URL
+  [ ] Redeploy after env change
+  [ ] npm run build passes (test locally first)
+
+Security:
+  [ ] backend/.env NOT in git
+  [ ] Strong JWT_SECRET and admin password
+  [ ] MongoDB user has least privilege
+  [ ] FORCE_SUPER_ADMIN_PASSWORD=false in production
+
+================================================================================
+END OF DEPLOYMENT GUIDE
+================================================================================

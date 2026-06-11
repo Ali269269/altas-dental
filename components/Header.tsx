@@ -176,7 +176,7 @@ export default function Header() {
                   whiteSpace: 'nowrap'
                 }}
               >
-                Notre spécialités
+                Nos spécialités
                 <span style={{ fontSize: '10px' }}>▾</span>
               </button>
 
@@ -217,7 +217,7 @@ export default function Header() {
             </div>
 
             <Link href="/pages/a-propos" style={{ color: isHomePage ? '#FFFFFF' : '#711C31', textDecoration: 'none', fontSize: '14.5px', fontFamily: "var(--font-seasons-reg)", whiteSpace: 'nowrap' }}>
-              À propos de moi
+              Notre équipe
             </Link>
 
             <Link href="/pages/avant-apres" style={{ color: isHomePage ? '#FFFFFF' : '#711C31', textDecoration: 'none', fontSize: '14.5px', fontFamily: "var(--font-seasons-reg)", whiteSpace: 'nowrap' }}>

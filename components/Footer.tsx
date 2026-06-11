@@ -14,6 +14,18 @@ import {
   specialityPagePath,
 } from "@/utils/specialitiesApi";
 
+const FRENCH_DAY_LABELS: Record<string, string> = {
+  "Mon - Fri": "Lundi - Vendredi",
+  "Mon-Fri": "Lundi - Vendredi",
+  "Monday - Friday": "Lundi - Vendredi",
+  Saturday: "Samedi",
+  Sunday: "Dimanche",
+};
+
+function frenchDayLabel(label: string): string {
+  return FRENCH_DAY_LABELS[label] ?? label;
+}
+
 const socialLinkStyle: React.CSSProperties = {
   width: "36px",
   height: "36px",
@@ -704,12 +716,12 @@ export default function Footer() {
             {/* COL 3 */}
             <div className="footer-col3">
               <h4 style={{ color: "#F0F0F0", marginBottom: "20px", fontWeight: 500 }}>
-                Timings
+              Horaire
               </h4>
 
               {clinic.businessHours.map((entry) => (
                 <p key={entry.label} style={{ color: "#f0e6d3", marginBottom: "6px" }}>
-                  {entry.label}: {entry.display}
+                  {frenchDayLabel(entry.label)}: {entry.display}
                 </p>
               ))}
             </div>
